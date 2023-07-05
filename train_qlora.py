@@ -146,7 +146,7 @@ def train(global_args):
             device_map="auto" # 模型不同层会被自动分配到不同GPU上进行计算
             # device_map={'':torch.cuda.current_device()} # 这种方式虽然解决了模型各层散步乱象但GPU 显存开销大
         )
-    print(f"OLD_DEVICE_MAP ={model.hf_device_map})
+    print(f"OLD_DEVICE_MAP ={model.hf_device_map}")
 
     # STEP 2 : 手动设置 deivce map 
     # 参考 https://github.com/shuxueslpi/chatGLM-6B-QLoRA/issues/11#issuecomment-1614252556
@@ -180,7 +180,7 @@ def train(global_args):
     
     
     model = AutoModel.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True, device_map=model.hf_device_map)
-    print(print(f"NEW_DEVICE_MAP ={model.hf_device_map}))
+    print(f"NEW_DEVICE_MAP ={model.hf_device_map}" )
     
     """
     .gradient_checkpointing_enable()
