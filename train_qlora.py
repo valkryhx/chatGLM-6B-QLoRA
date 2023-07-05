@@ -159,10 +159,10 @@ def train(global_args):
         device_map = {'': local_rank}
     
     
-    !!!! now qlora are not compatible with ZeRO3 and FSDP
-    if global_args.qlora and (len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled()):
-        logger.warning("FSDP and ZeRO3 are both currently incompatible with QLoRA.")
-    """
+    #!!!! now qlora are not compatible with ZeRO3 and FSDP
+    #if global_args.qlora and (len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled()):
+    #    logger.warning("FSDP and ZeRO3 are both currently incompatible with QLoRA.")
+    
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                       quantization_config=q_config,
                                       device_map= device_map ,
