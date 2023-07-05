@@ -137,37 +137,6 @@ def train(global_args):
 
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
-
-    # STEP 1 : 加载空模型查看各层的GPU分布情况 empty model structure
-    # init model
-    with init_empty_weights():
-        model = AutoModel.from_pretrained(
-            global_args.model_name_or_path, 
-            trust_remote_code=True, 
-            device_map="auto" # 模型不同层会被自动分配到不同GPU上进行计算
-            # device_map={'':torch.cuda.current_device()} # 这种方式虽然解决了模型各层散步乱象但GPU 显存开销大
-        )
-    print(f"OLD_DEVICE_MAP ={model.hf_device_map}")
-
-    # STEP 2 : 手动设置 deivce map 
-    # 参考 https://github.com/shuxueslpi/chatGLM-6B-QLoRA/issues/11#issuecomment-1614252556
-    # 参考 https://github.com/beyondguo/LLM-Tuning/blob/master/chatglm2_lora_tuning.py#L105
-    # 解决设置model加载时device_map="auto"后，output_layer 被分到另一张GPU导致计算loss的时候报错显示
-    # RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:2 and cuda:0!
-    # 手动把 output_layer 设置为跟 input 一样的 device
-
-    """
-    设置了 device_map="auto" 之后
-    chatglm 1.0 的时候，lm_head会跟input_layer自动分配到同个 device，
-    chatglm 2.0 的时候，没有了 lm_head，有一个 output_layer，这个时候可能会分配到两个 device，导致计算loss的时候报错显示
-    RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:2 and cuda:0!
-    一个解决办法是设置 device_map={'':torch.cuda.current_device()}，进行数据并行，但是这样batchsize只能设置非常小，而且很占显存
-    另一个解决办法是下面这个：
-    手动把 output_layer 设置为跟 input 一样的 device
-    """
-    model.hf_device_map['transformer.output_layer'] = model.hf_device_map['transformer.embedding']
-
-    # STEP 3 : 此时按照device_map=model.hf_device_map 加载模型，并量化
     # Quantization
     q_config = BitsAndBytesConfig(load_in_4bit=True,
                                   bnb_4bit_quant_type='nf4',
@@ -176,11 +145,10 @@ def train(global_args):
 
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                       quantization_config=q_config,
-                                      device_map=model.hf_device_map ,
+                                      device_map='auto',
                                       trust_remote_code=True)
-    
 
-    print(f"NEW_DEVICE_MAP ={model.hf_device_map}" )
+    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
     """
     .gradient_checkpointing_enable()
