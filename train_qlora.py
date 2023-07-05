@@ -163,13 +163,15 @@ def train(global_args):
     #if global_args.qlora and (len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled()):
     #    logger.warning("FSDP and ZeRO3 are both currently incompatible with QLoRA.")
     
-    model = AutoModel.from_pretrained(global_args.model_name_or_path,
+    model = AutoModel.from_pretrained(global_args.model_name_or_path, 
+                                      load_in_4bit=True,
+                                      torch_dtype=torch.float16,
                                       quantization_config=q_config,
                                       device_map= device_map ,
                                       trust_remote_code=True)
 
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
-    
+    print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
     # 
     # .gradient_checkpointing_enable()
     # .enable_input_require_grads()
