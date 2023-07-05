@@ -142,7 +142,8 @@ def train(global_args):
     # init model
     with init_empty_weights():
         model = AutoModel.from_pretrained(
-            model_path, trust_remote_code=True, 
+            global_args.model_name_or_path, 
+            trust_remote_code=True, 
             device_map="auto" # 模型不同层会被自动分配到不同GPU上进行计算
             # device_map={'':torch.cuda.current_device()} # 这种方式虽然解决了模型各层散步乱象但GPU 显存开销大
         )
