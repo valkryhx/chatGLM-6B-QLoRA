@@ -133,6 +133,8 @@ def train(global_args):
 
     set_seed(global_args.seed)
     hf_train_args.seed = global_args.seed
+    
+    hf_train_args.optim="paged_adamw_8bit"
     model_max_length = global_args.max_input_length + global_args.max_output_length
 
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
@@ -144,18 +146,26 @@ def train(global_args):
                                   bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
     
    # 参考 https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L280C9-L282C77
-    the_device_map = "auto"
+   # https://github.com/artidoro/qlora/issues/137     
+   # [FireFly] solve the ddp training : https://github.com/yangjianxin1/Firefly/blob/master/train_qlora.py#L104
+
     world_size = int(os.environ.get("WORLD_SIZE", 1))
-    if world_size > 1:
-        the_device_map = {"": int(os.environ["LOCAL_RANK"]) or 0}
-    """
+    ddp = world_size != 1
+    training_args.ddp_find_unused_parameters = False if ddp else None
+    device_map = "auto"
+    # if we are in a distributed setting, we need to set the device map and max memory per device
+    if os.environ.get('LOCAL_RANK') is not None:
+        local_rank = int(os.environ.get('LOCAL_RANK', '0'))
+        device_map = {'': local_rank}
+    
+    
     !!!! now qlora are not compatible with ZeRO3 and FSDP
     if global_args.qlora and (len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled()):
         logger.warning("FSDP and ZeRO3 are both currently incompatible with QLoRA.")
     """
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                       quantization_config=q_config,
-                                      device_map= the_device_map ,
+                                      device_map= device_map ,
                                       trust_remote_code=True)
 
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
