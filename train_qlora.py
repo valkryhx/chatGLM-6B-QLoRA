@@ -57,7 +57,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
+def tokenize_func(example, tokenizer, global_args, ignore_label_id=0):
     """单样本tokenize处理"""
     question = global_args.prompt_text + example['instruction']
     if example.get('input', None):
@@ -92,7 +92,7 @@ class DataCollatorForChatGLM:
     def __init__(self,
                  pad_token_id: int,
                  max_length: int = 2048,
-                 ignore_label_id: int = -100):
+                 ignore_label_id: int = 0):
         self.pad_token_id = pad_token_id
         self.ignore_label_id = ignore_label_id
         self.max_length = max_length
