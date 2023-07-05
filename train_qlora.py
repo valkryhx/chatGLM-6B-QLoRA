@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # time: 2023/6/1 17:19
 # file: train_qlora.py
-# author: zmfy
-# email: shuxueslpi@163.com
+# author: hx
+# email: XXXXX
 
 import os
 import argparse
