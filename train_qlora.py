@@ -146,9 +146,13 @@ def train(global_args):
    # 参考 https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L280C9-L282C77
     the_device_map = "auto"
     world_size = int(os.environ.get("WORLD_SIZE", 1))
-        if world_size > 1:
-            the_device_map = {"": int(os.environ["LOCAL_RANK"]) or 0}
-    
+    if world_size > 1:
+        the_device_map = {"": int(os.environ["LOCAL_RANK"]) or 0}
+    """
+    !!!! now qlora are not compatible with ZeRO3 and FSDP
+    if global_args.qlora and (len(training_args.fsdp) > 0 or deepspeed.is_deepspeed_zero3_enabled()):
+        logger.warning("FSDP and ZeRO3 are both currently incompatible with QLoRA.")
+    """
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                       quantization_config=q_config,
                                       device_map= the_device_map ,
