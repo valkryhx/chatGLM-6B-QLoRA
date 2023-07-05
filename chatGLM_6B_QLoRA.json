@@ -16,5 +16,6 @@
     "fp16": true,
     "remove_unused_columns": false,
     "ddp_find_unused_parameters": false,
-    "seed": 42
+    "seed": 42,
+    "report_to":"tensorboard"
 }
