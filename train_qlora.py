@@ -179,8 +179,7 @@ def train(global_args):
                                       device_map=model.hf_device_map ,
                                       trust_remote_code=True)
     
-    
-    model = AutoModel.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True, device_map=model.hf_device_map)
+
     print(f"NEW_DEVICE_MAP ={model.hf_device_map}" )
     
     """
