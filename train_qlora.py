@@ -142,10 +142,16 @@ def train(global_args):
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
                                   bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
-
+    
+   # 参考 https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L280C9-L282C77
+    the_device_map = "auto"
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+        if world_size > 1:
+            the_device_map = {"": int(os.environ["LOCAL_RANK"]) or 0}
+    
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                       quantization_config=q_config,
-                                      device_map='auto',
+                                      device_map= the_device_map ,
                                       trust_remote_code=True)
 
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
