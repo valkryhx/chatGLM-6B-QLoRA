@@ -151,7 +151,7 @@ def train(global_args):
 
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
-    training_args.ddp_find_unused_parameters = False if ddp else None
+    global_args.ddp_find_unused_parameters = False if ddp else None
     device_map = "auto"
     # if we are in a distributed setting, we need to set the device map and max memory per device
     if os.environ.get('LOCAL_RANK') is not None:
