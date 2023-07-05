@@ -170,12 +170,12 @@ def train(global_args):
 
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
-    """
-    .gradient_checkpointing_enable()
-    .enable_input_require_grads()
-    .is_parallelizable
-    这三个都是 transformers 模型的函数/参数（见 transformers/modeling_utils.py 文件）
-    """
+    # 
+    # .gradient_checkpointing_enable()
+    # .enable_input_require_grads()
+    # .is_parallelizable
+    # 这三个都是 transformers 模型的函数/参数(见 transformers/modeling_utils.py 文件)
+    #
     model.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     model.enable_input_require_grads()
