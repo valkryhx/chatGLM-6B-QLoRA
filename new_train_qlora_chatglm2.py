@@ -56,6 +56,7 @@ def parse_args():
     parser.add_argument('--compute_dtype', type=str, default='fp32',
                         choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
     parser.add_argument("--local_rank", type=int, default=0)
+    parser.add_argument("--deepspeed", type=str, default='deepspeed_config.json')
     return parser.parse_args()
 
 
