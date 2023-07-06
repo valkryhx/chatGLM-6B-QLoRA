@@ -56,7 +56,7 @@ def parse_args():
     parser.add_argument('--compute_dtype', type=str, default='fp32',
                         choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
     parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument("--deepspeed", type=str, default='deepspeed_config.json')
+    parser.add_argument("--deepspeed", type=str, default='ds_config_zero3_0629.json')
     return parser.parse_args()
 
 
@@ -209,8 +209,8 @@ def train(global_args):
     "train_batch_size": 2,
 }
     from transformers.deepspeed import HfDeepSpeedConfig
-    dschf = HfDeepSpeedConfig(ds_config) 
-    #ds_config_file = global_args.deepspeed 
+    #dschf = HfDeepSpeedConfig(ds_config) 
+    ds_config_file = global_args.deepspeed 
     #dschf = HfDeepSpeedConfig(ds_config_file)
     # now a model can be loaded
 
