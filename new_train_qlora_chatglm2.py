@@ -271,7 +271,7 @@ def train(global_args):
         print(f'memory_allocated {torch.cuda.memory_allocated()}')
         print('loading real model...')
 
-        """
+    
         global_args.ddp_find_unused_parameters = False
         model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
@@ -280,8 +280,15 @@ def train(global_args):
                                           quantization_config=q_config,
                                           device_map=new_hf_device_map)
         print("[real]",model.hf_device_map)
-    
-
+        """
+        
+    model = AutoModel.from_pretrained(global_args.model_name_or_path,
+                                          trust_remote_code=True,                           
+                                          load_in_4bit=True,
+                                          torch_dtype=torch.float16,
+                                          quantization_config=q_config,
+                                          #device_map=new_hf_device_map
+                                     )
 
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
