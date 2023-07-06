@@ -240,7 +240,7 @@ def train(global_args):
             load_in_4bit=True,
             torch_dtype=torch.float16,
             #quantization_config=q_config,
-            device_map="auto" # 模型不同层会被自动分配到不同GPU上进行计算
+            #device_map="auto" # 模型不同层会被自动分配到不同GPU上进行计算
             # device_map={'':torch.cuda.current_device()}
         )
     print(model.hf_device_map)
