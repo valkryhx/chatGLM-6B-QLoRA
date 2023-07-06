@@ -152,6 +152,70 @@ def find_all_linear_names(model):
 
 def train(global_args):
 
+
+    # ADD by hx 20230629
+    # https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html
+    ds_config = {
+    "fp16": {
+        "enabled": True,
+        "loss_scale": 0,
+        "loss_scale_window": 1000,
+        "initial_scale_power": 16,
+        "hysteresis": 2,
+        "min_loss_scale": 1
+    },
+    "bf16": {
+        "enabled": False
+    },
+    "optimizer": {
+        "type": "AdamW",
+        "params": {
+            "lr": "auto",
+            "weight_decay": "auto",
+            "torch_adam": True,
+            "adam_w_mode": True
+        }
+    },
+    "scheduler": {
+        "type": "WarmupDecayLR",
+        "params": {
+            "warmup_min_lr": "auto",
+            "warmup_max_lr": "auto",
+            "warmup_num_steps": "auto",
+            "total_num_steps": "auto"
+        }
+    },
+
+    "zero_optimization": {
+        "stage": 3,
+        "offload_optimizer": {
+            "device": "none",
+            "pin_memory": False
+        },
+        "offload_param": {
+            "device": "none",
+            "pin_memory": False
+        },
+        "overlap_comm": True,
+        "contiguous_gradients": True,
+        "sub_group_size": 1e6,
+        "reduce_bucket_size": "auto",
+        "stage3_prefetch_bucket_size": "auto",
+        "stage3_param_persistence_threshold": "auto",
+        "stage3_max_live_parameters": 1e8,
+        "stage3_max_reuse_distance": 1e8,
+        "stage3_gather_16bit_weights_on_model_save": True
+    },
+    "train_batch_size": 2,
+}
+
+    #dschf = HfDeepSpeedConfig(ds_config) 
+    ds_config_file = "./ds_config_zero3_0629.json"
+    dschf = HfDeepSpeedConfig(ds_config_file)
+    # now a model can be loaded
+
+
+    
     hf_parser = HfArgumentParser(TrainingArguments)
     hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
 
