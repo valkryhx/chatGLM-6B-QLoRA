@@ -55,6 +55,7 @@ def parse_args():
     parser.add_argument('--prompt_text', type=str, default='', help='统一添加在所有数据前的指令文本')
     parser.add_argument('--compute_dtype', type=str, default='fp32',
                         choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
+    parser.add_argument("--local_rank", type=int, default=0)
     return parser.parse_args()
 
 
