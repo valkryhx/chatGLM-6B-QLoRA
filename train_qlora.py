@@ -89,7 +89,9 @@ def get_datset(data_path, tokenizer, global_args):
     dataset = dataset.flatten_indices()
     return dataset
 
-
+"""与这个一致 https://github.com/valkryhx/LLM-Tuning/blob/master/chatglm2_lora_tuning.py#L37
+   只不过使用类方式实现 
+"""
 class DataCollatorForChatGLM:
     def __init__(self,
                  pad_token_id: int,
@@ -152,10 +154,8 @@ def train(global_args):
 
     set_seed(global_args.seed)
     hf_train_args.seed = global_args.seed
-    
     hf_train_args.optim="paged_adamw_8bit"
     model_max_length = global_args.max_input_length + global_args.max_output_length
-
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
     # Quantization
