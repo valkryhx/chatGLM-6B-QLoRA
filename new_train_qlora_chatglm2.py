@@ -287,6 +287,7 @@ def train(global_args):
                                           load_in_4bit=True,
                                           torch_dtype=torch.float16,
                                           quantization_config=q_config,
+                                          empty_init=False,
                                           #device_map=new_hf_device_map
                                      )
 
