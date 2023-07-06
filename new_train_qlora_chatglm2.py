@@ -232,9 +232,10 @@ def train(global_args):
                                   bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
     
     # init model
-    with init_empty_weights(): # 似乎没用
-        print('loading init model...')
-        model = AutoModel.from_pretrained(
+    # with init_empty_weights(): # 似乎没用
+    """
+    print('loading init model...')
+    model = AutoModel.from_pretrained(
             global_args.model_name_or_path, 
             trust_remote_code=True, 
             load_in_4bit=True,
@@ -245,7 +246,7 @@ def train(global_args):
         )
     print(model.hf_device_map)
     print(f'memory_allocated {torch.cuda.memory_allocated()}')
-
+    """
     """
     设置了 device_map="auto" 之后
     chatglm 1.0 的时候，lm_head会跟input_layer自动分配到同个 device，
@@ -256,6 +257,7 @@ def train(global_args):
     然后这里会加载两次模型，可以先加载，调整device_map之后，再把旧模型删掉：https://github.com/pytorch/pytorch/issues/37250#issuecomment-1622972872
     """
     
+    """
     if torch.cuda.device_count() > 1:
         world_size = int(os.environ.get("WORLD_SIZE", 1))
         ddp = (world_size != 1) # True(distributed training) or False(single gpu )
@@ -268,6 +270,9 @@ def train(global_args):
         torch.cuda.empty_cache()
         print(f'memory_allocated {torch.cuda.memory_allocated()}')
         print('loading real model...')
+
+        """
+        global_args.ddp_find_unused_parameters = False
         model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
                                           load_in_4bit=True,
