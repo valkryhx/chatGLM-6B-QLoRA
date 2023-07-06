@@ -19,8 +19,7 @@ from transformers import (
     set_seed,
     TrainingArguments,
     Trainer,
-    BitsAndBytesConfig ,
-    deepspeed
+    BitsAndBytesConfig 
 )
 from peft import (
     TaskType,
@@ -30,7 +29,8 @@ from peft import (
     prepare_model_for_kbit_training
 )
 from peft.utils import TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING
-
+from transformers.deepspeed import HfDeepSpeedConfig
+import deepspeed
 
 _compute_dtype_map = {
     'fp32': torch.float32,
