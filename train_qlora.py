@@ -66,9 +66,9 @@ def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
     answer = example['output']
     q_ids = tokenizer.encode(text=question, add_special_tokens=False)
     a_ids = tokenizer.encode(text=answer, add_special_tokens=False)
-    if len(q_ids) > global_args.max_input_length - 2:  # 2 - gmask, bos
+    if len(q_ids) > global_args.max_input_length - 2:  # 额外token为2个  gmask, bos
         q_ids = q_ids[: global_args.max_input_length - 2]
-    if len(a_ids) > global_args.max_output_length - 1:  # 1 - eos
+    if len(a_ids) > global_args.max_output_length - 1:  # 额外token为1  eos
         a_ids = a_ids[: global_args.max_output_length - 1]
     input_ids = tokenizer.build_inputs_with_special_tokens(q_ids, a_ids)
     # question_length = input_ids.index(tokenizer.bos_token_id)
@@ -81,8 +81,10 @@ def get_datset(data_path, tokenizer, global_args):
     """读取本地数据文件，并tokenize，shuffle，返回datasets.dataset"""
     data = load_dataset('json', data_files=data_path)
     column_names = data['train'].column_names
+    """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
     dataset = data['train'].map(lambda example: tokenize_func(example, tokenizer, global_args),
-                                batched=False, remove_columns=column_names)
+                                batched=False, 
+                                remove_columns=column_names)
     dataset = dataset.shuffle(seed=global_args.seed)
     dataset = dataset.flatten_indices()
     return dataset
