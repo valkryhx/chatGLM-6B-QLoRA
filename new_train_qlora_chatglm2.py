@@ -19,7 +19,8 @@ from transformers import (
     set_seed,
     TrainingArguments,
     Trainer,
-    BitsAndBytesConfig
+    BitsAndBytesConfig ,
+    deepspeed
 )
 from peft import (
     TaskType,
