@@ -208,7 +208,7 @@ def train(global_args):
     },
     "train_batch_size": 2,
 }
-
+    from transformers.deepspeed import HfDeepSpeedConfig
     dschf = HfDeepSpeedConfig(ds_config) 
     #ds_config_file = global_args.deepspeed 
     #dschf = HfDeepSpeedConfig(ds_config_file)
