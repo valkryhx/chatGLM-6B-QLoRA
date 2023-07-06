@@ -210,7 +210,7 @@ def train(global_args):
 }
 
     #dschf = HfDeepSpeedConfig(ds_config) 
-    ds_config_file = "./ds_config_zero3_0629.json"
+    ds_config_file = global_args.deepspeed 
     dschf = HfDeepSpeedConfig(ds_config_file)
     # now a model can be loaded
 
