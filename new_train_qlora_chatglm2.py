@@ -189,6 +189,10 @@ def train(global_args):
     """
     
     if torch.cuda.device_count() > 1:
+        world_size = int(os.environ.get("WORLD_SIZE", 1))
+        ddp = (world_size != 1) # True(distributed training) or False(single gpu )
+        global_args.ddp_find_unused_parameters = False if ddp else None
+        
         model.hf_device_map['transformer.output_layer'] = model.hf_device_map['transformer.embedding']
         new_hf_device_map = model.hf_device_map
         model.cpu()
