@@ -10,6 +10,7 @@ from typing import List, Dict, Optional
 from accelerate import init_empty_weights  # load an empty model,just structure , no real weight.
 import bitsandbytes as bnb
 import torch
+from glob import glob
 from loguru import logger
 from datasets import load_dataset
 from transformers import (
@@ -82,9 +83,17 @@ def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
 
 
 def get_datset(data_path, tokenizer, global_args):
-    """读取本地数据文件，并tokenize，shuffle，返回datasets.dataset"""
-    data = load_dataset('json', data_files=data_path)
-    column_names = data['train'].column_names
+    """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset"""
+    
+    if not (data_path is not None and os.path.exists(data_path)):
+        raise ValueError("data_path requires a directory pointing to   jsons/jsonls")
+    """https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L383"""
+    data_files_list = glob(f'{data_path}/**/*.json', recursive=True) + glob(
+                f'{data_path}/**/*.jsonl', recursive=True)
+    logger.info(f"data files: {', '.join(train_data_files)}")
+            
+    data = load_dataset('json', data_files=data_files_list)
+    column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
     """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
     dataset = data['train'].map(lambda example: tokenize_func(example, tokenizer, global_args),
                                 batched=False, 
