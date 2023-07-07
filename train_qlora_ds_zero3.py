@@ -155,6 +155,7 @@ def train(global_args):
 
     # ADD by hx 20230629
     # https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html
+    ''' ds_config 变量 可以用于在程序内导入HfDeepspeedConfig 不过目前使用了配置json文件的方式，见下。'''
     ds_config = {
     "fp16": {
         "enabled": True,
@@ -208,11 +209,11 @@ def train(global_args):
     },
     "train_batch_size": 2,
 }
-    from transformers.deepspeed import HfDeepSpeedConfig
+    
     #dschf = HfDeepSpeedConfig(ds_config) 
     '''从配置文件中读取HfDeepspeedConfig'''
     ds_config_file = global_args.deepspeed 
-    #dschf = HfDeepSpeedConfig(ds_config_file)
+    dschf = HfDeepSpeedConfig(ds_config_file)
     # now a model can be loaded
 
 
