@@ -155,8 +155,8 @@ def train(global_args):
 
     # ADD by hx 20230629
     # https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html
-    ''' ds_config 变量 可以用于在程序内导入HfDeepspeedConfig 不过目前使用了配置json文件的方式，见下。'''
-    ds_config = {
+    ''' ds_config 变量 可以用于在程序内导入Hf_train_args.deepspeed'''
+    ds_config ={
     "fp16": {
         "enabled": True,
         "loss_scale": 0,
@@ -190,7 +190,7 @@ def train(global_args):
     "zero_optimization": {
         "stage": 3,
         "offload_optimizer": {
-            "device": "none",
+            "device": "cpu",
             "pin_memory": False
         },
         "offload_param": {
@@ -203,11 +203,12 @@ def train(global_args):
         "reduce_bucket_size": "auto",
         "stage3_prefetch_bucket_size": "auto",
         "stage3_param_persistence_threshold": "auto",
-        "stage3_max_live_parameters": 1e8,
-        "stage3_max_reuse_distance": 1e8,
+        "stage3_max_live_parameters": 1e6,
+        "stage3_max_reuse_distance": 1e6,
         "stage3_gather_16bit_weights_on_model_save": True
     },
-    "train_batch_size": 2,
+    "train_batch_size": 4 ,
+    "train_micro_batch_size_per_gpu":2
 }
     
     #dschf = HfDeepSpeedConfig(ds_config) 
@@ -221,9 +222,12 @@ def train(global_args):
     hf_parser = HfArgumentParser(TrainingArguments)
     hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
 
+    hf_train_args.deepspeed = ds_config
+    
     set_seed(global_args.seed)
     hf_train_args.seed = global_args.seed
     hf_train_args.optim="paged_adamw_8bit"
+    
     model_max_length = global_args.max_input_length + global_args.max_output_length
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
