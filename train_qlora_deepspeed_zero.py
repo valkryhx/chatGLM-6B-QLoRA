@@ -365,7 +365,8 @@ def train(global_args):
     train_dataset = get_datset(global_args.train_data_path, tokenizer, global_args)
     
     """ 
-     eval data数据量太少（比如4）会而且 gradiant accumulation较大时（比如8）无法计算和积累梯度
+     eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize num_gpu的大时无法计算和积累梯度
+     eval_data至少要 >= 后面3者的乘积
      RuntimeError: unscale_() has already been called on this optimizer since the last update().
      https://github.com/huggingface/transformers/issues/23935#issuecomment-1597170127
      """
