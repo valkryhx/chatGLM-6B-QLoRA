@@ -95,6 +95,7 @@ def get_datset(data_path, tokenizer, global_args):
     data = load_dataset('json', data_files=data_files_list)
     column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
     """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
+    logger.info("preprocessing dataset...")
     dataset = data['train'].map(lambda example: tokenize_func(example, tokenizer, global_args),
                                 batched=False, 
                                 remove_columns=column_names)
