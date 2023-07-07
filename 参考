@@ -6,7 +6,12 @@ from_pretrained()中 empty_init=Fasle
 
 deepspeed config 使用
     https://huggingface.co/docs/transformers/main_classes/deepspeed#constructing-massive-models
-
+ds_zero2.json 参考
+    https://huggingface.co/docs/transformers/main_classes/deepspeed#zero2-example
+ds_zero3.json 参考
+   https://huggingface.co/docs/transformers/main_classes/deepspeed#zero3-example
+zero级别选择
+   https://huggingface.co/docs/transformers/main_classes/deepspeed#how-to-choose-which-zero-stage-and-offloads-to-use-for-best-performance
 模型加载过程
     https://github.com/beyondguo/LLM-Tuning/blob/master/chatglm2_lora_tuning.py#L96
 
