@@ -326,7 +326,7 @@ def train(global_args):
 
 
     # STEP 4 : 将model转化为peftModel 准备loRA微调
-    
+    logger.info("prepare_model_for_kbit_training...")
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
     # LoRA
@@ -361,6 +361,7 @@ def train(global_args):
     model.print_trainable_parameters()
 
     # data
+    logger.info("loading dataset...")
     train_dataset = get_datset(global_args.train_data_path, tokenizer, global_args)
     eval_dataset = None
     if global_args.eval_data_path:
