@@ -90,7 +90,7 @@ def get_datset(data_path, tokenizer, global_args):
     """https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L383"""
     data_files_list = glob(f'{data_path}/**/*.json', recursive=True) + glob(
                 f'{data_path}/**/*.jsonl', recursive=True)
-    logger.info(f"data files: {', '.join(train_data_files)}")
+    logger.info(f"data files: {', '.join(train_data_list)}")
             
     data = load_dataset('json', data_files=data_files_list)
     column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
