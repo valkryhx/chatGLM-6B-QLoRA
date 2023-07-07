@@ -1,0 +1,23 @@
+# 参考
+
+from_pretrained()中 empty_init=Fasle 
+    https://github.com/THUDM/ChatGLM-6B/issues/530
+    https://blog.csdn.net/BIT_666/article/details/131433393
+
+deepspeed config 使用
+    https://huggingface.co/docs/transformers/main_classes/deepspeed#constructing-massive-models
+
+模型加载过程
+    https://github.com/beyondguo/LLM-Tuning/blob/master/chatglm2_lora_tuning.py#L96
+
+模型qlora
+    fork 后少量修改 https://github.com/shuxueslpi/chatGLM-6B-QLoRA/blob/main/train_qlora.py#L139
+
+模型lora找出所有全连接层，为所有全连接添加adapter ,find_all_linear_names(model):
+    https://github.com/yangjianxin1/Firefly/blob/master/train_qlora.py#L61
+
+学习
+   https://github.com/shibing624/MedicalGPT
+   https://github.com/shibing624/textgen
+   
+   
