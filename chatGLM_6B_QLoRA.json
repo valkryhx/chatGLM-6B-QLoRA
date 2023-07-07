@@ -1,6 +1,6 @@
 {
-    "output_dir": "saved_files/chatGLM_6B_QLoRA",
-    "per_device_train_batch_size": 4,   // 该参数验证 生效 可以根据实际硬件调整大小
+    "output_dir": "output/qlora_ds_zero3",
+    "per_device_train_batch_size": 4, 
     "per_device_eval_batch_size":  4,
     "gradient_accumulation_steps": 8,
     "learning_rate": 2e-5,
