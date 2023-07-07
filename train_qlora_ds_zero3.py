@@ -207,8 +207,8 @@ def train(global_args):
         "stage3_max_reuse_distance": 1e6,
         "stage3_gather_16bit_weights_on_model_save": True
     },
-    "train_batch_size": 4 ,
-    "train_micro_batch_size_per_gpu":2
+    "train_batch_size": 8 ,
+    "train_micro_batch_size_per_gpu":4
 }
     
     #dschf = HfDeepSpeedConfig(ds_config) 
