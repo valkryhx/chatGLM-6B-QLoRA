@@ -1,7 +1,8 @@
 # 【20230707】更新：
-## [update_1]  更新qlora + deepspeed_zeRO3 实现单机多卡微调chatGLM2-6B代码，实验环境为kaggle 双T4（14.8G * 2）环境，
-##            加载完成后 单张卡的显存消耗为6.5G，符合int4级别量化后的资源占用值。
-##            目前还在验证增加batch size对微调耗时的影响。
+[update_1]   
+            更新qlora + deepspeed_zeRO3 实现单机多卡微调chatGLM2-6B代码，实验环境为kaggle 双T4（14.8G * 2）环境，
+            加载完成后 单张卡的显存消耗为6.5G，符合int4级别量化后的资源占用值。
+            目前还在验证增加batch size对微调耗时的影响。
 
 
 # ChatGLM-6B-QLoRA
