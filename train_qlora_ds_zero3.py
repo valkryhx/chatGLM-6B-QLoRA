@@ -207,7 +207,8 @@ def train(global_args):
         "stage3_max_reuse_distance": 1e6,
         "stage3_gather_16bit_weights_on_model_save": True
     },
-    "train_batch_size": 8 ,
+    '''下面这两个参数好像没生效'''    
+    "train_batch_size": 8 ,  
     "train_micro_batch_size_per_gpu":4
 }
     
