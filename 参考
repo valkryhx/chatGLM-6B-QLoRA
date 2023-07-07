@@ -6,12 +6,16 @@ from_pretrained()中 empty_init=Fasle
 
 deepspeed config 使用
     https://huggingface.co/docs/transformers/main_classes/deepspeed#constructing-massive-models
+
 ds_zero2.json 参考
     https://huggingface.co/docs/transformers/main_classes/deepspeed#zero2-example
+
 ds_zero3.json 参考
    https://huggingface.co/docs/transformers/main_classes/deepspeed#zero3-example
+
 zero级别选择
    https://huggingface.co/docs/transformers/main_classes/deepspeed#how-to-choose-which-zero-stage-and-offloads-to-use-for-best-performance
+
 模型加载过程
     https://github.com/beyondguo/LLM-Tuning/blob/master/chatglm2_lora_tuning.py#L96
 
@@ -24,5 +28,21 @@ zero级别选择
 学习
    https://github.com/shibing624/MedicalGPT
    https://github.com/shibing624/textgen
-   
-   
+
+chatglm-tuning项目 最早的lora finetune  使用alpaca 52k数据
+   https://github.com/mymusise/ChatGLM-Tuning
+
+ 使用alpaca-gpt4 数据的建议
+    https://github.com/THUDM/ChatGLM2-6B/issues/51
+
+ 全量微调显存占用 最好是8XA100 
+    https://github.com/SpongebBob/Finetune-ChatGLM2-6B/issues/1
+
+ 二次预训练语料规模建议 ：50万中文裁判文书  sft用30万语料规模
+    https://github.com/pengxiao-song/LaWGPT/tree/main
+
+ 大语言模型知识问答系统 腾讯  向量数据库方案
+    https://mp.weixin.qq.com/s?__biz=MjM5ODYwMjI2MA==&mid=2649779506&idx=1&sn=d6406a827808b2887b959bb6b2b05976&chksm=beccfe4989bb775fea0aaa0d538787f3e7c06307eee75353287467da9234444b44b11099dec9&scene=126&sessionid=1687860304&key=4a31cc73eef27e0ce03c6d1f1ed0ce5bcce1eaf7f16bf696a0e810685324578bc50eb3f77b652dd45837694300d3edd78a72e8bd1eedb3fc60cc975408d8b4ca30ae2d3dd3f8e55599a7b0e67a6b6caf768de1525fa89e92208219c97c3d77657fa0903e0b3b646d183a8deec43ef9ba1ad48f736f062c38cd19fcedc9b54f57&ascene=15&uin=NTY2NTA4NjQ%3D&devicetype=Windows+10+x64&version=63060012&lang=zh_CN&session_us=gh_d14465b5ce6c&countrycode=AL&exportkey=n_ChQIAhIQYm7qwB%2F65GguyHWf4eIYphLuAQIE97dBBAEAAAAAADtYCh8zJ3wAAAAOpnltbLcz9gKNyK89dVj0p4WDZXVb2hIHwqQrI%2B%2BpfiCGP9knqn6fyfZ1g7J%2Bp%2BpAMLJ9BV0BeVCTkZzHscxnzQ99ViKu%2F6UmTVP7bS9k9N2N%2Fb065AbCsqgZTB71HJNnKWV9ECdaVF0xg7lBSejJT%2F7gURhMiDwnnj4thRav0M%2FHCfG7hdVbkWnYYbHPnCBzfCdnGuW3i7TAJahrFpHSRvtPJNNBi3EYfmlFEjwDwIAMzPDxO39AyHglVM3X0N%2Fi60sHSi15%2BihcgI9GqUlrS2hXEDYPzVQ%3D&acct
+
+ adgen 数据集下载
+    https://huggingface.co/datasets/RUCAIBox/Chinese-Generation/tree/main
