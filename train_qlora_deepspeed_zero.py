@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # time: 2023/7/7 10:13
-# file: train_qlora.py
+# file: train_qlora_deepspeed_zero.py
 # author: hx
 # email: XXXXX
 
