@@ -31,6 +31,7 @@ from peft import (
 from peft.utils import TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING
 from transformers.deepspeed import HfDeepSpeedConfig
 import deepspeed
+import json
 
 _compute_dtype_map = {
     'fp32': torch.float32,
@@ -56,7 +57,7 @@ def parse_args():
     parser.add_argument('--compute_dtype', type=str, default='fp32',
                         choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
     parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument("--deepspeed", type=str, default=None)
+    parser.add_argument("--deepspeed", type=str, default="ds_zero3_config.json")
     return parser.parse_args()
 
 
@@ -154,8 +155,11 @@ def train(global_args):
 
 
     # ADD by hx 20230629
+    # https://huggingface.co/docs/transformers/main_classes/deepspeed 参考 【Constructing Massive Models】一节 
+    # 直接在TrainingArgs中加入deepspeed=ds_config即可
     # https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html
-    ''' ds_config 变量 可以用于在程序内导入Hf_train_args.deepspeed'''
+    
+    ''' ds_config 变量 可以用于在程序内导入 本次使用的是外部json文件'''
     ds_config ={
     "fp16": {
         "enabled": True,
@@ -206,24 +210,22 @@ def train(global_args):
         "stage3_max_live_parameters": 1e6,
         "stage3_max_reuse_distance": 1e6,
         "stage3_gather_16bit_weights_on_model_save": True
-    },
-    '''下面这两个参数好像没生效'''    
+    },    
     "train_batch_size": 8 ,  
     "train_micro_batch_size_per_gpu":4
 }
+    '''这两个参数train_batch_size 和 train_micro_batch_size_per_gpu好像在训练过程中没生效 
+       训练实际的batchsize是chatGLM_6B_QLoA.json 中的参数决定的 '''
     
-    #dschf = HfDeepSpeedConfig(ds_config) 
-    '''从配置文件中读取HfDeepspeedConfig'''
-    #ds_config_file = global_args.deepspeed 
-    #dschf = HfDeepSpeedConfig(ds_config_file)
-    # now a model can be loaded
-
+    
 
     
     hf_parser = HfArgumentParser(TrainingArguments)
     hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
 
-    hf_train_args.deepspeed = ds_config
+    
+    with open('ds_zero3_config.json','r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
+        hf_train_args.deepspeed = json.load(fr)  # set trainingArgs中deepspeed=ds_config
     
     set_seed(global_args.seed)
     hf_train_args.seed = global_args.seed
