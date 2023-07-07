@@ -210,6 +210,7 @@ def train(global_args):
 }
     from transformers.deepspeed import HfDeepSpeedConfig
     #dschf = HfDeepSpeedConfig(ds_config) 
+    '''从配置文件中读取HfDeepspeedConfig'''
     ds_config_file = global_args.deepspeed 
     #dschf = HfDeepSpeedConfig(ds_config_file)
     # now a model can be loaded
