@@ -9,3 +9,4 @@ wandb==0.15.3
 cpm_kernels==1.0.11
 accelerate==0.20.3
 sentencepiece==0.1.99
+deepspeed==0.9.5
