@@ -12,5 +12,7 @@
     "remove_unused_columns": false,
     "ddp_find_unused_parameters": false,
     "seed": 42,
-    "report_to":"tensorboard"
+    "report_to":"tensorboard" ,
+    "load_best_model_at_end":true,
+    "save_total_limit " : 5
 }
