@@ -420,6 +420,7 @@ def train(global_args):
                                            max_length=model_max_length)
 
     # print hf_train_args to see the manually set paras
+    print(f"number_train_samples={len(train_dataset)}\nnumber_of_eval_numbers={eval_dataset}")
     print(hf_train_args)
     raise ValueError("TEST")
     
