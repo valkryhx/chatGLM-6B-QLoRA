@@ -402,6 +402,10 @@ def train(global_args):
     data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,
                                            max_length=model_max_length)
 
+    # print hf_train_args to see the manually set paras
+    print(hf_train_args)
+    raise ValueError("TEST")
+    
     # train
     trainer = LoRATrainer(
         model=model,
