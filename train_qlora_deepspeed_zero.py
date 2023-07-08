@@ -113,11 +113,11 @@ def get_datset(data_path, tokenizer, global_args,max_samples=None):
     ''' 只使用max_samples 个样本来参与train和eval  
         https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L453
     '''
-    logger.info(f"在取样之前 data len ={len(data)}")
+    logger.info(f"在取样之前 data len ={len(data['train'])}")
     if max_samples is not None and max_samples > 0:
             max_samples = min(len(data), max_samples)  # 
-            data = data.select(range(max_samples))
-    logger.info(f"在取样之后 data len ={len(data)}")
+            data['train'] =  data['train'].select(range(max_samples))
+    logger.info(f"在取样之后 data len ={len(data['train'])}")
     
     column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
     """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
