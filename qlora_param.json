@@ -1,4 +1,5 @@
 {
+    "output_dir":"out/1",
     "lr_scheduler_type": "cosine",
     "warmup_ratio": 0.1,
     "logging_steps": 1,
