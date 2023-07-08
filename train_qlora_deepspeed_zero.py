@@ -58,7 +58,21 @@ def parse_args():
     parser.add_argument('--compute_dtype', type=str, default='fp32',
                         choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
     parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument("--deepspeed", type=str, default="ds_zero3_config.json")
+    parser.add_argument("--deepspeed", type=str, default="ds_zero2_config.json")
+    parser.add_argument("--output_dir",type=str,default="output/lora",help="模型训练输出目录")
+    parser.add_argument("--per_device_train_batch_size",type=int,default=1)
+    parser.add_argument("--per_device_eval_batch_size",type=int,default=1)
+    parser.add_argument("--gradient_accumulation_steps",type=int,default=1)
+    parser.add_argument("--learning_rate",type=float,default=2e-5)
+    parser.add_argument("--num_train_epochs",type=int,default=1)
+    #"output_dir": "output/qlora_ds_zero",
+    #"per_device_train_batch_size": 8, 
+    #"per_device_eval_batch_size":  2,
+    #"gradient_accumulation_steps": 8,
+    #"learning_rate": 2e-5,
+    #"num_train_epochs": 10.0,
+
+    
     return parser.parse_args()
 
 
