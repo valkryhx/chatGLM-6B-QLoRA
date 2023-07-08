@@ -258,12 +258,12 @@ def train(global_args):
     hf_train_args.seed = global_args.seed
     hf_train_args.optim="paged_adamw_8bit"
 
-    hf_train_args.output_dir = gloabal_args.output_dir 
-    hf_train_args.per_device_train_batch_size = hf_train_args.per_device_train_batch_size
-    hf_train_args.per_device_eval_batch_size = hf_train_args.per_device_eval_batch_size
-    hf_train_args.gradient_accumulation_steps = hf_train_args.gradient_accumulation_steps
-    hf_train_args.learning_rate = hf_train_args.learning_rate
-    hf_train_args.num_train_epochs = hf_train_args.num_train_epochs
+    hf_train_args.output_dir = global_args.output_dir 
+    hf_train_args.per_device_train_batch_size = global_args.per_device_train_batch_size
+    hf_train_args.per_device_eval_batch_size = global_args.per_device_eval_batch_size
+    hf_train_args.gradient_accumulation_steps = global_args.gradient_accumulation_steps
+    hf_train_args.learning_rate = global_args.learning_rate
+    hf_train_args.num_train_epochs = global_args.num_train_epochs
 
     
     model_max_length = global_args.max_input_length + global_args.max_output_length
