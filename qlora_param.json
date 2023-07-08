@@ -1,6 +1,6 @@
 {
     "output_dir":"out/1",
-    "lr_scheduler_type": "cosine",
+    "lr_scheduler_type": "linear",
     "warmup_ratio": 0.1,
     "logging_steps": 20,
     "save_strategy": "steps",
