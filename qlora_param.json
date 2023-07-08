@@ -6,7 +6,7 @@
     "save_strategy": "steps",
     "save_steps": 50,
     "evaluation_strategy": "steps",
-    "eval_steps": 50,
+    "eval_steps": 20,
     "optim": "adamw_torch",
     "fp16": true,
     "remove_unused_columns": false,
