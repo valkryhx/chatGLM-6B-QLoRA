@@ -1,0 +1,15 @@
+{
+    "lr_scheduler_type": "cosine",
+    "warmup_ratio": 0.1,
+    "logging_steps": 1,
+    "save_strategy": "steps",
+    "save_steps": 1,
+    "evaluation_strategy": "steps",
+    "eval_steps": 1,
+    "optim": "adamw_torch",
+    "fp16": true,
+    "remove_unused_columns": false,
+    "ddp_find_unused_parameters": false,
+    "seed": 1,
+    "report_to":"tensorboard"
+}
