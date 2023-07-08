@@ -250,7 +250,7 @@ def train(global_args):
     hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
 
     
-    with open('global_args.deepspeed','r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
+    with open(global_args.deepspeed,'r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
         hf_train_args.deepspeed = json.load(fr)  # set trainingArgs中deepspeed=ds_config
 
     '''读取命令行传入参数 这个优先级高  覆盖对应的默认参数'''
