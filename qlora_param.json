@@ -14,5 +14,5 @@
     "seed": 42,
     "report_to":"tensorboard" ,
     "load_best_model_at_end":true,
-    "save_total_limit " : 5
+    "save_total_limit " : 3
 }
