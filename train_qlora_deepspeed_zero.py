@@ -65,6 +65,8 @@ def parse_args():
     parser.add_argument("--gradient_accumulation_steps",type=int,default=1)
     parser.add_argument("--learning_rate",type=float,default=2e-5)
     parser.add_argument("--num_train_epochs",type=float,default=1.0)
+    parser.add_argument("--num_train_samples",type=int,default= 0,help="用于train的样本数量，可选。")
+    parser.add_argument("--num_eval_samples",type=int,default= 0,help="用于eval的样本数量，可选。")
     
     #"output_dir": "output/qlora_ds_zero",
     #"per_device_train_batch_size": 8, 
@@ -97,7 +99,7 @@ def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
     return {'input_ids': input_ids, 'labels': labels}
 
 
-def get_datset(data_path, tokenizer, global_args):
+def get_datset(data_path, tokenizer, global_args,max_samples=None):
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset"""
     
     if not (data_path is not None and os.path.exists(data_path)):
@@ -106,8 +108,17 @@ def get_datset(data_path, tokenizer, global_args):
     data_files_list = glob(f'{data_path}/**/*.json', recursive=True) + glob(
                 f'{data_path}/**/*.jsonl', recursive=True)
     logger.info(f"data files: {', '.join(data_files_list)}")
-            
+          
     data = load_dataset('json', data_files=data_files_list)
+    ''' 只使用max_samples 个样本来参与train和eval  
+        https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L453
+    '''
+    logger.info(f"在取样之前 data len ={len(data)}")
+    if max_samples is not None and max_samples > 0:
+            max_samples = min(len(data), max_samples)  # 
+            data = data.select(range(max_samples))
+    logger.info(f"在取样之后 data len ={len(data)}")
+    
     column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
     """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
     logger.info("preprocessing dataset...")
@@ -344,6 +355,7 @@ def train(global_args):
     # .is_parallelizable
     # 这三个都是 transformers 模型的函数/参数(见 transformers/modeling_utils.py 文件)
     #
+    
     model.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     model.enable_input_require_grads()
@@ -388,17 +400,21 @@ def train(global_args):
 
     # data
     logger.info("loading dataset...")
-    train_dataset = get_datset(global_args.train_data_path, tokenizer, global_args)
+    train_dataset = get_datset(global_args.train_data_path, tokenizer, 
+                               global_args,
+                               max_samples=global_args.num_train_samples )
     
     """ 
-     eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize num_gpu的大时无法计算和积累梯度
+     eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
      eval_data至少要 >= 后面3者的乘积
      RuntimeError: unscale_() has already been called on this optimizer since the last update().
      https://github.com/huggingface/transformers/issues/23935#issuecomment-1597170127
      """
     eval_dataset = None
     if global_args.eval_data_path:
-        eval_dataset = get_datset(global_args.eval_data_path, tokenizer, global_args)
+        eval_dataset = get_datset(global_args.eval_data_path, tokenizer, 
+                                  global_args,
+                                  max_samples=global_args.num_eval_samples)
 
     data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,
                                            max_length=model_max_length)
