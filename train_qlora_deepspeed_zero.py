@@ -65,6 +65,7 @@ def parse_args():
     parser.add_argument("--gradient_accumulation_steps",type=int,default=1)
     parser.add_argument("--learning_rate",type=float,default=2e-5)
     parser.add_argument("--num_train_epochs",type=int,default=1)
+    
     #"output_dir": "output/qlora_ds_zero",
     #"per_device_train_batch_size": 8, 
     #"per_device_eval_batch_size":  2,
@@ -245,15 +246,25 @@ def train(global_args):
 
     
     hf_parser = HfArgumentParser(TrainingArguments)
+    '''读取json中默认配置作为训练参数'''
     hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
 
     
-    with open('ds_zero3_config.json','r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
+    with open('global_args.deepspeed','r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
         hf_train_args.deepspeed = json.load(fr)  # set trainingArgs中deepspeed=ds_config
-    
+
+    '''读取命令行传入参数 这个优先级高  覆盖对应的默认参数'''
     set_seed(global_args.seed)
     hf_train_args.seed = global_args.seed
     hf_train_args.optim="paged_adamw_8bit"
+
+    hf_train_args.output_dir = gloabal_args.output_dir 
+    hf_train_args.per_device_train_batch_size = hf_train_args.per_device_train_batch_size
+    hf_train_args.per_device_eval_batch_size = hf_train_args.per_device_eval_batch_size
+    hf_train_args.gradient_accumulation_steps = hf_train_args.gradient_accumulation_steps
+    hf_train_args.learning_rate = hf_train_args.learning_rate
+    hf_train_args.num_train_epochs = hf_train_args.num_train_epochs
+
     
     model_max_length = global_args.max_input_length + global_args.max_output_length
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
