@@ -259,6 +259,7 @@ def train(global_args):
     hf_train_args.optim="paged_adamw_8bit"
 
     hf_train_args.output_dir = global_args.output_dir 
+    hf_train_args.logging_dir = global_args.output_dir 
     hf_train_args.per_device_train_batch_size = global_args.per_device_train_batch_size
     hf_train_args.per_device_eval_batch_size = global_args.per_device_eval_batch_size
     hf_train_args.gradient_accumulation_steps = global_args.gradient_accumulation_steps
