@@ -25,6 +25,7 @@ from transformers import (
 from peft import (
     TaskType,
     LoraConfig,
+    AdaLoraConfig ,  # https://www.zhihu.com/question/596950521/answer/3109759716
     get_peft_model,
     set_peft_model_state_dict,
     prepare_model_for_kbit_training
@@ -371,7 +372,7 @@ def train(global_args):
     # LoRA
     #target_modules = TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING['chatglm']
     target_modules = find_all_linear_names(model)
-    lora_config = LoraConfig(
+    lora_config = AdaLoraConfig(   # LoraConfig
         r=global_args.lora_rank,
         lora_alpha=global_args.lora_alpha,
         target_modules=target_modules,
