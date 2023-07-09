@@ -344,12 +344,14 @@ def train(global_args):
                                           trust_remote_code=True,                           
                                           load_in_4bit=True,
                                           torch_dtype=torch.float16,
-                                          #quantization_config=q_config,
+                                          quantization_config=q_config,
                                           empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
                                           #device_map=new_hf_device_map
                                      )
 
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    
+    #model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    
     print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
     # 
     # .gradient_checkpointing_enable()
