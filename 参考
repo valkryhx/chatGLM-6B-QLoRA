@@ -49,4 +49,6 @@ chatglm-tuning项目 最早的lora finetune  使用alpaca 52k数据
 
   单条知识注入chatglm2 AdaLora  共7条语料
     https://www.zhihu.com/question/596950521/answer/3109759716
-
+  
+  微调cahtglm2保姆级教程
+    https://zhuanlan.zhihu.com/p/641047705 
