@@ -372,7 +372,7 @@ def train(global_args):
     # LoRA
     #target_modules = TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING['chatglm']
     target_modules = find_all_linear_names(model)
-    lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突
+    lora_config = AdaLoraConfig(   # AdaLoraConfig 和 qlora好像有冲突
         r=global_args.lora_rank,
         lora_alpha=global_args.lora_alpha,
         target_modules=target_modules,
