@@ -25,7 +25,8 @@ from transformers import (
 from peft import (
     TaskType,
     LoraConfig,
-    AdaLoraConfig ,  # https://www.zhihu.com/question/596950521/answer/3109759716
+    AdaLoraConfig ,  #  提出自2020年 感觉和lora区别不大 而且和qlora有冲突 这里代码没有用到 
+                     #例子https://www.zhihu.com/question/596950521/answer/3109759716
     get_peft_model,
     set_peft_model_state_dict,
     prepare_model_for_kbit_training
@@ -374,7 +375,7 @@ def train(global_args):
     # LoRA
     #target_modules = TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING['chatglm']
     target_modules = find_all_linear_names(model)
-    lora_config = AdaLoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
+    lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
         r=global_args.lora_rank,
         lora_alpha=global_args.lora_alpha,
         target_modules=target_modules,
