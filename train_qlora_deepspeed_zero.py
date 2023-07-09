@@ -24,7 +24,7 @@ from transformers import (
 )
 from peft import (
     TaskType,
-    LoraConfig,
+    #LoraConfig,
     AdaLoraConfig ,  # https://www.zhihu.com/question/596950521/answer/3109759716
     get_peft_model,
     set_peft_model_state_dict,
