@@ -1,0 +1,17 @@
+{
+    "output_dir":"out/1",
+    "lr_scheduler_type": "linear",
+    "warmup_ratio": 0.1,
+    "logging_steps": 2,
+    "save_strategy": "steps",
+    "save_steps": 2,
+    "evaluation_strategy": "steps",
+    "eval_steps": 2,
+    "optim": "adamw_torch",
+    "fp16": true,
+    "remove_unused_columns": false,
+    "ddp_find_unused_parameters": false,
+    "seed": 42,
+    "report_to":"tensorboard" ,
+    "load_best_model_at_end":true
+}
