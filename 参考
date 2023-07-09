@@ -55,3 +55,8 @@ chatglm-tuning项目 最早的lora finetune  使用alpaca 52k数据
   
   NLP 大模型各类资料
     https://github.com/fighting41love/funNLP
+ 
+ 多轮对话SFT 语料组织 可以是拼接后的alpaca inst-inp-out三元组 也可以是 inst-inp-out-history 四元组  四元组就按照清华的prompt拼接成三元组
+    https://github.com/shibing624/MedicalGPT/issues/46#issuecomment-1614807346
+ 清华官方的prompt拼接 就是history对话循环拼接 不难
+    https://github.com/shibing624/MedicalGPT/issues/67
