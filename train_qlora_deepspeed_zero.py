@@ -351,7 +351,7 @@ def train(global_args):
                                      )
 
     
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
     print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
     # 
