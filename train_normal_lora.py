@@ -369,8 +369,8 @@ def train(global_args):
 
 
     # STEP 4 : 将model转化为peftModel 准备loRA微调
-    logger.info("prepare_model_for_kbit_training...")
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    logger.info("prepare normal lora training...")
+    #model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
     # LoRA
     #target_modules = TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING['chatglm']
