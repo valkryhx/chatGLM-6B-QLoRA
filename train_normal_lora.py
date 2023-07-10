@@ -286,9 +286,9 @@ def train(global_args):
 
     # Quantization
     #q_config = BitsAndBytesConfig(load_in_4bit=True,
-                                  bnb_4bit_quant_type='nf4',
-                                  bnb_4bit_use_double_quant=True,
-                                  bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
+    #                               bnb_4bit_quant_type='nf4',
+    #                              bnb_4bit_use_double_quant=True,
+    #                              bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
     
     # init model
     # with init_empty_weights(): # 似乎没用
