@@ -70,6 +70,7 @@ def parse_args():
     parser.add_argument("--num_train_samples",type=int,default= 0,help="用于train的样本数量，可选。")
     parser.add_argument("--num_eval_samples",type=int,default= 0,help="用于eval的样本数量，可选。")
     parser.add_argument("--save_total_limit" , type=int ,default=None)
+    parser.add_argument("--load_in_4bit" , type=bool ,default=True)
     
     #"output_dir": "output/qlora_ds_zero",
     #"per_device_train_batch_size": 8, 
@@ -343,7 +344,7 @@ def train(global_args):
         
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
-                                          load_in_4bit=True,
+                                          load_in_4bit=global_args.load_in_4bit,
                                           torch_dtype=torch.float16,
                                           quantization_config=q_config,
                                           empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
