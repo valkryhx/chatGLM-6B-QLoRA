@@ -349,7 +349,7 @@ def train(global_args):
                                           quantization_config=q_config,
                                           empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
                                           #device_map=new_hf_device_map,
-                                          device_map="auto"   # add 20230713
+                                          # device_map="auto"   # add 20230713
                                      )
 
     
