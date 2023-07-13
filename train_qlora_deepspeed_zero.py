@@ -350,7 +350,7 @@ def train(global_args):
                                           empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
                                           #device_map=new_hf_device_map,
                                           # device_map="auto"   # add 20230713
-                                     )
+                                     ).half()
 
     
     # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
