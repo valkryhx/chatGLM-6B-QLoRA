@@ -71,3 +71,6 @@ chatglm-tuning项目 最早的lora finetune  使用alpaca 52k数据
 加载数据（比如用户上传的文件夹）可以先验证，也就是先glob读取所有文件名字 然后循环加载每一个文件 循环外面用try/catch接住异常 这样就能判断哪个具体的文件有问题
 不过我感觉其实正常的load_dataset 其实已经支持加载文件名list了 直接在真正的load_dataset之前的验证阶段提前pre_load_dataset ，说不定仅仅需要在pre_load_dataset外面
 搞一个try/catch就可以确定有问题的数据了。
+
+二次预训练后推理极慢很可能是陷入输出循环不会停止了 建议用stream chat的方式输出看看
+   https://github.com/shuxueslpi/chatGLM-6B-QLoRA/issues/23
