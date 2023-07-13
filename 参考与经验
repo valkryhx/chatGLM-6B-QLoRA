@@ -1,4 +1,4 @@
-# 参考
+# 参考 从20230707开始记录
 
 from_pretrained()中 empty_init=Fasle 
     https://github.com/THUDM/ChatGLM-6B/issues/530
@@ -65,6 +65,8 @@ chatglm-tuning项目 最早的lora finetune  使用alpaca 52k数据
  好文章
     https://blog.csdn.net/mingzai624/article/details/130735366?spm=1001.2014.3001.5502
 
+#----------------20230712------------------#
+
 预训练中语料格式问题和一直输出不停止的问题  以及试用blocksize划分数据sampl个数的问题 以及设置max_len就停止的问题
     https://github.com/shibing624/MedicalGPT/issues/61
 
@@ -74,3 +76,6 @@ chatglm-tuning项目 最早的lora finetune  使用alpaca 52k数据
 
 二次预训练后推理极慢很可能是陷入输出循环不会停止了 建议用stream chat的方式输出看看
    https://github.com/shuxueslpi/chatGLM-6B-QLoRA/issues/23
+
+一个stream chat的colab例子 三种方式调用stream chat 但是 其中的def ask_and_ans 函数好像使用报错
+   https://colab.research.google.com/github/WSH032/ChatGLM-webui/blob/main/Colab_ChatGLM.ipynb#scrollTo=akGK5YpRjcu_
