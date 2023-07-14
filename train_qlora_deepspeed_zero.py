@@ -71,7 +71,7 @@ def parse_args():
     parser.add_argument("--num_eval_samples",type=int,default= 0,help="用于eval的样本数量，可选。")
     parser.add_argument("--save_total_limit" , type=int ,default=None)
     parser.add_argument("--load_in_4bit" , type=bool ,default=True)
-    parser.add_argument("--load_best_model_at_end",type=bool,default=True)
+    parser.add_argument("--load_best_model_at_end",type=bool,default=True)  # https://huggingface.co/docs/transformers/main_classes/trainer
     #"output_dir": "output/qlora_ds_zero",
     #"per_device_train_batch_size": 8, 
     #"per_device_eval_batch_size":  2,
