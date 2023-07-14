@@ -79,3 +79,13 @@ chatglm-tuning项目 最早的lora finetune  使用alpaca 52k数据
 
 一个stream chat的colab例子 三种方式调用stream chat 但是 其中的def ask_and_ans 函数好像使用报错
    https://colab.research.google.com/github/WSH032/ChatGLM-webui/blob/main/Colab_ChatGLM.ipynb#scrollTo=akGK5YpRjcu_
+
+#--------------------20230714----------------#
+
+huggingface 官网API docs
+      https://huggingface.co/docs/transformers/v4.30.0/en/main_classes/trainer#transformers.Trainer
+
+训练样本能记住邮箱 
+训练样本中如果数据不平衡 比如员工邮箱samples有250条  FAQ有70条 那么有可能训练时着重拟合邮箱数据 FAQ数据就训练的弱一些
+此时我尝试直接把FAQ数据复制2份 一共3份 达到210条 加入到训练集合中 强行在数量上平衡
+
