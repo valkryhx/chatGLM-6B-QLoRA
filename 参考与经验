@@ -124,4 +124,5 @@ qlora 通俗介绍
 英伟达TensorRT int8 原理
    https://yunyang1994.gitee.io/2021/06/06/%E7%90%86%E8%A7%A3%E8%8B%B1%E4%BC%9F%E8%BE%BE-TensorRT-%E7%9A%84-INT8-%E5%8A%A0%E9%80%9F%E5%8E%9F%E7%90%86/
 
-
+大模型统一后端 支持很多类的大模型展示
+   https://github.com/xusenlinzy/api-for-open-llm
