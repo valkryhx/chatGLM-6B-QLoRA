@@ -145,3 +145,34 @@ langchain 介绍
 chatglm-6B的api调用修改  Update api.py 同步方法异步化,防止请求之间在服务层相互阻塞,增加api调用的并发性能
   https://github.com/THUDM/ChatGLM-6B/pull/1340
   https://github.com/aleimu/ChatGLM-6B/tree/main  api.py 今天刚update  我也fork了该项目
+
+自回归或者GPT2中的位移 lm_logits 与label 是怎么对应计算loss的  比如第1，2位的token如何预测第3位的label
+我在看firefly项目的loss计算时  https://github.com/yangjianxin1/Firefly/blob/master/component/loss.py#L40
+发现了
+shift_logits = logits[..., :-1, :].contiguous()
+shift_labels = labels[..., 1:].contiguous()
+经过调研发现这段代码就是gpt-2自回归训练时，用于logits与label对齐的代码
+http://mingchao.wang/5QjuqLH5/#12  解释的很好：
+# move labels to correct device to enable model parallelism
+            labels = labels.to(lm_logits.device)
+            # Shift so that tokens < n predict n
+            shift_logits = lm_logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+            # Flatten the tokens
+            loss_fct = CrossEntropyLoss()
+            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+上述代码中，lm_logits 表示模型前向传播输出的结果，其shape为[batch_size, seq_len, vocab_size]；
+labels 就是 copy 自 "input_ids" 的，其shape为[batch_size, seq_len]。
+主要看上述代码的第6行和第7行可知，其对 labels 去掉了第一个token，对 lm_logits 去掉了最后一个token，
+这样也就实现了根据前面的token预测下一个token了。 
+也就是说lm_logits[3]本身就是利用到了前1、2位的信息生成的 所以可以直接用这个logits[3]的分布来预测[3]位置对应的label，也就是可以计算交叉熵loss。
+类似的解释：
+https://brightliao.com/2023/05/20/chatgpt-training/  代码第二十一行
+https://www.cnblogs.com/phyger/p/14188608.html  代码中【# 此时的shift_labels为将输入的labels张量的切片labels[..., 1:].contiguous(), 即取(2, n)的label值；
+        # 因此利用(1, n-1)的lm_logits值与(2, n)的label值即可计算此时自回归预训练的交叉熵损失值.】
+
+huggingface 提供的训练gpt2样例
+  https://huggingface.co/learn/nlp-course/zh-CN/chapter7/6?fw=pt
+这个博客系列写的很好 可以能力提升
+  https://brightliao.com/2023/05/20/chatgpt-training/
+  http://mingchao.wang/
