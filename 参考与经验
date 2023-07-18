@@ -176,3 +176,8 @@ huggingface 提供的训练gpt2样例
 这个博客系列写的很好 可以能力提升
   https://brightliao.com/2023/05/20/chatgpt-training/
   http://mingchao.wang/
+
+百川模型github baichuan 推荐的LLM effective Finetuning 项目
+  https://github.com/hiyouga/LLaMA-Efficient-Tuning  支持不少模型 更新快 而且也有三阶段训练代码
+
+
