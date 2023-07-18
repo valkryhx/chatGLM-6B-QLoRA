@@ -141,3 +141,7 @@ langchain 介绍
   https://www.jiqizhixin.com/articles/2020-12-29-2
   https://redian.news/wxnews/289054
   https://www.ccita.net/news/204.html
+
+chatglm-6B的api调用修改  Update api.py 同步方法异步化,防止请求之间在服务层相互阻塞,增加api调用的并发性能
+  https://github.com/THUDM/ChatGLM-6B/pull/1340
+  https://github.com/aleimu/ChatGLM-6B/tree/main  api.py 今天刚update  我也fork了该项目
