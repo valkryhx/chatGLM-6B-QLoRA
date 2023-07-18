@@ -15,7 +15,7 @@ from loguru import logger
 from datasets import load_dataset
 from transformers import (
     AutoModel,
-    AutoModelForCausalLM
+    AutoModelForCausalLM,
     AutoTokenizer,
     HfArgumentParser,
     set_seed,
