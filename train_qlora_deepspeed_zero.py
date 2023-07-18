@@ -342,7 +342,7 @@ def train(global_args):
         print("[real]",model.hf_device_map)
         """
         
-    model = AutoModel.from_pretrained(global_args.model_name_or_path,
+    model = AutoModelForCausalLM.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
                                           load_in_4bit=global_args.load_in_4bit,
                                           torch_dtype=torch.float16,
