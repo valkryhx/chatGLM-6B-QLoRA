@@ -89,3 +89,39 @@ huggingface 官网API docs
 训练样本中如果数据不平衡 比如员工邮箱samples有250条  FAQ有70条 那么有可能训练时着重拟合邮箱数据 FAQ数据就训练的弱一些
 此时我尝试直接把FAQ数据复制2份 一共3份 达到210条 加入到训练集合中 强行在数量上平衡
 
+#-------------------20230718---------------------#
+一个6B模型 为何需要6×16GB的显存才能训练 因为显存占用分成3部分：模型参数24G + 梯度24G + AdamW优化器 48G=96GB 
+而推理时由于没有梯度和优化器参数占用 所以仅仅需要24G
+以上计算先不考虑CUDA程序和计算中间冗余 仅仅考虑模型本身所需的最小显存
+量化+lora 可以大幅减少训练时的显存占用。
+   https://redian.news/wxnews/348240 
+   https://zhuanlan.zhihu.com/p/616858352
+
+多轮对话的数据格式组织
+   https://github.com/THUDM/ChatGLM-6B/tree/main/ptuning#%E5%AF%B9%E8%AF%9D%E6%95%B0%E6%8D%AE%E9%9B%86
+   https://github.com/THUDM/ChatGLM-6B/issues/410
+
+图解大模型训练之：数据并行（DP、DDP、ZeRO、零冗余优化)
+   https://www.cvmart.net/community/detail/7638
+
+ZeRO零冗余优化器详解
+   https://hub.baai.ac.cn/view/18162
+
+图解大模型训练之：数据并行下篇( DeepSpeed ZeRO，零冗余优化)
+   https://zhuanlan.zhihu.com/p/618865052
+
+qlora 通俗介绍
+   https://www.51cto.com/article/757269.html
+   https://zhuanlan.zhihu.com/p/634256206
+
+一文搞懂模型量化基础
+   https://bbs.huaweicloud.com/blogs/390419
+
+优化器参数为何显存占用是2倍的梯度 因为AdamW优化器（带weight decayL2正则化的Adam）包含一阶动量+二阶动量信息
+   https://zhuanlan.zhihu.com/p/256393726
+   https://www.cvmart.net/community/detail/5247
+
+英伟达TensorRT int8 原理
+   https://yunyang1994.gitee.io/2021/06/06/%E7%90%86%E8%A7%A3%E8%8B%B1%E4%BC%9F%E8%BE%BE-TensorRT-%E7%9A%84-INT8-%E5%8A%A0%E9%80%9F%E5%8E%9F%E7%90%86/
+
+
