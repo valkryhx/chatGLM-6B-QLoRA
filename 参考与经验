@@ -185,6 +185,9 @@ huggingface 提供的训练gpt2样例
   https://huggingface.co/blog/zh/hf-bitsandbytes-integration
   https://huggingface.co/blog/hf-bitsandbytes-integration
 
+4bit qlora 官网例子 
+   https://colab.research.google.com/drive/1VoYNfYDKcKRQRor98Zbf2-9VQTtGJ24k?usp=sharing&pli=1
+
 4bit 浮点数量化技术   FP4 NF4 也是bitsandbytes的
   https://huggingface.co/blog/4bit-transformers-bitsandbytes
   注意不管是4bit 还是8bit量化 都是对参数的storage data type存储类型进行量化 
