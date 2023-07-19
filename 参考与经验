@@ -180,6 +180,7 @@ huggingface 提供的训练gpt2样例
 百川模型github baichuan 推荐的LLM effective Finetuning 项目
   https://github.com/hiyouga/LLaMA-Efficient-Tuning  支持不少模型 更新快 而且也有三阶段训练代码
 
+#----------------------20230719----------------------#
 8比特整型量化技术 llm.int8 中文介绍
   https://huggingface.co/blog/zh/hf-bitsandbytes-integration
   https://huggingface.co/blog/hf-bitsandbytes-integration
@@ -208,3 +209,8 @@ huggingface 提供的训练gpt2样例
 load_in_4bit 和load_in_8bit 后，模型的显存占用会变小 使用print(model.get_memory_footprint()/1024/1024/1024) 单位GB来检查
 一般来说在fp16作为原始精度下 4bit加载后模型大小为原始1/4 8bit加载为原始的1/2 。
 https://huggingface.co/docs/transformers/main_classes/quantization#load-a-large-model-in-4bit
+
+从每个模型的hf主页的config.json中可以看到torch.dtype 比如baichuan7B是float32 难怪需要7*4=28G以上的RAM才能加载
+  https://huggingface.co/baichuan-inc/Baichuan-7B/blob/main/config.json
+而清华的chatglm2-6B 是"torch_dtype": "float16", 所以仅需6.2*2=12.4G的RAM就可以load
+  https://huggingface.co/THUDM/chatglm2-6b/blob/main/config.json
