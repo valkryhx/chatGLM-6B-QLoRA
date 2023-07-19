@@ -220,3 +220,14 @@ lora微调chatglm2-6B后出现重复的情况 可能是最早发布的版本。
 代码中在140在对label进行处理的时候，将pad_token_id全部替换为ignore（-100）的时候 将eos_token_id也替换成了-100。
 从而导致label最终没有eos_id从而不能停止。
    https://github.com/THUDM/ChatGLM2-6B/issues/228
+
+介绍了qlora的几个技术点 解释的不错 值得看
+  https://zhuanlan.zhihu.com/p/634256206
+
+训练你的大模型！低资源下的模型轻量化
+  提到了gptq
+  https://zhuanlan.zhihu.com/p/626701575
+
+ 量化AWQ GGMKL
+    https://www.reddit.com/r/LocalLLaMA/comments/13yehfn/new_quantization_method_awq_outperforms_gptq_in/
+
