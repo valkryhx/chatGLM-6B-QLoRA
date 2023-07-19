@@ -180,4 +180,14 @@ huggingface 提供的训练gpt2样例
 百川模型github baichuan 推荐的LLM effective Finetuning 项目
   https://github.com/hiyouga/LLaMA-Efficient-Tuning  支持不少模型 更新快 而且也有三阶段训练代码
 
+8比特整型量化技术 llm.int8 中文介绍
+  https://huggingface.co/blog/zh/hf-bitsandbytes-integration
+  https://huggingface.co/blog/hf-bitsandbytes-integration
 
+4bit 浮点数量化技术   FP4 NF4 也是bitsandbytes的
+  https://huggingface.co/blog/4bit-transformers-bitsandbytes
+
+浮点数的表示 fp32 以及fp8 的原理  NP 浮点数的原理 跟理解FP4量化很有帮助 浮点数结构为sign	exponent	mantissa三部分
+  http://www.cburch.com/books/float/ 
+4bit sign	exponent	mantissa = 1-3-0 或者1-2-1 一般来说1-3-0用的更多
+  [sign,exponent,mantissa] = [1,3,0]  https://proceedings.neurips.cc/paper/2020/file/13b919438259814cd5be8cb45877d577-Paper.pdf
