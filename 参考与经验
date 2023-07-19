@@ -214,3 +214,9 @@ https://huggingface.co/docs/transformers/main_classes/quantization#load-a-large-
   https://huggingface.co/baichuan-inc/Baichuan-7B/blob/main/config.json
 而清华的chatglm2-6B 是"torch_dtype": "float16", 所以仅需6.2*2=12.4G的RAM就可以load
   https://huggingface.co/THUDM/chatglm2-6b/blob/main/config.json
+
+lora微调chatglm2-6B后出现重复的情况 可能是最早发布的版本。
+在该人使用的版本中出问题的关键原因是，eos_token_id和pad_token_id一样，都是2。
+代码中在140在对label进行处理的时候，将pad_token_id全部替换为ignore（-100）的时候 将eos_token_id也替换成了-100。
+从而导致label最终没有eos_id从而不能停止。
+   https://github.com/THUDM/ChatGLM2-6B/issues/228
