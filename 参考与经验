@@ -186,6 +186,17 @@ huggingface 提供的训练gpt2样例
 
 4bit 浮点数量化技术   FP4 NF4 也是bitsandbytes的
   https://huggingface.co/blog/4bit-transformers-bitsandbytes
+  注意不管是4bit 还是8bit量化 都是对参数的storage data type存储类型进行量化 
+  而计算类型computation data type 仍然是fp16 或者fp32 所以使用到lora来减少参与计算的参数量
+  4-bit模型参数本身不能再微调 但是可以配合lora技术来微调lora矩阵的参数
+  【QLoRA has one storage data type (usually 4-bit NormalFloat) for the base model weights and a computation data type (16-bit BrainFloat) used to perform computations.
+   QLoRA dequantizes weights from the storage data type to the computation data type to perform the forward and backward passes, 
+   but only computes weight gradients for the LoRA parameters which use 16-bit bfloat. 
+   The weights are decompressed only when they are needed, therefore the memory usage stays low during training and inference.】
+   【Can we train 4bit/8bit models?
+     It is not possible to perform pure 4bit training on these models. However, you can train these models by leveraging parameter efficient fine tuning methods (PEFT) 
+     and train for example adapters on top of them. That is what is done in the paper and is officially supported by the PEFT library from Hugging Face. 
+     We also provide a training notebook and recommend users to check the QLoRA repository if they are interested in replicating the results from the paper.】
 
 浮点数的表示 fp32 以及fp8 的原理  NP 浮点数的原理 跟理解FP4量化很有帮助 浮点数结构为sign	exponent	mantissa三部分
   http://www.cburch.com/books/float/ 
