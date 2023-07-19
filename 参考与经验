@@ -204,3 +204,7 @@ huggingface 提供的训练gpt2样例
   http://www.cburch.com/books/float/ 
 4bit sign	exponent	mantissa = 1-3-0 或者1-2-1 一般来说1-3-0用的更多
   [sign,exponent,mantissa] = [1,3,0]  https://proceedings.neurips.cc/paper/2020/file/13b919438259814cd5be8cb45877d577-Paper.pdf
+
+load_in_4bit 和load_in_8bit 后，模型的显存占用会变小 使用print(model.get_memory_footprint()/1024/1024/1024) 单位GB来检查
+一般来说在fp16作为原始精度下 4bit加载后模型大小为原始1/4 8bit加载为原始的1/2 。
+https://huggingface.co/docs/transformers/main_classes/quantization#load-a-large-model-in-4bit
