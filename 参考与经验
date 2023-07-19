@@ -241,3 +241,7 @@ fp32是默认值 这样训练loss稳定 如果想减小adapter 可以将fp设置
 
 GPTQ+ LORA 好像并没有节省bit的优势 甚至不如bitsandbytes的FP4
   https://www.reddit.com/r/LocalLLaMA/comments/13r7pzg/gptqlora_efficient_finetuning_of_quantized_llms/
+
+https://colab.research.google.com/drive/1T1pOgewAWVpR9gKpaEWw4orOrzPFb3yM?usp=sharing
+https://colab.research.google.com/drive/1VoYNfYDKcKRQRor98Zbf2-9VQTtGJ24k?usp=sharing#scrollTo=XIyP_0r6zuVc
+https://colab.research.google.com/drive/1VoYNfYDKcKRQRor98Zbf2-9VQTtGJ24k?usp=sharing
