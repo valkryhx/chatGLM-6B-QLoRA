@@ -235,3 +235,6 @@ lora微调chatglm2-6B后出现重复的情况 可能是最早发布的版本。
 fp32是默认值 这样训练loss稳定 如果想减小adapter 可以将fp设置为True
    https://huggingface.co/docs/transformers/main_classes/trainer#transformers.Seq2SeqTrainingArguments.fp16
   [[[[fp16 (bool, optional, defaults to False) — Whether to use fp16 16-bit (mixed) precision training instead of 32-bit training.]]]]]
+
+GPTQ+ LORA 好像并没有节省bit的优势 甚至不如bitsandbytes的FP4
+  https://www.reddit.com/r/LocalLLaMA/comments/13r7pzg/gptqlora_efficient_finetuning_of_quantized_llms/
