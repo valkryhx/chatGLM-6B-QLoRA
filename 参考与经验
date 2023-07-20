@@ -247,5 +247,9 @@ https://colab.research.google.com/drive/1VoYNfYDKcKRQRor98Zbf2-9VQTtGJ24k?usp=sh
 https://colab.research.google.com/drive/1VoYNfYDKcKRQRor98Zbf2-9VQTtGJ24k?usp=sharing
 
 #------------20230720------------#
- baichuan lora 数学题微调  我也fork了文章中提到的项目
+baichuan lora 数学题微调  我也fork了文章中提到的项目
     https://zhuanlan.zhihu.com/p/643935822
+
+baichuan-7b vicuna 项目 用shareGPT leetcode和cot数据SFT 这个项目也有gptq版本的模型 可以试试在这个版本上微调
+    https://huggingface.co/fireballoon/baichuan-vicuna-7b
+
