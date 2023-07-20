@@ -353,9 +353,7 @@ def train(global_args):
                                           # device_map="auto"   # add 20230713
                                      )
 
-    for param in model.base_model.parameters():
-        param.requires_grad = False
-        
+    
     # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
     print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
