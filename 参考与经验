@@ -253,3 +253,4 @@ baichuan lora 数学题微调  我也fork了文章中提到的项目
 baichuan-7b vicuna 项目 用shareGPT leetcode和cot数据SFT 这个项目也有gptq版本的模型 可以试试在这个版本上微调
     https://huggingface.co/fireballoon/baichuan-vicuna-7b
 
+fireballoon/baichuan-vicuna-chinese-7b-gptq  一个baichuan7b sft后的chat model  等会试试在这个上面做sft  原始模型也可以在hf找找
