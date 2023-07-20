@@ -254,3 +254,12 @@ baichuan-7b vicuna 项目 用shareGPT leetcode和cot数据SFT 这个项目也有
     https://huggingface.co/fireballoon/baichuan-vicuna-7b
 
 fireballoon/baichuan-vicuna-chinese-7b-gptq  一个baichuan7b sft后的chat model  等会试试在这个上面做sft  原始模型也可以在hf找找
+
+torchrun deepspeed accelerate分布式DDP训练时报错 Finding the cause of RuntimeError: Expected to mark a variable ready only once.....
+需要把trainingArguments中的ddp_find_unused_parameters设置为False  在命令行输入后 记得在程序中打印出来检查  不然可能配置未生效
+   https://discuss.pytorch.org/t/finding-the-cause-of-runtimeerror-expected-to-mark-a-variable-ready-only-once/124428
+   https://blog.csdn.net/qq_45717425/article/details/130088045
+   https://stackoverflow.com/questions/68000761/pytorch-ddp-finding-the-cause-of-expected-to-mark-a-variable-ready-only-once
+   https://github.com/Lightning-AI/lightning/issues/14533
+   https://huggingface.co/transformers/v4.9.0/main_classes/trainer.html
+
