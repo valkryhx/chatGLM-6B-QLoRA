@@ -245,3 +245,7 @@ GPTQ+ LORA 好像并没有节省bit的优势 甚至不如bitsandbytes的FP4
 https://colab.research.google.com/drive/1T1pOgewAWVpR9gKpaEWw4orOrzPFb3yM?usp=sharing
 https://colab.research.google.com/drive/1VoYNfYDKcKRQRor98Zbf2-9VQTtGJ24k?usp=sharing#scrollTo=XIyP_0r6zuVc
 https://colab.research.google.com/drive/1VoYNfYDKcKRQRor98Zbf2-9VQTtGJ24k?usp=sharing
+
+#------------20230720------------#
+ baichuan lora 数学题微调  我也fork了文章中提到的项目
+    https://zhuanlan.zhihu.com/p/643935822
