@@ -266,3 +266,11 @@ torchrun deepspeed accelerate分布式DDP训练时报错 Finding the cause of Ru
    https://huggingface.co/transformers/v4.9.0/main_classes/trainer.html
    注意 parser.add_argument("--ddp_find_unused_parameters", type=str, default=False)  type是str 不是bool  如果是bool 只要这个参数写了 后面无论跟的什么值  这个参数都是True  那就不符合我们的目的了 而且这个bug很诡异
    一定要参考 https://github.com/valkryhx/Firefly/blob/master/gptq_lora_baichuan7b_vicuna_v2_%E6%94%AF%E6%8C%81%E5%88%86%E5%B8%83%E5%BC%8F%E8%AE%AD%E7%BB%83.ipynb   的说明
+
+#-------20230721--------#
+langchain  langchain-chatglm
+   https://www.langchain.asia/
+   https://github.com/imClumsyPanda/langchain-ChatGLM
+   https://github.com/liaokongVFX/LangChain-Chinese-Getting-Started-Guide
+   https://python.langchain.com/docs/get_started/introduction.html
+   https://python.langchain.com.cn/docs/
