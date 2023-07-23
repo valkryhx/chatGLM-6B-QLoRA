@@ -268,9 +268,25 @@ torchrun deepspeed accelerate分布式DDP训练时报错 Finding the cause of Ru
    一定要参考 https://github.com/valkryhx/Firefly/blob/master/gptq_lora_baichuan7b_vicuna_v2_%E6%94%AF%E6%8C%81%E5%88%86%E5%B8%83%E5%BC%8F%E8%AE%AD%E7%BB%83.ipynb   的说明
 
 #-------20230721--------#
-langchain  langchain-chatglm
+langchain  langchain-chatglm 的介绍
    https://www.langchain.asia/
    https://github.com/imClumsyPanda/langchain-ChatGLM
    https://github.com/liaokongVFX/LangChain-Chinese-Getting-Started-Guide
    https://python.langchain.com/docs/get_started/introduction.html
    https://python.langchain.com.cn/docs/
+
+#-------20230723--------#
+  关于argparse.ArgumentParser的用法中type=bool 类型参数的特殊之处
+  如果参数A type=bool  那么不能使用 --A True/False的方式传参 而是直接 --A  这样A表示出现 就会自动读取action='store_false'或者store_true的值 所以其实很有迷惑之处
+  有个好的办法 用eval 强行执行的方式作为type  讨论和比较好的带有--A True的解决方案见下：
+  https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+  
+
+  Simplest. It's not flexible, but I prefer simplicity.
+
+  parser.add_argument('--boolean_flag',
+                      help='This is a boolean flag.',
+                      type=eval, 
+                      choices=[True, False], 
+                      default='True')
+  EDIT: If you don't trust the input, don't use eval.
