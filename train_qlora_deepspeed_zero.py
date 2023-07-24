@@ -166,7 +166,7 @@ class DataCollatorForChatGLM:
 
 
 class LoRATrainer(Trainer):
-    print(888888888888989898989898989090000000)
+    print("save !!!!!!")
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
         """只保存adapter"""
         if output_dir is None:
