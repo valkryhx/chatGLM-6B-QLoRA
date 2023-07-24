@@ -314,3 +314,10 @@ https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/182b42504399d2755897b9737
 
 向langchain-chatglm加载1G txt faiss报错
   https://github.com/imClumsyPanda/langchain-ChatGLM/issues/884
+
+LLaMA类项目的4步骤微调项目 
+  https://github.com/hiyouga/LLaMA-Efficient-Tuning
+chatglm项目的微调项目 是同一个作者
+  https://github.com/hiyouga/ChatGLM-Efficient-Tuning
+  提到RHLF 数据标注项目
+  https://github.com/SupritYoung/RLHF-Label-Tool/tree/master
