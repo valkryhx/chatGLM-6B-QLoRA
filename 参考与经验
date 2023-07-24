@@ -321,3 +321,9 @@ chatglm项目的微调项目 是同一个作者
   https://github.com/hiyouga/ChatGLM-Efficient-Tuning
   提到RHLF 数据标注项目
   https://github.com/SupritYoung/RLHF-Label-Tool/tree/master
+
+langflow flowise 两个低代码拖拽式的。Flowise就像Langflow一样是一个伟大的无代码工具，可以让你在大型语言模型的基础上建立强大的应用程序
+   langflow基于python flowise基于typescript 都属于langchain上层UI的部分 github星数都在10K以上 很棒！
+   https://github.com/FlowiseAI/Flowise
+   https://github.com/logspace-ai/langflow
+
