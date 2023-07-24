@@ -311,6 +311,9 @@ https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/182b42504399d2755897b9737
 整个预测相当于并行预测多个A ，即问1答____问2答_____ 同时计算多个答案位置的loss   这和firefly项目的思路是一致的 
 参考 
 注意这个函数的line72和line73
+【注意对比chatglm的多轮对话处理】https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/dsets/preprocess.py#L29
+   明显看出就是按照QAQAQ拼起来的作为input 而label是最后一轮的answer，也就是说 多轮对话其实只是用到最后一轮来训练。语料利用效率不高，但是效果可能还行。
+   可以考虑将多轮对话拆分成多个语料Q1-A1  Q1A1Q2-A2 Q1A1Q2A2Q3-A3 。。。这样虽然麻烦但是每一轮都是一个sample
 
 向langchain-chatglm加载1G txt faiss报错
   https://github.com/imClumsyPanda/langchain-ChatGLM/issues/884
