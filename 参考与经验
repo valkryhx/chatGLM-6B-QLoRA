@@ -335,3 +335,16 @@ LLaMA类模型和chatglm模型 两类模型的多轮对话语料处理的区别
    chatglm模型是用Q1A1Q2A2Qn 拼接起来作为Q_final ，最后一个An作为A，用Q_final当做input_ids ,A作为label。所以实际上只用了最后一轮对话来训练，作者说可以将多轮Q-A拆分成多个对话来训练，增加语料。
    https://github.com/hiyouga/LLaMA-Efficient-Tuning/issues/226
 
+ChatGLM-efficient-Tuning 项目的几个传参例子： 
+   glm2版本要传入--use_v2  
+   还可以修改data_dir位置--dataset_dir data/car
+   --load_best_model_at_end 也可以传
+   --dev_ratio 0.085 可以传入 直接在train_dataset上切分出eval 不用传do_eval 而是在train的过程中利用该部分数据做eval
+   看第三个link 好像所有training args都是可以传的 比如--save_total_limit
+   
+   https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/163
+   https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/202
+   https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/212
+   https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/288  这个有deepspeed config
+   用zero_optimization 搜issue 能看到很多deepspeed的案例 config
+   https://github.com/search?q=repo%3Ahiyouga%2FChatGLM-Efficient-Tuning+zero_optimization&type=issues
