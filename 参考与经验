@@ -320,7 +320,7 @@ https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/182b42504399d2755897b9737
 
 LLaMA类项目的4步骤微调项目 
   https://github.com/hiyouga/LLaMA-Efficient-Tuning
-chatglm项目的微调项目 是同一个作者
+chatglm项目的微调项目 是同一个作者  哪些参数可以作为入参通过命令行传入 见https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/5ec41e2e74097d9863a41fec034c70b045b82a01/src/glmtuner/tuner/core/parser.py#L76
   https://github.com/hiyouga/ChatGLM-Efficient-Tuning
   提到RHLF 数据标注项目
   https://github.com/SupritYoung/RLHF-Label-Tool/tree/master
@@ -334,3 +334,4 @@ LLaMA类模型和chatglm模型 两类模型的多轮对话语料处理的区别
    见下：llama模型是属于考虑了所有Q1A1Q2A2Q3A3...作为input_ids 而把所有的Q都掩盖成ignore token，label就是 __A1__A2__A3_... 属于考虑每个A的loss
    chatglm模型是用Q1A1Q2A2Qn 拼接起来作为Q_final ，最后一个An作为A，用Q_final当做input_ids ,A作为label。所以实际上只用了最后一轮对话来训练，作者说可以将多轮Q-A拆分成多个对话来训练，增加语料。
    https://github.com/hiyouga/LLaMA-Efficient-Tuning/issues/226
+
