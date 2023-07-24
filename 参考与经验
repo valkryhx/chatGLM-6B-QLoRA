@@ -311,3 +311,6 @@ https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/182b42504399d2755897b9737
 整个预测相当于并行预测多个A ，即问1答____问2答_____ 同时计算多个答案位置的loss   这和firefly项目的思路是一致的 
 参考 
 注意这个函数的line72和line73
+
+向langchain-chatglm加载1G txt faiss报错
+  https://github.com/imClumsyPanda/langchain-ChatGLM/issues/884
