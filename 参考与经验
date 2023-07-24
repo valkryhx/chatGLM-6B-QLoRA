@@ -290,3 +290,24 @@ langchain  langchain-chatglm 的介绍
                       choices=[True, False], 
                       default='True')
   EDIT: If you don't trust the input, don't use eval.
+
+
+#-----20230724------#
+LLAMA 多轮对话的语料处理 好像是把所有history拼接后 形成 [Q1  A1 Q2 A2 ....Qn An]
+https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/182b42504399d2755897b9737db1d36655a0fa50/src/llmtuner/dsets/preprocess.py#L31C17-L31C99
+上面的代码用到了from llmtuner.extras.template import get_template
+在第57 84 103行都用到了 get_dialog(examples) 而这个函数定义在25行 def get_dialog(examples): 用到了22行prompt_template和31行的prompt_template.get_dialog
+而prompt_template 对象又是https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/182b42504399d2755897b9737db1d36655a0fa50/src/llmtuner/extras/template.py#L21
+定义的 它的get_dialog方法又参考这里的29行
+https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/182b42504399d2755897b9737db1d36655a0fa50/src/llmtuner/extras/template.py#L29
+这就可以看出 将history处理成Q1，A1，Q2，A2的过程了 也就是conv.append操作
+
+然后回到
+https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/182b42504399d2755897b9737db1d36655a0fa50/src/llmtuner/dsets/preprocess.py#L50
+从最后的input_ids += 和labels += 可以看出 +=是将history转化的QxAx全部考虑进去拼接成一个了
+输入也就是input_ids 是包含Q1A1Q2A2...QnAn的 tokenized id  ，比如其中一部分是Q1A1+[tokenizer.eos_token_id]
+需要预测的label则是将所有的Q部分用ignore token id掩盖 后面接上一个eos_id 而且正好长度等于Q1(masked)A1+[tokenizer.eos_token_id] 
+也就是只用预测未被掩盖的A1部分
+整个预测相当于并行预测多个A ，即问1答____问2答_____ 同时计算多个答案位置的loss   这和firefly项目的思路是一致的 
+参考 
+注意这个函数的line72和line73
