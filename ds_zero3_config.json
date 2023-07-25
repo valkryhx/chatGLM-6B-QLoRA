@@ -47,7 +47,7 @@
         "stage3_param_persistence_threshold": "auto",
         "stage3_max_live_parameters": 1e6,
         "stage3_max_reuse_distance": 1e6,
-        "stage3_gather_16bit_weights_on_model_save": true
+        "stage3_gather_16bit_weights_on_model_save": false
     },
     "train_batch_size": 8 ,
     "train_micro_batch_size_per_gpu":4
