@@ -357,6 +357,7 @@ ChatGLM-efficient-Tuning 项目的几个传参例子：
    zero_pp_rank_0_mp_rank_00_optim_states.pt.  这种中间状态的模型states和优化器states 先load到cpu 再存到磁盘 所以多卡情况下ram直接oom（因为是2个卡的进程都在load到 ram）
    单卡时ram倒是没有马上oom 而是能正常接住load过来的各类.pt 成功保存到磁盘 而且ram也从10g下降到5g 但是每次保存文件巨大 都有3G-6G 存个几次 磁盘就满了。
    参考 https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/342 
+   zhihu上也有一套类似的代码 https://zhuanlan.zhihu.com/p/638994113  也有这个保存的操作 但是实际上我并不需要！！！这不知道谁抄谁的
 
    也有关于checkpoint文件很大的bug的讨论 但是看chatglm-efficient-tuning的项目实现 其save其实是使用了k:v.clone()的 现在无非就是不知道为啥会启动deepspeed save_checkpoint()这个动作
    这个checkpoint文件过大的bug讨论见：
