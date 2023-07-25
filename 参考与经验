@@ -348,3 +348,18 @@ ChatGLM-efficient-Tuning 项目的几个传参例子：
    https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/288  这个有deepspeed config
    用zero_optimization 搜issue 能看到很多deepspeed的案例 config
    https://github.com/search?q=repo%3Ahiyouga%2FChatGLM-Efficient-Tuning+zero_optimization&type=issues
+
+#---------20230725----------#
+   chatglm-efficeint-tuning项目中 使用qlora-4bit量化微调后 如果使用--fp16 则会出现deepspeed overflow的情况 这个时候不使用--fp16 默认fp32 就没这个情况了
+
+   chatglm-efficient-tuning项目中 使用deepspeed 不管单gpu还是多gpu 都会出现到--save_steps 10 比如第10步 就开始CPU RAM OOM的情况
+   经过定位 发现是deepspeed.TorchCheckpointEngine 在到save_steps的时候比如10 20 居然也会使用torch.load 把mp_rank_00_model_states.pt
+   zero_pp_rank_0_mp_rank_00_optim_states.pt.  这种中间状态的模型states和优化器states 先load到cpu 再存到磁盘 所以多卡情况下ram直接oom（因为是2个卡的进程都在load到 ram）
+   单卡时ram倒是没有马上oom 而是能正常接住load过来的各类.pt 成功保存到磁盘 而且ram也从10g下降到5g 但是每次保存文件巨大 都有3G-6G 存个几次 磁盘就满了。
+   参考 https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/342 
+
+   也有关于checkpoint文件很大的bug的讨论 但是看chatglm-efficient-tuning的项目实现 其save其实是使用了k:v.clone()的 现在无非就是不知道为啥会启动deepspeed save_checkpoint()这个动作
+   这个checkpoint文件过大的bug讨论见：
+   https://github.com/microsoft/DeepSpeed/issues/3303
+   https://github.com/huggingface/transformers/issues/22822
+   https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/342
