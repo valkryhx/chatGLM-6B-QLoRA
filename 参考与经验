@@ -402,3 +402,7 @@ ChatGLM-efficient-Tuning 项目的几个传参例子：
 
     chatGLM的预训练方式不是自回归 而是多个空白快填充 这个跟LLaMA好像差不多 难怪好多代码都改成了这样
     https://zhuanlan.zhihu.com/p/641499380
+
+    从零训练一个多模态LLM：预训练+指令微调+对齐+融合多模态+链接外部系统  无代码 只有流程指导 很好！
+    https://redian.news/wxnews/497220
+    https://zhuanlan.zhihu.com/p/643611622
