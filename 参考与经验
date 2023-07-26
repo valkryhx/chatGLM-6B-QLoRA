@@ -394,3 +394,8 @@ ChatGLM-efficient-Tuning 项目的几个传参例子：
     天池上有一篇金融数据的处理流程的参赛笔记  可以参考里面提到的向量数据库 FAISS 等  很有指导意义
     https://tianchi.aliyun.com/forum/post/571708
     https://tianchi.aliyun.com/competition/entrance/532126/introduction
+
+    关于使用预训练语料在已经指令微调的model上做增量训练的效果 大佬的结论是 正向好效果
+    参见 https://www.zhihu.com/people/yan-yan-qing-15
+    问：我想请问下，增量预训练在类似chatglm和baichuan-chat这种已经做过指令微调的模型上，效果是不是不好 甚至有副作用？增量预训练是否适合用在pretrain的模型上更合适呢？
+    答：效果好，需要自己增量预训练的数据少一些；有较多的领域数据（无监督的数据），建议用base model，训练专门模型，如果没有，就用chat类的。
