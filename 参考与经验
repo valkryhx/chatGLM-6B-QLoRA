@@ -399,3 +399,6 @@ ChatGLM-efficient-Tuning 项目的几个传参例子：
     参见 https://www.zhihu.com/people/yan-yan-qing-15
     问：我想请问下，增量预训练在类似chatglm和baichuan-chat这种已经做过指令微调的模型上，效果是不是不好 甚至有副作用？增量预训练是否适合用在pretrain的模型上更合适呢？
     答：效果好，需要自己增量预训练的数据少一些；有较多的领域数据（无监督的数据），建议用base model，训练专门模型，如果没有，就用chat类的。
+
+    chatGLM的预训练方式不是自回归 而是多个空白快填充 这个跟LLaMA好像差不多 难怪好多代码都改成了这样
+    https://zhuanlan.zhihu.com/p/641499380
