@@ -364,3 +364,33 @@ ChatGLM-efficient-Tuning 项目的几个传参例子：
    https://github.com/microsoft/DeepSpeed/issues/3303
    https://github.com/huggingface/transformers/issues/22822
    https://github.com/hiyouga/ChatGLM-Efficient-Tuning/issues/342
+
+#--------20230726---------#
+   MedicalGPT 的gradio不知道为何 即使基座模型不做量化 +qlora adapter 效果也很差 而且似乎在gradio.py中选择history为空 结果使用时似乎还是会被历史信息影响
+   注意启动时的 --template_name chatglm2
+
+   在不使用AutoModel和AutoTokenizer的情况下 要import ChatGLMForConditionalGeneration 模型和ChatGLMTokeniizer 这个tokenizer 
+   那么在transformers库中是没有的 我们需要直接从hf上下载THUDM/chatglm2-6b项目中的各类py和json小文件 放到一个单独的目录
+   （模型文件+各类json = 模型加载目录） （py文件是model类文件 各种tokenizer chat streamchat方法从这些类文件中来）
+    为了简便 我们直接在这个类文件目录中新建我们的python 比如训练的python 加载的python 并且在我们自己的python
+    import时 要写成  from  modeling_chatglm  import ChatGLMForConditionalGeneration
+                     from  tokenizer_chatglm import ChatGLmTokenizer
+                     并且要修改modeling_chatglm.py 的26行 import configuration_chatglm 把相对导入的 .去掉
+
+    MedicalGPT的bug modeling_chatglm.py error: `-` operator, with a bool tensor is not supported是清华模型代码bug
+    参见https://user-images.githubusercontent.com/121851857/256195899-9e0d7d65-9d44-494c-acac-682e205c37df.png
+    可以这么改 688行：full_attention_mask -= padding_mask.unsqueeze(-1) - 1 -》 full_attention_mask -= padding_mask.unsqueeze(-1).int() - 1
+    参考 https://huggingface.co/THUDM/chatglm2-6b/discussions/67
+
+    alpaca_gpt4_data_zh是alpaca格式，是单轮对话 需要通过https://github.com/shibing624/MedicalGPT/blob/main/convert_alpaca.py 转换为ShareGPT格式
+    这样就是让MedicalGPT 兼容单轮和多轮对话格式
+    参考 https://github.com/Instruction-Tuning-with-GPT-4/GPT-4-LLM/blob/main/data/alpaca_gpt4_data_zh.json
+    再查查shareGPT 在这个过程中 我们发现 https://finance.sina.com.cn/tech/roll/2023-04-21/doc-imyrcpar4710479.shtml
+    https://github.com/thunlp/UltraChat     UltraLM-13B 模型 
+    UltraLM 项目上的AlpacaEval Leaderboard  排行 https://tatsu-lab.github.io/alpaca_eval/
+
+    https://zhuanlan.zhihu.com/p/646072687  声称是模型如何理解表格 用markdown的 | 分割表格数据 效果好 用的是天池金融大模型的chatglm-6B 说明6B微调很有潜力
+    作者写了很多很多很好的文章 特别是提到了PDF数据等非结构化数据的处理 可以参考 https://www.zhihu.com/people/yan-yan-qing-15
+    天池上有一篇金融数据的处理流程的参赛笔记  可以参考里面提到的向量数据库 FAISS 等  很有指导意义
+    https://tianchi.aliyun.com/forum/post/571708
+    https://tianchi.aliyun.com/competition/entrance/532126/introduction
