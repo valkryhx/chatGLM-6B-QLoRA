@@ -406,3 +406,8 @@ ChatGLM-efficient-Tuning 项目的几个传参例子：
     从零训练一个多模态LLM：预训练+指令微调+对齐+融合多模态+链接外部系统  无代码 只有流程指导 很好！
     https://redian.news/wxnews/497220
     https://zhuanlan.zhihu.com/p/643611622
+
+#----------20230727----------#
+   tensorflow mnist 加载本地离线的mnist数据集案例 包括下载地址
+   参考 https://zhuanlan.zhihu.com/p/351180890
+   mnist下载和本地加载 https://stackoverflow.com/a/40693405
