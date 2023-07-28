@@ -349,6 +349,14 @@ def train(global_args):
                                           load_in_4bit=global_args.load_in_4bit,
                                           torch_dtype=torch.float16,
                                           quantization_config=q_config,
+                                           # empty_init这是最关键的参数 如果不设置 那即使用deepspeed也oom
+                                  # 当您使用 AutoModel.from_pretrained() 方法加载预训练模型时，模型权重会被存储在 PyTorch 的 nn.Parameter 对象中。
+                                  # 在没有指定 empty_init=False 参数时，nn.Parameter 对象的值将被初始化为全零的张量。
+                                  # 但是，由于 nn.Parameter 对象不是真正的张量，而是具有元数据的张量包装器，因此无法将这些对象直接复制到 DeepSpeed 使用的元数据张量中。
+                                  # 在指定 empty_init=False 参数后，nn.Parameter 对象将被初始化为包含预训练权重的张量，
+                                  # 这使得 DeepSpeed 能够正常地将权重复制到元数据张量中
+                                  # THUDM/chatglm2 估计modeling_chatglm.py 默认是True  好坑！
+                                  # 果然 一查真的是 https://huggingface.co/THUDM/chatglm2-6b/blob/main/modeling_chatglm.py#L732
                                           empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
                                           #device_map=new_hf_device_map,
                                           # device_map="auto"   # add 20230713
