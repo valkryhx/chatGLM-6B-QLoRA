@@ -456,7 +456,7 @@ def train(global_args):
     '''读取命令行传入参数 这个优先级高  覆盖对应的默认参数'''
     #set_seed(global_args.seed)
     #hf_train_args.seed = global_args.seed
-    hf_train_args.optim="paged_adamw_8bit"
+    #hf_train_args.optim="paged_adamw_8bit"
 
     hf_train_args.output_dir = global_args.output_dir 
     hf_train_args.logging_dir = global_args.output_dir 
