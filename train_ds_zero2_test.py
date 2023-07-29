@@ -209,8 +209,8 @@ class PeftArguments(TrainingArguments):
     num_train_samples :int =field(default=1000)
     num_eval_samples :int =field(default=100)
     
-    max_input_length:int=filed(default=256) 
-    max_output_length:int=filed(default=256) 
+    max_input_length:int=field(default=256) 
+    max_output_length:int=field(default=256) 
     compute_dtype:str=field(default='fp16')
     model_name_or_path:str=field(default="")
 
