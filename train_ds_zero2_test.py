@@ -14,15 +14,23 @@ import torch
 from glob import glob
 from loguru import logger
 from datasets import load_dataset
+
 from transformers import (
-    AutoModel,
+    AutoConfig,
+    BloomForCausalLM,
     AutoModelForCausalLM,
+    AutoModel,
+    LlamaTokenizer,
+    LlamaForCausalLM,
+    BloomTokenizerFast,
     AutoTokenizer,
     HfArgumentParser,
-    set_seed,
-    TrainingArguments,
     Trainer,
-    BitsAndBytesConfig 
+    TrainingArguments,
+    is_torch_tpu_available,
+    set_seed,
+    BitsAndBytesConfig,  ##20230728 ADD for qlora
+    deepspeed,           ##20230728 ADD for deepspeed
 )
 from peft import (
     TaskType,
