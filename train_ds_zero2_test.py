@@ -433,9 +433,9 @@ def train(global_args):
 
     logger.warning(f"Model args: {model_args}")
     logger.warning(f"Data args: {data_args}")
-    logger.warning(f"hf_train_args: {training_args}")
+    logger.warning(f"hf_train_args: {hf_train_args}")
     logger.warning(
-        f"Process rank: {hf_train_args.local_rank}, device: {hf_train_argss.device}, n_gpu: {hf_train_args.n_gpu}"
+        f"Process rank: {hf_train_args.local_rank}, device: {hf_train_args.device}, n_gpu: {hf_train_args.n_gpu}"
         + f" distributed training: {bool(hf_train_args.local_rank != -1)}, 16-bits training: {hf_train_args.fp16}"
     )
     
