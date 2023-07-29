@@ -637,8 +637,8 @@ def train(global_args):
 
 if __name__ == "__main__":
     #args = parse_args()
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, PeftArguments))
-    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    parser = HfArgumentParser(( PeftArguments))
+     training_args = parser.parse_args_into_dataclasses()
 
     logger.warning(f"Model args: {model_args}")
     logger.warning(f"Data args: {data_args}")
