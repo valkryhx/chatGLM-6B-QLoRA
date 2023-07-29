@@ -213,6 +213,7 @@ class PeftArguments(TrainingArguments):
     max_output_length:int=field(default=256) 
     compute_dtype:str=field(default='fp16')
     model_name_or_path:str=field(default="")
+    local_rank:int=field(default=0)
 
 # def parse_args():
 #     parser = argparse.ArgumentParser(description='ChatGLM-6B QLoRA')
