@@ -44,6 +44,13 @@ _compute_dtype_map = {
     'bf16': torch.bfloat16
 }
 
+MODEL_CLASSES = {
+    "bloom": (AutoConfig, BloomForCausalLM, BloomTokenizerFast),
+    "chatglm": (AutoConfig, AutoModel, AutoTokenizer),
+    "llama": (AutoConfig, LlamaForCausalLM, LlamaTokenizer),
+    "baichuan": (AutoConfig, AutoModelForCausalLM, AutoTokenizer),
+    "auto": (AutoConfig, AutoModelForCausalLM, AutoTokenizer),
+}
 
 
 
