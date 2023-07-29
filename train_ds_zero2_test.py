@@ -432,11 +432,12 @@ def train(global_args):
     '''
     
     
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, PeftArguments))
-    model_args, data_args, hf_train_args = parser.parse_args_into_dataclasses()
+    #parser = HfArgumentParser((ModelArguments, DataTrainingArguments, PeftArguments))
+    #model_args, data_args, hf_train_args = parser.parse_args_into_dataclasses()
 
-    logger.warning(f"Model args: {model_args}")
-    logger.warning(f"Data args: {data_args}")
+    #logger.warning(f"Model args: {model_args}")
+    #logger.warning(f"Data args: {data_args}")
+    hf_train_args = global_args
     logger.warning(f"hf_train_args: {hf_train_args}")
     logger.warning(
         f"Process rank: {hf_train_args.local_rank}, device: {hf_train_args.device}, n_gpu: {hf_train_args.n_gpu}"
@@ -640,8 +641,8 @@ if __name__ == "__main__":
     parser = HfArgumentParser(( PeftArguments))
      training_args = parser.parse_args_into_dataclasses()
 
-    logger.warning(f"Model args: {model_args}")
-    logger.warning(f"Data args: {data_args}")
+    #logger.warning(f"Model args: {model_args}")
+    #logger.warning(f"Data args: {data_args}")
     logger.warning(f"Training args: {training_args}")
     logger.warning(
         f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
