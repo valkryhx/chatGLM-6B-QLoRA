@@ -234,7 +234,7 @@ def train(global_args):
     },
 
     "zero_optimization": {
-        "stage": 3,
+        "stage": 2,
         "offload_optimizer": {
             "device": "cpu",
             "pin_memory": False
@@ -251,13 +251,15 @@ def train(global_args):
         "stage3_param_persistence_threshold": "auto",
         "stage3_max_live_parameters": 1e6,
         "stage3_max_reuse_distance": 1e6,
-        "stage3_gather_16bit_weights_on_model_save": True
+        "stage3_gather_16bit_weights_on_model_save": False
     },    
-    "train_batch_size": 8 ,  
-    "train_micro_batch_size_per_gpu":4
+    "train_batch_size": "auto" ,  
+    "train_micro_batch_size_per_gpu":"auto"
 }
     '''这两个参数train_batch_size 和 train_micro_batch_size_per_gpu好像在训练过程中没生效 
-       训练实际的batchsize是chatGLM_6B_QLoA.json 中的参数决定的 '''
+      ##add 20230729 训练实际的batchsize是chatGLM_6B_QLoA.json 中的参数决定的 这里直接改成auto
+      ## 另外"stage3_gather_16bit_weights_on_model_save": False 这个如果改成True 好像会在保存deepspeed state 是训练过程中的优化器状态 很大 很不好
+    '''
     
     
 
