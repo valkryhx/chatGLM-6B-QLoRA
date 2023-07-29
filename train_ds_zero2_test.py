@@ -439,13 +439,13 @@ def train(global_args):
         + f" distributed training: {bool(hf_train_args.local_rank != -1)}, 16-bits training: {hf_train_args.fp16}"
     )
     
-    hf_parser = HfArgumentParser(TrainingArguments)
+    #hf_parser = HfArgumentParser(TrainingArguments)
     '''读取json中默认配置作为训练参数'''
-    hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
+    #hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
 
     
-    with open(global_args.deepspeed,'r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
-        hf_train_args.deepspeed = json.load(fr)  # set trainingArgs中deepspeed=ds_config
+    #with open(global_args.deepspeed,'r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
+    #    hf_train_args.deepspeed = json.load(fr)  # set trainingArgs中deepspeed=ds_config
 
     '''读取命令行传入参数 这个优先级高  覆盖对应的默认参数'''
     #set_seed(global_args.seed)
