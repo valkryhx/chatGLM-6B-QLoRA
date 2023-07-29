@@ -72,14 +72,14 @@ class ModelArguments:
         default=None,
         metadata={"help": "Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys())}
     )
-    model_name_or_path: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": (
-                "The model checkpoint for weights initialization.Don't set if you want to train a model from scratch."
-            )
-        },
-    )
+    # model_name_or_path: Optional[str] = field(
+    #     default=None,
+    #     metadata={
+    #         "help": (
+    #             "The model checkpoint for weights initialization.Don't set if you want to train a model from scratch."
+    #         )
+    #     },
+    # )
     tokenizer_name_or_path: Optional[str] = field(
         default=None,
         metadata={
