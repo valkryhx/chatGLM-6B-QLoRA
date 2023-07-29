@@ -204,8 +204,10 @@ class PeftArguments(TrainingArguments):
     modules_to_save: Optional[str] = field(default=None)
     peft_path: Optional[str] = field(default=None)
     qlora: bool = field(default=False, metadata={"help": "Whether to use qlora"})
-
-
+    eval_data_path : str=field(default="")
+    train_data_path : str=field(default="")
+    num_train_samples :int =field(default=1000)
+    num_eval_samples :int =field(default=100)
 
 
 def parse_args():
@@ -446,8 +448,8 @@ def train(global_args):
         hf_train_args.deepspeed = json.load(fr)  # set trainingArgs中deepspeed=ds_config
 
     '''读取命令行传入参数 这个优先级高  覆盖对应的默认参数'''
-    set_seed(global_args.seed)
-    hf_train_args.seed = global_args.seed
+    #set_seed(global_args.seed)
+    #hf_train_args.seed = global_args.seed
     hf_train_args.optim="paged_adamw_8bit"
 
     hf_train_args.output_dir = global_args.output_dir 
@@ -459,7 +461,7 @@ def train(global_args):
     hf_train_args.num_train_epochs = global_args.num_train_epochs
     hf_train_args.save_total_limit = global_args.save_total_limit
     
-    model_max_length = global_args.max_input_length + global_args.max_output_length
+    model_max_length =600 #global_args.max_input_length + global_args.max_output_length
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
     # Quantization
@@ -631,4 +633,17 @@ def train(global_args):
 
 if __name__ == "__main__":
     #args = parse_args()
-    train(args)
+    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, PeftArguments))
+    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+
+    logger.warning(f"Model args: {model_args}")
+    logger.warning(f"Data args: {data_args}")
+    logger.warning(f"Training args: {training_args}")
+    logger.warning(
+        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
+        + f" distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
+    )
+
+    # Set seed before initializing model.
+    set_seed(training_args.seed)
+    train(training_args)
