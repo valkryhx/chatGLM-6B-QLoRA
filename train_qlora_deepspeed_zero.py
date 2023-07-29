@@ -277,7 +277,9 @@ def train(global_args):
      HfArgumentParser.parse_json_file 返回的是一个tuple 【outputs = self.parse_dict(data, allow_extra_keys=allow_extra_keys)
         return tuple(outputs)】
         所以如果不加, 那hf_train_args就是一个tuple 而不是一个TrainingArguments对象 下面的类似hf_train_args.seed = global_args.seed 代码就会报错
-        加上，逗号之后 那就把tuple解开了 （即使tuple里面只有一个TrainingArguments对象 也需要解开真操蛋！）
+        加上，逗号之后 那就把tuple解开了 
+        （即使tuple里面只有一个TrainingArguments对象 也需要解开真操蛋！多个A,B=HfArgumentParser.parse_json_file  可能还看不出来，
+        但是单个A=HfArgumentParser.parse_json_file  不加逗号就是错误的）
         那就拿到了真正的TrainingArguments对象的hf_train_args 真的操蛋
         那个源码中其他parse方法都是return tuple 都要注意
         例如 parse_yaml_file /  parse_dict /parse_args_into_dataclasses
