@@ -213,7 +213,7 @@ class PeftArguments(TrainingArguments):
     max_output_length:int=field(default=256) 
     compute_dtype:str=field(default='fp16')
     model_name_or_path:str=field(default="")
-    local_rank:int=field(default=0)
+    #local_rank:int=field(default=0)
 
 # def parse_args():
 #     parser = argparse.ArgumentParser(description='ChatGLM-6B QLoRA')
@@ -440,10 +440,10 @@ def train(global_args):
     #logger.warning(f"Data args: {data_args}")
     hf_train_args = global_args
     logger.warning(f"hf_train_args: {hf_train_args}")
-    logger.warning(
-        f"Process rank: {hf_train_args.local_rank}, device: {hf_train_args.device}, n_gpu: {hf_train_args.n_gpu}"
-        + f" distributed training: {bool(hf_train_args.local_rank != -1)}, 16-bits training: {hf_train_args.fp16}"
-    )
+    # logger.warning(
+    #     f"Process rank: {hf_train_args.local_rank}, device: {hf_train_args.device}, n_gpu: {hf_train_args.n_gpu}"
+    #     + f" distributed training: {bool(hf_train_args.local_rank != -1)}, 16-bits training: {hf_train_args.fp16}"
+    # )
     
     #hf_parser = HfArgumentParser(TrainingArguments)
     '''读取json中默认配置作为训练参数'''
@@ -645,10 +645,10 @@ if __name__ == "__main__":
     #logger.warning(f"Model args: {model_args}")
     #logger.warning(f"Data args: {data_args}")
     logger.warning(f"Training args: {training_args}")
-    logger.warning(
-        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
-        + f" distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
-    )
+    # logger.warning(
+    #     f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
+    #     + f" distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
+    # )
 
     # Set seed before initializing model.
     set_seed(training_args.seed)
