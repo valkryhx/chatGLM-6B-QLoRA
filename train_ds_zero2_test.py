@@ -651,5 +651,5 @@ if __name__ == "__main__":
     # )
 
     # Set seed before initializing model.
-    set_seed(training_args.seed)
+    #set_seed(training_args.seed)
     train(training_args)
