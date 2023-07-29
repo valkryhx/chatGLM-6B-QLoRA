@@ -214,44 +214,44 @@ class PeftArguments(TrainingArguments):
     compute_dtype:str=field(default='fp16')
     model_name_or_path:str=field(default="")
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='ChatGLM-6B QLoRA')
-    parser.add_argument('--train_args_json', type=str, required=True, help='TrainingArguments的json文件')
-    parser.add_argument('--model_name_or_path', type=str, default='THUDM/chatglm-6b', help='模型id或local path')
-    parser.add_argument('--train_data_path', type=str, required=True, help='训练数据路径')
-    parser.add_argument('--eval_data_path', type=str, default=None, help='验证数据路径')
-    parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--max_input_length', type=int, default=512, help='instruction + input的最大长度')
-    parser.add_argument('--max_output_length', type=int, default=1536, help='output的最大长度')
-    parser.add_argument('--lora_rank', type=int, default=4, help='lora rank')
-    parser.add_argument('--lora_alpha', type=int, default=32, help='lora_alpha')
-    parser.add_argument('--lora_dropout', type=float, default=0.05, help='lora dropout')
-    parser.add_argument('--resume_from_checkpoint', type=str, default=None, help='恢复训练的checkpoint路径')
-    parser.add_argument('--prompt_text', type=str, default='', help='统一添加在所有数据前的指令文本')
-    parser.add_argument('--compute_dtype', type=str, default='fp32',
-                        choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
-    parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument("--deepspeed", type=str, default="ds_zero2_config.json")
-    parser.add_argument("--output_dir",type=str,default="output/lora",help="模型训练输出目录")
-    parser.add_argument("--per_device_train_batch_size",type=int,default=1)
-    parser.add_argument("--per_device_eval_batch_size",type=int,default=1)
-    parser.add_argument("--gradient_accumulation_steps",type=int,default=1)
-    parser.add_argument("--learning_rate",type=float,default=2e-5)
-    parser.add_argument("--num_train_epochs",type=float,default=1.0)
-    parser.add_argument("--num_train_samples",type=int,default= 0,help="用于train的样本数量，可选。")
-    parser.add_argument("--num_eval_samples",type=int,default= 0,help="用于eval的样本数量，可选。")
-    parser.add_argument("--save_total_limit" , type=int ,default=None)
-    parser.add_argument("--load_in_4bit" , type=bool ,default=True)
-    parser.add_argument("--load_best_model_at_end",type=bool,default=True)  # https://huggingface.co/docs/transformers/main_classes/trainer
-    #"output_dir": "output/qlora_ds_zero",
-    #"per_device_train_batch_size": 8, 
-    #"per_device_eval_batch_size":  2,
-    #"gradient_accumulation_steps": 8,
-    #"learning_rate": 2e-5,
-    #"num_train_epochs": 10.0,
+# def parse_args():
+#     parser = argparse.ArgumentParser(description='ChatGLM-6B QLoRA')
+#     parser.add_argument('--train_args_json', type=str, required=True, help='TrainingArguments的json文件')
+#     parser.add_argument('--model_name_or_path', type=str, default='THUDM/chatglm-6b', help='模型id或local path')
+#     parser.add_argument('--train_data_path', type=str, required=True, help='训练数据路径')
+#     parser.add_argument('--eval_data_path', type=str, default=None, help='验证数据路径')
+#     parser.add_argument('--seed', type=int, default=42)
+#     parser.add_argument('--max_input_length', type=int, default=512, help='instruction + input的最大长度')
+#     parser.add_argument('--max_output_length', type=int, default=1536, help='output的最大长度')
+#     parser.add_argument('--lora_rank', type=int, default=4, help='lora rank')
+#     parser.add_argument('--lora_alpha', type=int, default=32, help='lora_alpha')
+#     parser.add_argument('--lora_dropout', type=float, default=0.05, help='lora dropout')
+#     parser.add_argument('--resume_from_checkpoint', type=str, default=None, help='恢复训练的checkpoint路径')
+#     parser.add_argument('--prompt_text', type=str, default='', help='统一添加在所有数据前的指令文本')
+#     parser.add_argument('--compute_dtype', type=str, default='fp32',
+#                         choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
+#     parser.add_argument("--local_rank", type=int, default=0)
+#     parser.add_argument("--deepspeed", type=str, default="ds_zero2_config.json")
+#     parser.add_argument("--output_dir",type=str,default="output/lora",help="模型训练输出目录")
+#     parser.add_argument("--per_device_train_batch_size",type=int,default=1)
+#     parser.add_argument("--per_device_eval_batch_size",type=int,default=1)
+#     parser.add_argument("--gradient_accumulation_steps",type=int,default=1)
+#     parser.add_argument("--learning_rate",type=float,default=2e-5)
+#     parser.add_argument("--num_train_epochs",type=float,default=1.0)
+#     parser.add_argument("--num_train_samples",type=int,default= 0,help="用于train的样本数量，可选。")
+#     parser.add_argument("--num_eval_samples",type=int,default= 0,help="用于eval的样本数量，可选。")
+#     parser.add_argument("--save_total_limit" , type=int ,default=None)
+#     parser.add_argument("--load_in_4bit" , type=bool ,default=True)
+#     parser.add_argument("--load_best_model_at_end",type=bool,default=True)  # https://huggingface.co/docs/transformers/main_classes/trainer
+#     #"output_dir": "output/qlora_ds_zero",
+#     #"per_device_train_batch_size": 8, 
+#     #"per_device_eval_batch_size":  2,
+#     #"gradient_accumulation_steps": 8,
+#     #"learning_rate": 2e-5,
+#     #"num_train_epochs": 10.0,
 
     
-    return parser.parse_args()
+#     return parser.parse_args()
 
 
 def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
