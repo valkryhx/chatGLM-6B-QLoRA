@@ -6,6 +6,7 @@
 
 import os
 import argparse
+from dataclasses import dataclass, field
 from typing import List, Dict, Optional
 from accelerate import init_empty_weights  # load an empty model,just structure , no real weight.
 import bitsandbytes as bnb
