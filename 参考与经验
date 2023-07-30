@@ -411,3 +411,26 @@ ChatGLM-efficient-Tuning 项目的几个传参例子：
    tensorflow mnist 加载本地离线的mnist数据集案例 包括下载地址
    参考 https://zhuanlan.zhihu.com/p/351180890
    mnist下载和本地加载 https://stackoverflow.com/a/40693405
+
+
+#--------20230730---------#
+https://github.com/valkryhx/MedicalGPT/tree/MedicalGPT_0728  这个是medicalGPT_0728 branch
+里面的pretraining.py 和 0730_sft_test.py 都是最好的代码 我自己改的
+0730_pt_test.py 也测试通过 但是model_class.from_pretrained 没有更新到上两种的写法
+pretrain_0729_test.py 这是测试 也通过的 
+
+注意看0730_pt_test.py 最下面的说明是关于deepspeed的大文件bug解决方法 就是从json导入trainingargs 而非从命令行导入 因为命令行导入save steps 会被ds也读到 从而也会让ds在savesteps的频次保存很大的中间文件
+注意看0730_sft_test.py 最上面的说明 是1.修改了chatglm的ChatGLMForConditionalGeneration的导入 直接从修改了的本地文件读 而不能是automodel 因为automodel会从hf官网加载 而官网文件有bug
+不然会报错 RuntimeError: Subtraction, the `-` operator, with a bool tensor is not 
+supported. If you are trying to invert a mask, use the `~` or `logical_not()` 
+operator instead.
+参考 https://huggingface.co/THUDM/chatglm2-6b/discussions/67
+     https://github.com/shibing624/MedicalGPT/issues/124
+
+2.修改了cur_len 针对chatglm 增加了代码 在817行左右
+ if model_args.model_type =='chatglm':  ## add 0730
+                cur_len +=2                        ## add 0730
+3. 针对trainging args的处理方式和pt代码一致 从json读取   
+
+
+
