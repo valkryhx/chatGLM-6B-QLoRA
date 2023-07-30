@@ -436,5 +436,10 @@ operator instead.
 注意 model.from_pretrained()中empty_init参数只是chatglm才有的 参考它的modeling_chatglm.py
 其他模型没有这个参数 所以pretraining.py 和 0730_sft_test.py  的model.from_pretrained方法之前加了if modeltype = chatglm判断
 
-
+eval loss= nan 但是train loss 正常下降 shi大佬说是跟torch_dtype=float16有关 但是实际上我测试发现因为 tokenized 之后cur_len mismatch导致的 部分samples相当于是空  所以为nan
+我自己导入了一份 finetun_1_turn_conv目录下354.json 就全是1轮对话  这样就没有mismatch 就让evalloss正常了
+但是小问题或者不是问题：1.eval acc这个值停留在0 然后上升到0.18就不变了 可能是acc参数有问题 所以sh大佬自己sft代码中没有向pt代码一样使用这个comput metric acc了
+第二 这个多轮对话就mismatch的bug  还是等大佬自己修改
+第三 针对chatglm  我把cur_len 手动 加了2 这样才能训练--template_name chatglm2 \ 参考 0730_sft_test.py 的817行左右
+这个多轮对话的mismatch很有问题 目前不知道怎么解决
 
