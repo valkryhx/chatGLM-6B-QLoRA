@@ -430,7 +430,11 @@ operator instead.
 2.修改了cur_len 针对chatglm 增加了代码 在817行左右
  if model_args.model_type =='chatglm':  ## add 0730
                 cur_len +=2                        ## add 0730
-3. 针对trainging args的处理方式和pt代码一致 从json读取   
+3. 针对trainging args的处理方式和pt代码一致 从json读取  
+
+
+注意 model.from_pretrained()中empty_init参数只是chatglm才有的 参考它的modeling_chatglm.py
+其他模型没有这个参数 所以pretraining.py 和 0730_sft_test.py  的model.from_pretrained方法之前加了if modeltype = chatglm判断
 
 
 
