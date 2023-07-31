@@ -46,6 +46,10 @@ _compute_dtype_map = {
 }
 
 
+# 关闭dataset的cache
+from datasets import set_caching_enabled
+set_caching_enabled(False)
+
 def parse_args():
     parser = argparse.ArgumentParser(description='ChatGLM-6B QLoRA')
     parser.add_argument('--train_args_json', type=str, required=True, help='TrainingArguments的json文件')
