@@ -245,7 +245,7 @@ def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset"""
     
     if not (data_path is not None and os.path.exists(data_path)):
-        raise ValueError("data_path requires a directory pointing to  .txt files")
+        raise ValueError("data_path may contain 空白内容txt ？？？requires a directory pointing to  .txt files")
     """https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L383"""
     data_files_list = glob(f'{data_path}/**/*.txt', recursive=True) 
     logger.info(f"data files: {', '.join(data_files_list)}")
