@@ -189,7 +189,7 @@ def tokenize_function(examples,tokenizer):
     return {"input_ids" :tokenizer(examples["text"]).input_ids}
 
 
-def group_texts(examples):
+def group_texts(examples, block_size):
         # Concatenate all texts.
         #concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
         total_length = len(examples[list(examples.keys())[0]])
@@ -265,7 +265,7 @@ def get_datset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_
             )
     # N个长list在这一步被按照block_size切成小段 原先是[长1],[长2] 现在仍然为2元素 但是每个里面都是小段[[短1-1],[短1-2]] ,[[短2-1],[短2-2]]
     lm_datasets = tokenized_datasets['train'].map(
-                group_texts,
+                lambda examples :group_texts(examples , block_size),
                 batched=False,
                 num_proc=2,#data_args.preprocessing_num_workers,
                 #load_from_cache_file=not data_args.overwrite_cache,
