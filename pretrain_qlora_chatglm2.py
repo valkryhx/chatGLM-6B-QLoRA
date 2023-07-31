@@ -279,6 +279,8 @@ def get_datset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_
                         num_samples=max_samples)
     return dataset_final
 
+def simple_data_collator(feature):
+    return feature
 
 class LoRATrainer(Trainer):
     print("save !!!!!!")
@@ -506,7 +508,7 @@ def train(global_args):
         args=hf_train_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        #data_collator=data_collator
+        data_collator=simple_data_collator
     )
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
