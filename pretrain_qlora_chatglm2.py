@@ -4,7 +4,7 @@
 # author: hx
 # https://github.com/valkryhx
 
-
+import random
 import os
 import argparse
 from typing import List, Dict, Optional
@@ -69,19 +69,20 @@ def parse_args():
     parser.add_argument("--gradient_accumulation_steps",type=int,default=1)
     parser.add_argument("--learning_rate",type=float,default=2e-5)
     parser.add_argument("--num_train_epochs",type=float,default=1.0)
-    parser.add_argument("--num_train_samples",type=int,default= 0,help="用于train的样本数量，可选。")
-    parser.add_argument("--num_eval_samples",type=int,default= 0,help="用于eval的样本数量，可选。")
+    parser.add_argument("--num_train_samples",type=int,default= -1,help="用于train的样本数量，可选,若为-1则是全部样本。")
+    parser.add_argument("--num_eval_samples",type=int,default= -1,help="用于eval的样本数量，可选，若为-1则是全部样本。")
     parser.add_argument("--save_total_limit" , type=int ,default=None)
     parser.add_argument("--load_in_4bit" , type=bool ,default=True)
     parser.add_argument("--load_best_model_at_end",type=bool,default=True)  # https://huggingface.co/docs/transformers/main_classes/trainer
+    parser.add_argument("--block_size",type=int,default=256,help="将篇章级别文本分词后的长tokens结果 按照block_size划分成固定大小 想象一下长火车分成多个车厢")
+    parser.add_argument("--max_length",type=int,default=256,help="每个样本的最大长度，一般会小于等于block_size")
+    
     #"output_dir": "output/qlora_ds_zero",
     #"per_device_train_batch_size": 8, 
     #"per_device_eval_batch_size":  2,
     #"gradient_accumulation_steps": 8,
     #"learning_rate": 2e-5,
-    #"num_train_epochs": 10.0,
-
-    
+    #"num_train_epochs": 10.0,  
     return parser.parse_args()
 
 
@@ -166,6 +167,118 @@ class DataCollatorForChatGLM:
         return {'input_ids': input_ids, 'labels': labels}
 
 
+## 20230731 根据shiming64的代码和 firefly的代码 理解了decoder 模型输入input_ids 都是完整的q+a，注意是q+a而不是q ,用labels来标记正确答案
+## 也就是最终的trainer中额dataset 无论是train / eval 都是字典形式即可
+## 即 {"input_ids":list[多个input_ids]
+##       "labels":list[多个labels]}
+## pt阶段 labels = input_ids.copy()也就是说labels中每个token都要计算loss
+## sft阶段 把labels中不需要计算loss的部分掩盖住，对于单轮qa 就是 
+# input_ids=Q+A 
+# labels= mask_q_len *[ignore_token] + A 
+# 看到没 input_ids和 labels长度和内容本来是一致的 只不过labels将其中不用计算loss的内容做了替换
+## 多轮对话也是可以这么处理 根据shiming64和firefly对于百川的处理 多轮对话的input_ids=Q1+A1+Q2+A2 +... 把所有历史对话当前对话全部拼起来
+## labels长度也是input_ids长度 只不过需要仔细拼接 labels =第一段Q1的长度mask+ A1 + 第二段Q2长度mask + A2 + ...
+## 这样的多轮对话处理方式相当于并行计算所有对话的loss 提升了样本利用率（不仅仅是只根据大段历史对话来计算最后一轮对话）
+## llama好像默认就这么处理的 
+
+
+def tokenize_function(examples):
+    # 这个函数必须返回dict 
+    ## 不然raw_datasets.map(tokenize_function, ...)调用会提示报错
+    ## 要么就直接这么写  return tokenizer(examples["text"])
+    return {"input_ids" :tokenizer(examples["text"]).input_ids}
+
+
+def group_texts(examples):
+        # Concatenate all texts.
+        #concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
+        total_length = len(examples[list(examples.keys())[0]])
+        # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
+        # customize this part to your needs.
+        print(f"total_length={total_length}")
+        if total_length >= block_size:
+            total_length = (total_length // block_size) * block_size
+        # Split by chunks of max_len.
+        result = {
+            k: [t[i: i + block_size] for i in range(0, total_length, block_size)]
+            for k, t in examples.items()
+        }
+        #result["labels"] = result["input_ids"].copy()
+        return result
+
+
+def get_chained_lm_datasets(lm_datasets,
+                            pad_token_id: int ,
+                            global_args_max_length: int = 2048,
+                            num_samples=-1):
+    "做padding和根据global.max_length截取"
+    input_ids_list = list(chain(*lm_datasets['input_ids']))
+    # padding  with max_len_of_samples
+    max_len_ids = max([len(input_ids) for input_ids in input_ids_list] ) 
+    print(f"样本中ids 最大长度 max_len_ids={max_len_ids}")
+    print(f"全局训练参数的global_args_max_length={global_args_max_length}")
+    print(f"cutoff to len = {min(global_args_max_length,max_len_ids)}")
+    
+    #截断
+    new_input_ids=[]
+    for ids in input_ids_list :
+        pad_len = max_len_ids - len(ids)
+        ids += [pad_token_id]* pad_len
+        # 截取 根据命令行输入的max len和 ids_list中最大长度 两值做比较取较小的来截取前面N个
+        ids =ids[: min(global_args_max_length,max_len_ids)]
+        new_input_ids.append(ids)
+    # 抽样
+    random_chosen_samples=new_input_ids
+    random.shuffle(new_input_ids)
+    if num_samples > -1: # num_samples  一般只是debug的时候取少量样本测试 ；
+        #random.sample 不重复抽样
+        random_chosen_samples = random.sample(new_input_ids,k=num_samples)
+    print(f"样本数量={len(random_chosen_samples)}")
+    return {"input_ids":random_chosen_samples  ,"labels":random_chosen_samples.copy()}
+
+
+def get_datset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_length=0,max_samples=0):
+    """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset"""
+    
+    if not (data_path is not None and os.path.exists(data_path)):
+        raise ValueError("data_path requires a directory pointing to  .txt files")
+    """https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L383"""
+    data_files_list = glob(f'{data_path}/**/*.txt', recursive=True) 
+    logger.info(f"data files: {', '.join(data_files_list)}")
+          
+    extension = "text"
+    # 读取全部txt文档 有N篇文档 那raw_datasets这个list就包含N个篇章级别的文本结果
+    #sasmple_by="document" 就是将一个txt当做一个sample全部读取
+    raw_datasets = load_dataset(
+        extension,
+        data_files=data_files_list,
+        sample_by="document"
+    )
+    # 对全部N个文档str 做分词 分词结果也是N个长list 每个list都含有input_ids这个
+    tokenized_datasets = raw_datasets.map(
+                tokenize_function,
+                batched=True,
+                num_proc=2,#data_args.preprocessing_num_workers,
+                remove_columns=['text'],#column_names,
+                #load_from_cache_file=not data_args.overwrite_cache,
+                desc="Running tokenizer on dataset",
+            )
+    # N个长list在这一步被按照block_size切成小段 原先是[长1],[长2] 现在仍然为2元素 但是每个里面都是小段[[短1-1],[短1-2]] ,[[短2-1],[短2-2]]
+    lm_datasets = tokenized_datasets['train'].map(
+                group_texts,
+                batched=False,
+                num_proc=2,#data_args.preprocessing_num_workers,
+                #load_from_cache_file=not data_args.overwrite_cache,
+                #desc=f"Grouping texts in chunks of {block_size}",
+                #remove_columns =['attention_mask', 'position_ids',]
+            )
+    dataset_final = get_chained_lm_datasets(lm_datasets,
+                        pad_token_id=tokenizer.pad_token_id,
+                        global_args_max_length=global_args_max_length,
+                        num_samples=max_samples)
+    return dataset_final
+
+
 class LoRATrainer(Trainer):
     print("save !!!!!!")
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
@@ -196,7 +309,8 @@ def find_all_linear_names(model):
 
 def train(global_args):
 
-
+    ##STEP 0 从命令行获取参数，包括trainingArgs在内的，以及各类附属参数
+    logger.info("loading parameters...")
     # ADD by hx 20230629
     # https://huggingface.co/docs/transformers/main_classes/deepspeed 参考 【Constructing Massive Models】一节 
     # 直接在TrainingArgs中加入deepspeed=ds_config即可
@@ -236,9 +350,46 @@ def train(global_args):
     hf_train_args.num_train_epochs = global_args.num_train_epochs
     hf_train_args.save_total_limit = global_args.save_total_limit
     
-    model_max_length = global_args.max_input_length + global_args.max_output_length
+    #model_max_length = global_args.max_input_length + global_args.max_output_length
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
+
+    ###STEP 1 加载train / eval data
+   
+    logger.info("loading dataset...")
+    # train_dataset = get_datset(global_args.train_data_path, tokenizer, 
+    #                            global_args,
+    #                            max_samples=global_args.num_train_samples )
+    
+    train_dataset = get_datset_for_pretrain(data_path=global_args.train_data_path,
+                                  tokenizer = tokenizer,
+                                  block_size = global_args.block_size,
+                                  global_args_max_length=global_args.max_length,
+                                  max_samples=global_args.num_train_samples)
+    
+    """ 
+     eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
+     eval_data至少要 >= 后面3者的乘积
+     RuntimeError: unscale_() has already been called on this optimizer since the last update().
+     https://github.com/huggingface/transformers/issues/23935#issuecomment-1597170127
+     """
+    eval_dataset = None
+    # if global_args.eval_data_path:
+    #     eval_dataset = get_datset(global_args.eval_data_path, tokenizer, 
+    #                               global_args,
+    #                               max_samples=global_args.num_eval_samples)
+    
+    eval_dataset = get_datset_for_pretrain(data_path=global_args.eval_data_path,
+                                  tokenizer = tokenizer,
+                                  block_size = global_args.block_size,
+                                  global_args_max_length=global_args.max_length,
+                                  max_samples=global_args.num_eval_samples)
+    
+    # data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,
+    #                                        max_length=model_max_length)
+     
+
+    
     # Quantization
     q_config = BitsAndBytesConfig(load_in_4bit=True,
                                   bnb_4bit_quant_type='nf4',
@@ -341,26 +492,7 @@ def train(global_args):
 
     model.print_trainable_parameters()
 
-    # data
-    logger.info("loading dataset...")
-    train_dataset = get_datset(global_args.train_data_path, tokenizer, 
-                               global_args,
-                               max_samples=global_args.num_train_samples )
     
-    """ 
-     eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
-     eval_data至少要 >= 后面3者的乘积
-     RuntimeError: unscale_() has already been called on this optimizer since the last update().
-     https://github.com/huggingface/transformers/issues/23935#issuecomment-1597170127
-     """
-    eval_dataset = None
-    if global_args.eval_data_path:
-        eval_dataset = get_datset(global_args.eval_data_path, tokenizer, 
-                                  global_args,
-                                  max_samples=global_args.num_eval_samples)
-
-    data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,
-                                           max_length=model_max_length)
 
     # print hf_train_args to see the manually set paras
     print(f"number_train_samples={len(train_dataset)}\nnumber_of_eval_numbers={len(eval_dataset)}")
