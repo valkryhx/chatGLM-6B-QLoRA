@@ -197,6 +197,7 @@ def tokenize_function(examples,tokenizer):
 def group_texts(examples,block_size):
         # Concatenate all texts.
         #concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
+        logger.eror(f"examples.keys()={examples.keys()}")
         total_length = len(examples[list(examples.keys())[0]])
         # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
         # customize this part to your needs.
