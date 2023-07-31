@@ -2,7 +2,7 @@
 # time: 2023/7/7 10:13
 # file: train_qlora_deepspeed_zero.py
 # author: hx
-# email: XXXXX
+# https://github.com/valkryhx
 
 """
 好好注意一下 277行附近的这行代码以及解释
