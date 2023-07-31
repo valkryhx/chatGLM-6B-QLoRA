@@ -189,16 +189,19 @@ def tokenize_function(examples,tokenizer):
     ## 要么就直接这么写  return tokenizer(examples["text"])
     return {"input_ids" :tokenizer(examples["text"]).input_ids}
 
-
-def group_texts(examples, block_size):
+# 没有去掉尾部的不足block size的部分 pad之后可以参与训练
+def group_texts(examples,block_size):
         # Concatenate all texts.
         #concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
         total_length = len(examples[list(examples.keys())[0]])
         # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
         # customize this part to your needs.
         print(f"total_length={total_length}")
-        if total_length >= block_size:
-            total_length = (total_length // block_size) * block_size
+        
+        #ADD 20230731 原先shiming是去掉了最后的尾巴 但是我觉得可以保留 毕竟语料不多 每一部分都要用上
+        #if total_length >= block_size:
+        #    total_length = (total_length // block_size) * block_size
+        
         # Split by chunks of max_len.
         result = {
             k: [t[i: i + block_size] for i in range(0, total_length, block_size)]
@@ -219,10 +222,10 @@ def get_chained_lm_datasets(lm_datasets,
     print(f"样本中ids 最大长度 max_len_ids={max_len_ids}")
     print(f"全局训练参数的global_args_max_length={global_args_max_length}")
     print(f"cutoff to len = {min(global_args_max_length,max_len_ids)}")
-    
     #截断
     new_input_ids=[]
     for ids in input_ids_list :
+        #print(f"len_sample_ids={len(ids)}") 这里能打印出来 尾部的不足blocksize的部分参与了计算 注意是已经经过pad了
         pad_len = max_len_ids - len(ids)
         ids += [pad_token_id]* pad_len
         # 截取 根据命令行输入的max len和 ids_list中最大长度 两值做比较取较小的来截取前面N个
@@ -235,8 +238,8 @@ def get_chained_lm_datasets(lm_datasets,
         #random.sample 不重复抽样
         random_chosen_samples = random.sample(new_input_ids,k=num_samples)
     print(f"样本数量={len(random_chosen_samples)}")
-    return {"input_ids":random_chosen_samples  ,"labels":random_chosen_samples.copy()}
-
+    #return {"input_ids":random_chosen_samples  ,"labels":random_chosen_samples.copy()}
+    return [{"input_ids": item ,"labels":item.copy() } for item in random_chosen_samples]
 
 def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_length=0,max_samples=0):
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset"""
@@ -279,10 +282,93 @@ def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max
                         num_samples=max_samples)
     return dataset_final
 
-def simple_data_collator(feature):
-    logger.info("into simple data collator")
-    logger.info(f"feature={feature}")
-    return feature
+
+# 可以作为预训练的data collator  但是写的不怎么看得懂 只能看出来就是专门处理了key=label 其他部分没动
+def fault_tolerance_data_collator(features: List) -> Dict[str, Any]:
+    if not isinstance(features[0], Mapping):
+        features = [vars(f) for f in features]
+    first = features[0]
+    batch = {}
+
+    # Special handling for labels.
+    # Ensure that tensor is created with the correct type
+    if "label" in first and first["label"] is not None:
+        label = first["label"].item() if isinstance(first["label"], torch.Tensor) else first["label"]
+        dtype = torch.long if isinstance(label, int) else torch.float
+        batch["labels"] = torch.tensor([f["label"] for f in features], dtype=dtype)
+    elif "label_ids" in first and first["label_ids"] is not None:
+        if isinstance(first["label_ids"], torch.Tensor):
+            batch["labels"] = torch.stack([f["label_ids"] for f in features])
+        else:
+            dtype = torch.long if type(first["label_ids"][0]) is int else torch.float
+            batch["labels"] = torch.tensor([f["label_ids"] for f in features], dtype=dtype)
+
+    # Handling of all other possible keys.
+    # Again, we will use the first element to figure out which key/values are not None for this model.
+    try:
+        for k, v in first.items():
+            if k not in ("label", "label_ids") and v is not None and not isinstance(v, str):
+                if isinstance(v, torch.Tensor):
+                    batch[k] = torch.stack([f[k] for f in features])
+                elif isinstance(v, np.ndarray):
+                    batch[k] = torch.tensor(np.stack([f[k] for f in features]))
+                else:
+                    batch[k] = torch.tensor([f[k] for f in features])
+    except ValueError:  # quick fix by simply take the first example
+        for k, v in first.items():
+            if k not in ("label", "label_ids") and v is not None and not isinstance(v, str):
+                if isinstance(v, torch.Tensor):
+                    batch[k] = torch.stack([features[0][k]] * len(features))
+                elif isinstance(v, np.ndarray):
+                    batch[k] = torch.tensor(np.stack([features[0][k]] * len(features)))
+                else:
+                    batch[k] = torch.tensor([features[0][k]] * len(features))
+    #print("打印fault_tolerance_data_collator处理后的信息")
+    #print(f"batch.keys()={batch.keys()},len_batch_key_labels={len(batch['labels'])}    ,len_batch_key_k={len(batch[k])}")
+    return batch
+
+# 这个也可以作为data collator
+
+class DataCollatorForChatGLM:
+    """输入是list[{input_ids:xxx,label(可选):YYY},{input_ids:xxx,label(可选):YYY},{input_ids:xxx,label(可选):YYY}]
+       输出是dict {inpu_ids :[xxx,xxx,xxx,] ,lebals :[yyy,yyy,yyy]}
+       List[Dict[str, List]]) -> Dict[str, torch.Tensor]
+       # 用法
+       #data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,max_length=7)
+    """
+    # 虽然这个函数中又做了pad和截断 但是实际在pt阶段没有效果 因为之前已经是统一长度而且把尾部短文本用
+    # pad token 补齐过了 这里代码留着是为了后面参考改多轮对话用
+    def __init__(self,
+                 pad_token_id: int,
+                 max_length: int = 2048,
+                 ignore_label_id: int = -100):
+        self.pad_token_id = pad_token_id
+        self.ignore_label_id = ignore_label_id
+        self.max_length = max_length
+
+    def __call__(self, batch_data: List[Dict[str, List]]) -> Dict[str, torch.Tensor]:
+        """根据batch最大长度做padding"""
+        len_list = [len(d['input_ids']) for d in batch_data]
+        batch_max_len = max(len_list)
+        input_ids, labels = [], []
+        for len_of_d, d in sorted(zip(len_list, batch_data), key=lambda x: -x[0]):
+            #padding :虽然预训练之前的步骤做了 长度已经是统一的 但是这个可以继续pad
+            #注意 ids和label使用的pad token不同 
+            # 在预训练阶段 下面的6行实际没有任何作用 因为pad_len 此时为0 可以打印看看
+            pad_len = batch_max_len - len_of_d
+            print(f"pad_len in data collator = {pad_len}")
+            ids = d['input_ids'] + [self.pad_token_id] * pad_len
+            label = d['labels'] + [self.ignore_label_id] * pad_len
+            if batch_max_len > self.max_length:
+                ids = ids[: self.max_length]
+                label = label[: self.max_length]
+            input_ids.append(torch.LongTensor(ids))
+            labels.append(torch.LongTensor(label))
+        input_ids = torch.stack(input_ids)
+        labels = torch.stack(labels)
+        return {'input_ids': input_ids, 'labels': labels}
+
+
 
 class LoRATrainer(Trainer):
     print("save !!!!!!")
@@ -366,7 +452,7 @@ def train(global_args):
     #                            global_args,
     #                            max_samples=global_args.num_train_samples )
     
-    train_dataset = get_datset_for_pretrain(data_path=global_args.train_data_path,
+    train_dataset = get_dataset_for_pretrain(data_path=global_args.train_data_path,
                                   tokenizer = tokenizer,
                                   block_size = global_args.block_size,
                                   global_args_max_length=global_args.max_length,
@@ -384,17 +470,18 @@ def train(global_args):
     #                               global_args,
     #                               max_samples=global_args.num_eval_samples)
     
-    eval_dataset = get_datset_for_pretrain(data_path=global_args.eval_data_path,
+    eval_dataset = get_dataset_for_pretrain(data_path=global_args.eval_data_path,
                                   tokenizer = tokenizer,
                                   block_size = global_args.block_size,
                                   global_args_max_length=global_args.max_length,
                                   max_samples=global_args.num_eval_samples)
     
-    # data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,
-    #                                        max_length=model_max_length)
+    ### STEP 2 定义 data collator
+    very_clear_data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,max_length=global_args.max_length)
      
 
-    
+
+    ### STEP 3  load model
     # Quantization
     q_config = BitsAndBytesConfig(load_in_4bit=True,
                                   bnb_4bit_quant_type='nf4',
@@ -504,13 +591,13 @@ def train(global_args):
     print(hf_train_args)
     # raise ValueError("TEST")
     
-    # train
+    ### STEP  5   train
     trainer = LoRATrainer(
         model=model,
         args=hf_train_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        data_collator=simple_data_collator
+        data_collator = very_clear_data_collator
     )
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
