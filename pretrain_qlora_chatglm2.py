@@ -506,7 +506,7 @@ def train(global_args):
         args=hf_train_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        data_collator=data_collator
+        #data_collator=data_collator
     )
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
