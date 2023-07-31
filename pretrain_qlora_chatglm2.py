@@ -234,8 +234,9 @@ def get_chained_lm_datasets(lm_datasets,
         new_input_ids.append(ids)
     # 抽样
     random_chosen_samples=new_input_ids
-    print(f"验证查看 shuffle和采样之前 第一个样本\n{tokenizer.decode(random_chosen_samples[0])}")
-    print(f"验证查看 shuffle和采样之前 最后一个样本\n{tokenizer.decode(random_chosen_samples[-1])}")
+    logger.info(f"【验证查看 shuffle和采样之前 第一个样本】\n{tokenizer.decode(random_chosen_samples[0])}")
+    logger.info(f"【验证查看 shuffle和采样之前 倒数第二个一个样本（长度满足block size）】\n{tokenizer.decode(random_chosen_samples[-2])}")
+    logger.info(f"【验证查看 shuffle和采样之前 最后一个样本（长度不足blcok size）】\n{tokenizer.decode(random_chosen_samples[-1])}")
     random.shuffle(new_input_ids)
     if num_samples > -1: # num_samples  一般只是debug的时候取少量样本测试 ；
         #random.sample 不重复抽样
