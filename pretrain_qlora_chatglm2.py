@@ -256,7 +256,7 @@ def get_datset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_
     )
     # 对全部N个文档str 做分词 分词结果也是N个长list 每个list都含有input_ids这个
     tokenized_datasets = raw_datasets.map(
-                tokenize_function,
+                lambda examples :tokenize_function(examples,tokenizer) ,
                 batched=True,
                 num_proc=2,#data_args.preprocessing_num_workers,
                 remove_columns=['text'],#column_names,
