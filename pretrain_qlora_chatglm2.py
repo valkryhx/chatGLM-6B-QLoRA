@@ -37,6 +37,7 @@ from peft.utils import TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING
 from transformers.deepspeed import HfDeepSpeedConfig
 import deepspeed
 import json
+from itertools import chain
 
 _compute_dtype_map = {
     'fp32': torch.float32,
