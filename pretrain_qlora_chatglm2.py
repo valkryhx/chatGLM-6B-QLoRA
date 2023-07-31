@@ -267,7 +267,7 @@ def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max
     tokenized_datasets = raw_datasets.map(
                 lambda examples :tokenize_function(examples,tokenizer) ,
                 batched=True,
-                num_proc=2,#data_args.preprocessing_num_workers,
+                num_proc=1,#data_args.preprocessing_num_workers,
                 remove_columns=['text'],#column_names,
                 #load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on dataset",
@@ -276,7 +276,7 @@ def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max
     lm_datasets = tokenized_datasets['train'].map(
                 lambda examples :group_texts(examples , block_size),
                 batched=False,
-                num_proc=2,#data_args.preprocessing_num_workers,
+                num_proc=1,#data_args.preprocessing_num_workers,
                 #load_from_cache_file=not data_args.overwrite_cache,
                 #desc=f"Grouping texts in chunks of {block_size}",
                 #remove_columns =['attention_mask', 'position_ids',]
