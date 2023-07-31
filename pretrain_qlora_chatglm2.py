@@ -355,7 +355,7 @@ class DataCollatorForChatGLM:
             #padding :虽然预训练之前的步骤做了 长度已经是统一的 但是这个可以继续pad
             #注意 ids和label使用的pad token不同 
             # 在预训练阶段 下面的6行实际没有任何作用 因为pad_len 此时为0 可以打印看看
-            pad_len = batch_max_len - len_of_d
+            #pad_len = batch_max_len - len_of_d
             print(f"pad_len in data collator = {pad_len}")
             ids = d['input_ids'] + [self.pad_token_id] * pad_len
             label = d['labels'] + [self.ignore_label_id] * pad_len
