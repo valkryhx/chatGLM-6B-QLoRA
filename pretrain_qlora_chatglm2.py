@@ -282,7 +282,7 @@ def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max
     dataset_final = get_chained_lm_datasets(lm_datasets,
                         pad_token_id=tokenizer.pad_token_id,
                         global_args_max_length=global_args_max_length,
-                        num_samples=max_samples，
+                        num_samples=max_samples ,
                         tokenizer = tokenizer)
     return dataset_final
 
