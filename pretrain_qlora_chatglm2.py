@@ -280,6 +280,8 @@ def get_datset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_
     return dataset_final
 
 def simple_data_collator(feature):
+    logger.info("into simple data collator")
+    logger.info(f"feature={feature}")
     return feature
 
 class LoRATrainer(Trainer):
