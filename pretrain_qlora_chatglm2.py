@@ -201,7 +201,8 @@ def group_texts(examples,block_size):
         total_length = len(examples[list(examples.keys())[0]])
         # We drop the small remainder, we could add padding if the model supported it instead of this drop, you can
         # customize this part to your needs.
-        print(f"total_length={total_length}")
+        print(f"每个txt文件对应的samples个数 total_length={total_length}")
+        logger.error(f"注意如果出现空白内容txt 则会出现异常短的单个sample 长度为4 类似[64790, 64792, 30910, 13, 0, 0, 0, 0, 0,0]，很难排查 所以数据集目录中不要出现空白内容txt。")
         
         #ADD 20230731 原先shiming是去掉了最后的尾巴 但是我觉得可以保留 毕竟语料不多 每一部分都要用上
         #if total_length >= block_size:
