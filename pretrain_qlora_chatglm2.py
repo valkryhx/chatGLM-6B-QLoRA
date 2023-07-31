@@ -182,7 +182,7 @@ class DataCollatorForChatGLM:
 ## llama好像默认就这么处理的 
 
 
-def tokenize_function(examples):
+def tokenize_function(examples,tokenizer):
     # 这个函数必须返回dict 
     ## 不然raw_datasets.map(tokenize_function, ...)调用会提示报错
     ## 要么就直接这么写  return tokenizer(examples["text"])
