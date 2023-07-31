@@ -242,14 +242,14 @@ def get_chained_lm_datasets(lm_datasets,
     # 抽样
     random_chosen_samples=new_input_ids
     logger.info(f"【验证查看 shuffle和采样之前 第一个样本】\n{tokenizer.decode(random_chosen_samples[0])}")
-    logger.info(f"【验证查看 shuffle和采样之前 倒数第二个一个样本（长度满足block size）】\n{tokenizer.decode(random_chosen_samples[-2])}")
-    logger.info(f"【验证查看 shuffle和采样之前 最后一个样本（长度不足blcok size）】\n【tokens】={random_chosen_samples[-1]}\n【原文】={tokenizer.decode(random_chosen_samples[-1])}\n【原文长度】={len(tokenizer.decode(random_chosen_samples[-1]))}")
+    logger.info(f"【验证查看 shuffle和采样之前 倒数第二个样本（长度满足block size）】\n{tokenizer.decode(random_chosen_samples[-2])}")
+    logger.info(f"【验证查看 shuffle和采样之前 最后一个样本（长度不足blcok size）】\n【tokens】={random_chosen_samples[-1]}\n【最后一个样本原文】={tokenizer.decode(random_chosen_samples[-1])}\n【原文长度】={len(tokenizer.decode(random_chosen_samples[-1]))}")
     logger.info("验证查看完毕")
     random.shuffle(new_input_ids)
     if num_samples > -1: # num_samples  一般只是debug的时候取少量样本测试 ；
         #random.sample 不重复抽样
         if num_samples > len(random_chosen_samples) :
-            raise ValueError("采样数目大于整个样本集数目:num_samples > len(random_chosen_samples) ,num_samples={num_samples}, len(random_chosen_samples) ={ len(random_chosen_samples)}") 
+            raise ValueError(f"采样数目大于整个样本集数目:num_samples > len(random_chosen_samples) ,num_samples={num_samples}, len(random_chosen_samples) ={ len(random_chosen_samples)}") 
         random_chosen_samples = random.sample(new_input_ids,k=num_samples)
     print(f"样本数量={len(random_chosen_samples)}")
     #return {"input_ids":random_chosen_samples  ,"labels":random_chosen_samples.copy()}
