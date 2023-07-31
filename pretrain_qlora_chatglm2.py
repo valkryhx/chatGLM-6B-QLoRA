@@ -248,7 +248,8 @@ def get_chained_lm_datasets(lm_datasets,
     random.shuffle(new_input_ids)
     if num_samples > -1: # num_samples  一般只是debug的时候取少量样本测试 ；
         #random.sample 不重复抽样
-        raise ValueError("采样数目大于整个样本集数目:num_samples > len(random_chosen_samples)") if num_samples > len(random_chosen_samples)
+        if num_samples > len(random_chosen_samples) :
+            raise ValueError("采样数目大于整个样本集数目:num_samples > len(random_chosen_samples) ,num_samples={num_samples}, len(random_chosen_samples) ={ len(random_chosen_samples)}") 
         random_chosen_samples = random.sample(new_input_ids,k=num_samples)
     print(f"样本数量={len(random_chosen_samples)}")
     #return {"input_ids":random_chosen_samples  ,"labels":random_chosen_samples.copy()}
