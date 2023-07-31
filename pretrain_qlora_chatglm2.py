@@ -214,7 +214,8 @@ def group_texts(examples,block_size):
 def get_chained_lm_datasets(lm_datasets,
                             pad_token_id: int ,
                             global_args_max_length: int = 2048,
-                            num_samples=-1):
+                            num_samples=-1,
+                            tokenizer = None ):
     "做padding和根据global.max_length截取"
     input_ids_list = list(chain(*lm_datasets['input_ids']))
     # padding  with max_len_of_samples
@@ -233,6 +234,8 @@ def get_chained_lm_datasets(lm_datasets,
         new_input_ids.append(ids)
     # 抽样
     random_chosen_samples=new_input_ids
+    print(f"验证查看 shuffle和采样之前 第一个样本\n{tokenizer.decode(random_chosen_samples[0])}")
+    print(f"验证查看 shuffle和采样之前 最后一个样本\n{tokenizer.decode(random_chosen_samples[-1])}")
     random.shuffle(new_input_ids)
     if num_samples > -1: # num_samples  一般只是debug的时候取少量样本测试 ；
         #random.sample 不重复抽样
@@ -279,7 +282,8 @@ def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max
     dataset_final = get_chained_lm_datasets(lm_datasets,
                         pad_token_id=tokenizer.pad_token_id,
                         global_args_max_length=global_args_max_length,
-                        num_samples=max_samples)
+                        num_samples=max_samples，
+                        tokenizer = tokenizer)
     return dataset_final
 
 
