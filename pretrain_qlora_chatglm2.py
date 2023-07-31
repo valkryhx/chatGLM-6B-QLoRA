@@ -238,7 +238,7 @@ def get_chained_lm_datasets(lm_datasets,
     return {"input_ids":random_chosen_samples  ,"labels":random_chosen_samples.copy()}
 
 
-def get_datset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_length=0,max_samples=0):
+def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_length=0,max_samples=0):
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset"""
     
     if not (data_path is not None and os.path.exists(data_path)):
