@@ -455,6 +455,11 @@ def group_texts(examples,block_size):
         print(f"每个txt文件对应的samples个数 total_length={total_length}")
         logger.error(f"注意如果出现空白内容txt 则会出现异常短的单个sample 长度为4 类似[64790, 64792, 30910, 13, 0, 0, 0, 0, 0,0]，很难排查 所以数据集目录中不要出现空白内容txt。")
 
-#----------20230810----------#
+#----------20230801----------#
 查看 训练后 lora_A/B 部分的weight model.base_model.model.transformer.encoder.layers[20].self_attention.query_key_value.lora_A.default.weight
 查看 原始模型的参数也可以以此类推
+
+SFT的数据格式一定要注意和chatglm2的格式保持一致 不然微调和似乎学到了只是但是输出都是胡说¶
+[Round {可以填1}]\n\n问：{}\n\n答：
+https://huggingface.co/THUDM/chatglm2-6b/blob/main/tokenization_chatglm.py#L168
+参考本项目主页
