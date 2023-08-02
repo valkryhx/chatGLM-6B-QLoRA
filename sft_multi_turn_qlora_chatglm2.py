@@ -174,7 +174,7 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  #
     return({"input_ids":input_ids , "labels":labels})
 
 # 用于shareGPT 格式数据集的处理
-tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在get_multi_turn_conversations_datset函数中用到了
+def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在get_multi_turn_conversations_datset函数中用到了
     """
        多轮对话使用每个example（也就是一行json样本）中的example['history'] 拼接多轮对话 构建一个包含多轮对话的总的input_ids和总的labels
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
