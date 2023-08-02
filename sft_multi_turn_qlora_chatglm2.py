@@ -113,7 +113,7 @@ def parse_args():
     parser.add_argument("--load_best_model_at_end",type=bool,default=True)  # https://huggingface.co/docs/transformers/main_classes/trainer
     parser.add_argument("--block_size",type=int,default=256,help="将篇章级别文本分词后的长tokens结果 按照block_size划分成固定大小 想象一下长火车分成多个车厢")
     parser.add_argument("--max_length",type=int,default=256,help="每个样本的最大长度，一般会小于等于block_size")
-    
+    parser.add_argument("--data_type",type=str,default="history",choices=['history', 'sharegpt'],help="每个样本的最大长度，一般会小于等于block_size")
     #"output_dir": "output/qlora_ds_zero",
     #"per_device_train_batch_size": 8, 
     #"per_device_eval_batch_size":  2,
@@ -138,8 +138,8 @@ def parse_args():
 ## llama好像默认就这么处理的 
 
 
-
-def tokenize_function(example,tokenizer,ignore_label_id: int = -100):  # 在get_data函数中用到了
+# 用于普通history格式数据集的处理
+def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  # 在get_multi_turn_conversations_datset函数中用到了
     """
        多轮对话使用每个example（也就是一行json样本）中的example['history'] 拼接多轮对话 构建一个包含多轮对话的总的input_ids和总的labels
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
@@ -173,7 +173,49 @@ def tokenize_function(example,tokenizer,ignore_label_id: int = -100):  # 在get_
     
     return({"input_ids":input_ids , "labels":labels})
 
-
+# 用于shareGPT 格式数据集的处理
+tokenize_function_sharegpt(example,tokenizer，ignore_label_id: int = -100): # 在get_multi_turn_conversations_datset函数中用到了
+    """
+       多轮对话使用每个example（也就是一行json样本）中的example['history'] 拼接多轮对话 构建一个包含多轮对话的总的input_ids和总的labels
+       这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
+       这里用chatglm2-6b官网的tokenization_chatglm.py中的
+    """
+    Q_temp = "[Round {}]\n\n问：{}"
+    A_temp = "\n\n答：{}\n\n"
+    input_ids =[]
+    labels =[]
+    must_be_even_len = len(example['conversations']) //2 *2
+    if must_be_even_len == 0:
+        print(f"must_be_even_len=0!")
+        print(f"长度不足的example={example}")
+        raise ValueError("example出现了长度不足2的异常。")
+    #assert must_be_even_len > 0
+    # must_be_even_len > 0 这个 条件由filter保证
+    # my_dataset['train'].filter(lambda example : len(example["conversations"])>1)
+    
+    for idx in range(0,must_be_even_len,2):
+        #print(turn_number + 1)
+        q = example['conversations'][idx]['value']
+        a = example['conversations'][idx+1]['value']
+        #print(Q_temp.format(turn_number+1,q))
+        #print(A_temp.format(a))
+        Q = Q_temp.format(int(idx//2)+1,q)
+        A = A_temp.format(a)
+        Q_token_list = tokenizer.encode(Q,add_special_tokens=False)
+        A_token_list = tokenizer.encode(A,add_special_tokens=False)
+        input_ids.extend(Q_token_list)
+        input_ids.extend(A_token_list)
+        labels.extend([ignore_label_id]*len(Q_token_list))
+        labels.extend(A_token_list)
+    #print(f"input_ids={input_ids}")
+    #print(f"labels={labels}")
+    assert len(input_ids) == len(labels) # 这里一定要保证长度相等 不然说明拼接出问题
+    #input_ids_token_to_str = tokenizer.batch_decode(input_ids,skip_special_tokens=True)
+    #labels_token_to_str = tokenizer.batch_decode(labels,skip_special_tokens=True)
+    #print(input_ids_token_to_str)
+    #print(labels_token_to_str)
+    
+    return({"input_ids":input_ids , "labels":labels})
 
 def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，只采样max_samples个参与训练/评估。
@@ -201,9 +243,17 @@ def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,glo
     column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
     """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
     logger.info("preprocessing dataset...")
-    
-    tokenized_dataset = data['train'].map(
-                                lambda example: tokenize_function(example, tokenizer=tokenizer),
+    if global_args.data_type.strip().lower() == "history":
+        least_sample_number = 1   #  =1 表示 一行的sample json中 "history":[(Q,A)] 至少有一个(Q,A) 这也只是初步检查 总比不检查好
+        customized_tokenize_function = tokenize_function_history
+    elif global_args.data_type.strip().lower() == "sharegpt":
+        least_sample_number = 2   #  =2 表示 一行的sample json中 "conversations":[{Q},{A}] 至少有2个{Q} {A}  这也只是初步检查 总比不检查好
+        customized_tokenize_function = tokenize_function_sharegpt
+    else :
+        raise ValueError("数据集类型错误!")
+    k = list(example.keys())[0]  # list(example.keys())只有一个元素，要么是history 要么是conversations 其他值也行 总之只有一个
+    tokenized_dataset = data['train'].filter(lambda example : len(example[k]) >= least_sample_number).map(
+                                lambda example: customized_tokenize_function(example, tokenizer=tokenizer),
                                 batched=False, 
                                 remove_columns=data['train'].column_names)
     # 验证打印一些信息
