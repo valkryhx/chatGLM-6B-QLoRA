@@ -251,8 +251,8 @@ def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,glo
         customized_tokenize_function = tokenize_function_sharegpt
     else :
         raise ValueError("数据集类型错误!")
-    k = list(example.keys())[0]  # list(example.keys())只有一个元素，要么是history 要么是conversations 其他值也行 总之只有一个
-    tokenized_dataset = data['train'].filter(lambda example : len(example[k]) >= least_sample_number).map(
+    #list(example.keys())[0] 就是每行sample json dict最外层的唯一的那个key list(example.keys())只有一个元素，要么是history 要么是conversations 其他值也行 总之只有一个
+    tokenized_dataset = data['train'].filter(lambda example : len(example[list(example.keys())[0]]) >= least_sample_number).map(
                                 lambda example: customized_tokenize_function(example, tokenizer=tokenizer),
                                 batched=False, 
                                 remove_columns=data['train'].column_names)
