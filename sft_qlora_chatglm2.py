@@ -106,7 +106,7 @@ def parse_args():
 
 
 
-def tokenize_function(example,tokenizer):  # 在get_data函数中用到了
+def tokenize_function(example,tokenizer,ignore_label_id: int = -100):  # 在get_data函数中用到了
     """
        多轮对话使用每个example（也就是一行json样本）中的example['history'] 拼接多轮对话 构建一个包含多轮对话的总的input_ids和总的labels
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
@@ -128,7 +128,7 @@ def tokenize_function(example,tokenizer):  # 在get_data函数中用到了
         A_token_list = tokenizer.encode(A,add_special_tokens=False)
         input_ids.extend(Q_token_list)
         input_ids.extend(A_token_list)
-        labels.extend([-100]*len(Q_token_list))
+        labels.extend([ignore_label_id]*len(Q_token_list))
         labels.extend(A_token_list)
     #print(f"input_ids={input_ids}")
     #print(f"labels={labels}")
@@ -142,8 +142,11 @@ def tokenize_function(example,tokenizer):  # 在get_data函数中用到了
 
 
 
-def get_datset(data_path, tokenizer, max_samples=-1,global_args=None):
-    """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset"""
+def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,global_args=None):
+    """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，只采样max_samples个参与训练/评估。
+    并tokenize，shuffle，返回datasets.dataset
+    DataCollatorForChatGLM做了padding和截断 不是在这里做的
+    """
     
     if not (data_path is not None and os.path.exists(data_path)):
         raise ValueError("data_path requires a directory pointing to   jsons/jsonls")
@@ -184,13 +187,19 @@ def get_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     return tokenized_dataset
 
 
+
+
+
+
+
+
 class DataCollatorForChatGLM:
-    """
+    """ 注意这个类主要作用就是padding和截断
        输入是list[{input_ids:xxx,label(可选):YYY},{input_ids:xxx,label(可选):YYY},{input_ids:xxx,label(可选):YYY}]
        输出是dict {inpu_ids :[xxx,xxx,xxx,] ,lebals :[yyy,yyy,yyy]}
        List[Dict[str, List]]) -> Dict[str, torch.Tensor]
        # 用法
-       #data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,max_length=7)
+       #data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,max_length=8192)
     """
     def __init__(self,
                  pad_token_id: int,
@@ -367,11 +376,15 @@ def train(global_args):
     #                            global_args,
     #                            max_samples=global_args.num_train_samples )
     
-    train_dataset = get_dataset_for_pretrain(data_path=global_args.train_data_path,
-                                  tokenizer = tokenizer,
-                                  block_size = global_args.block_size,
-                                  global_args_max_length=global_args.max_length,
-                                  max_samples=global_args.num_train_samples)
+    # train_dataset = get_multi_turn_conversations(data_path=global_args.train_data_path,
+    #                               tokenizer = tokenizer,
+    #                               block_size = global_args.block_size,
+    #                               global_args_max_length=global_args.max_length,
+    #                               max_samples=global_args.num_train_samples)
+
+    train_dataset =  get_multi_turn_conversations_datset(data_path=global_args.train_data_path, 
+                                                         tokenizer=tokenizer, 
+                                                         max_samples=global_args.num_train_samples,global_args=None)
     
     """ 
      eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
@@ -385,11 +398,15 @@ def train(global_args):
     #                               global_args,
     #                               max_samples=global_args.num_eval_samples)
     
-    eval_dataset = get_dataset_for_pretrain(data_path=global_args.eval_data_path,
-                                  tokenizer = tokenizer,
-                                  block_size = global_args.block_size,
-                                  global_args_max_length=global_args.max_length,
-                                  max_samples=global_args.num_eval_samples)
+    # eval_dataset = get_dataset_for_pretrain(data_path=global_args.eval_data_path,
+    #                               tokenizer = tokenizer,
+    #                               block_size = global_args.block_size,
+    #                               global_args_max_length=global_args.max_length,
+    #                               max_samples=global_args.num_eval_samples)
+
+    eval_dataset =  get_multi_turn_conversations_datset(data_path=global_args.eval_data_path, 
+                                                         tokenizer=tokenizer, 
+                                                         max_samples=global_args.num_eval_samples,global_args=None)
     
     ### STEP 2 定义 data collator
     very_clear_data_collator = DataCollatorForChatGLM(pad_token_id=tokenizer.pad_token_id,max_length=global_args.max_length)
