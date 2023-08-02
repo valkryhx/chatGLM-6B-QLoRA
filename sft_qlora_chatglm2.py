@@ -4,6 +4,39 @@
 # author: hx
 # https://github.com/valkryhx
 
+
+"""
+使用方式：注意在代码中已经根据chatglm的多轮对话代码加入了round_i_问_答格式  所以数据集中就保持原样的history就行，
+{"history": [["我今天想去玩术士。", "你要打toc吗？"], ["是的，我要买饰品。", "老四的裁决？"], ["怎么可能？我要买小强的亡者君临", "哦哦对 裁决是物理毕业 不是SS的"]]}
+代码中的处理方式参考【https://huggingface.co/THUDM/chatglm2-6b/blob/main/tokenization_chatglm.py#L167】
+
+!git pull --all --force 
+#!pip install  -U git+https://github.com/huggingface/peft.git   # 20230717 peft==0.4.0正式发布了 不用调版本了推理完后再训练需要重新升级到0.4.0dev 所以有这句
+!deepspeed --include localhost:0,1  sft_qlora_chatglm2.py  \
+  --train_args_json luzi.json \
+  --model_name_or_path THUDM/chatglm2-6b \
+  --output_dir output-multi-turn-sft-0802-v1 \
+  --num_train_samples -1 \
+  --num_eval_samples 5 \
+  --train_data_path ./data/multi_turn_conversations   \
+  --eval_data_path  ./data/multi_turn_conversations     \
+  --max_length 1024 \
+  --lora_rank 64 \
+  --lora_dropout 0.05 \
+  --compute_dtype fp16 \
+  --per_device_train_batch_size 1 \
+  --per_device_eval_batch_size 1  \
+  --gradient_accumulation_steps 1 \
+  --learning_rate  5e-5 \
+  --num_train_epochs  40  \
+  --save_total_limit 2 \
+  --load_in_4bit True \
+--deepspeed ds_zero2_config.json
+
+"""
+
+
+
 import random
 import os
 import argparse
