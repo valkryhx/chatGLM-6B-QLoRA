@@ -4,6 +4,36 @@
 # author: hx
 # https://github.com/valkryhx
 
+"""
+使用方法
+!git pull --all --force 
+#!pip install  -U git+https://github.com/huggingface/peft.git   # 20230717 peft==0.4.0正式发布了 不用调版本了推理完后再训练需要重新升级到0.4.0dev 所以有这句
+!deepspeed --include localhost:0,1  pretrain_qlora_chatglm2.py \
+  --train_args_json luzi.json \
+  --model_name_or_path THUDM/chatglm2-6b \
+  --output_dir output-pt \
+  --num_train_samples -1 \
+  --num_eval_samples 20 \
+  --block_size 1024 \
+  --train_data_path ./data/pretrain/xuanyan/ \
+  --eval_data_path  ./data/pretrain/xuanyan/ \
+  --max_length 1024 \
+  --lora_rank 64 \
+  --lora_dropout 0.05 \
+  --compute_dtype fp16 \
+  --per_device_train_batch_size 1 \
+  --per_device_eval_batch_size 1  \
+  --gradient_accumulation_steps 1 \
+  --learning_rate  5e-5 \
+  --num_train_epochs  40  \
+  --save_total_limit 2 \
+  --load_in_4bit True \
+--deepspeed ds_zero2_config.json
+"""
+
+
+
+
 import random
 import os
 import argparse
