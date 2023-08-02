@@ -256,7 +256,11 @@ def get_chained_lm_datasets(lm_datasets,
     return [{"input_ids": item ,"labels":item.copy() } for item in random_chosen_samples]
 
 def get_dataset_for_pretrain(data_path, tokenizer, block_size=10,global_args_max_length=0,max_samples=0):
-    """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset"""
+    
+    """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，并tokenize，shuffle，返回datasets.dataset
+       这是一个包含了tokenizee / group_text /  get_chained(包括padding) 在内的3个步骤的整个函数
+       只用调用这个就行
+    """
     
     if not (data_path is not None and os.path.exists(data_path)):
         raise ValueError("data_path may contain 空白内容txt ？？？requires a directory pointing to  .txt files")
