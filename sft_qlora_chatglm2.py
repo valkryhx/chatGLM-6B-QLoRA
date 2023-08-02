@@ -172,7 +172,7 @@ def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,glo
     tokenized_dataset = data['train'].map(
                                 lambda example: tokenize_function(example, tokenizer=tokenizer),
                                 batched=False, 
-                                remove_columns=my_dataset['train'].column_names)
+                                remove_columns=data['train'].column_names)
     # 验证打印一些信息
     print(f"tokenized_dataset={tokenized_dataset}")
     print(f"tokenizer.decode(tokenized_dataset[0]['input_ids'],skip_special_tokens=False)=\n{tokenizer.decode(tokenized_dataset[0]['input_ids'],skip_special_tokens=False)}")
