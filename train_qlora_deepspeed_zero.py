@@ -103,6 +103,12 @@ def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
         q_ids = q_ids[: global_args.max_input_length - 2]
     if len(a_ids) > global_args.max_output_length - 1:  # 额外token为1  eos
         a_ids = a_ids[: global_args.max_output_length - 1]
+
+    """
+    说明：tokenizer.build_inputs_with_special_tokens 是来自https://huggingface.co/THUDM/chatglm2-6b/blob/main/tokenization_chatglm.py#L190
+          是chatglm2-6b的tokenization_chatglm.py中的方法 这个方法可以传入1个tokenList参数 也可以传入2个tokenList参数 这里的tokenList就是
+          tokenizer.encode(string)之后的词元列表input_ids
+    """
     input_ids = tokenizer.build_inputs_with_special_tokens(q_ids, a_ids)
     # question_length = input_ids.index(tokenizer.bos_token_id)
     question_length = len(q_ids) + 2  # chatglm1 - gmask, bos, chatglm2 - gmask, sop
