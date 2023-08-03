@@ -235,8 +235,8 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100 ,max_len
     input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
     labels  = labels + [ignore_label_id ] * pad_len
     return {
-            "input_ids":torch.Tensor(input_ids) , 
-            "labels":torch.Tensor(labels) ,
+            "input_ids":input_ids , 
+            "labels": labels,
             "attention_mask" :torch.Tensor(input_ids).ne(tokenizer.pad_token_id).int(), 
             ## https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L754 
             ## https://cloud.tencent.com/developer/article/1885829
