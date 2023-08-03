@@ -231,7 +231,7 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100 ,max_len
     #print(labels_token_to_str)
 
     # padding
-    pad_len = max_len - len(input_ids)
+    pad_len = max_length - len(input_ids)
     input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
     labels  = labels + [ignore_label_id ] * pad_len
     return {
