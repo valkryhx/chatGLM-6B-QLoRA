@@ -145,8 +145,12 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  #
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
        这里用chatglm2-6b官网的tokenization_chatglm.py中的
     """
-    Q_temp = "[Round {}]\n\n问：{}"
-    A_temp = "\n\n答：{}\n\n"
+    ## Q_temp = "[Round {}]\n\n问：{}"
+    ## A_temp = "\n\n答：{}\n\n"
+
+    ## modify 20230803
+    Q_temp = "问：{}"
+    A_temp = "答：{}"
     input_ids =[]
     labels =[]
     for turn_number,conversation in enumerate(example['history']):
@@ -202,7 +206,8 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在g
         Q = Q_temp.format(int(idx//2)+1,q)
         A = A_temp.format(a)
         Q_token_list = tokenizer.encode(Q,add_special_tokens=False)
-        A_token_list = tokenizer.encode(A,add_special_tokens=False)
+        print(f"在每轮Q-A后补充一个 tokenizer.eos_token_id = {tokenizer.eos_token_id}")
+        A_token_list = tokenizer.encode(A,add_special_tokens=False)+tokenizer.eos_token_id # 在每轮Q-A后面补充一个eos_token_id
         input_ids.extend(Q_token_list)
         input_ids.extend(A_token_list)
         labels.extend([ignore_label_id]*len(Q_token_list))
