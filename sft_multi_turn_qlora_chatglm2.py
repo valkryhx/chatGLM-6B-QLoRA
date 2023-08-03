@@ -159,10 +159,12 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  #
         a = conversation[1]
         #print(Q_temp.format(turn_number+1,q))
         #print(A_temp.format(a))
-        Q = Q_temp.format(turn_number+1,q)
+        #Q = Q_temp.format(turn_number+1,q)  ## modify 20230803
+        Q = Q_temp.format(q)   ## ## modify 20230803
         A = A_temp.format(a)
-        Q_token_list = tokenizer.encode(Q,add_special_tokens=False)
-        A_token_list = tokenizer.encode(A,add_special_tokens=False)
+        Q_token_list = tokenizer.encode(Q,add_special_tokens=False) 
+        print(f"在每轮Q-A后补充一个 tokenizer.eos_token_id = {tokenizer.eos_token_id}")
+        A_token_list = tokenizer.encode(A,add_special_tokens=False) + tokenizer.eos_token_id # 在每一个Q-A对话的A后面加</s>
         input_ids.extend(Q_token_list)
         input_ids.extend(A_token_list)
         labels.extend([ignore_label_id]*len(Q_token_list))
@@ -184,8 +186,12 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在g
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
        这里用chatglm2-6b官网的tokenization_chatglm.py中的
     """
-    Q_temp = "[Round {}]\n\n问：{}"
-    A_temp = "\n\n答：{}\n\n"
+    #Q_temp = "[Round {}]\n\n问：{}"
+    #A_temp = "\n\n答：{}\n\n"
+    
+    Q_temp = "问：{}"
+    A_temp = "答：{}"
+    
     input_ids =[]
     labels =[]
     must_be_even_len = len(example['conversations']) //2 *2
@@ -207,7 +213,7 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在g
         A = A_temp.format(a)
         Q_token_list = tokenizer.encode(Q,add_special_tokens=False)
         print(f"在每轮Q-A后补充一个 tokenizer.eos_token_id = {tokenizer.eos_token_id}")
-        A_token_list = tokenizer.encode(A,add_special_tokens=False)+tokenizer.eos_token_id # 在每轮Q-A后面补充一个eos_token_id
+        A_token_list = tokenizer.encode(A,add_special_tokens=False) + tokenizer.eos_token_id # 在每轮Q-A后面补充一个eos_token_id
         input_ids.extend(Q_token_list)
         input_ids.extend(A_token_list)
         labels.extend([ignore_label_id]*len(Q_token_list))
