@@ -163,7 +163,7 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  #
         Q = Q_temp.format(q)   ## ## modify 20230803
         A = A_temp.format(a)
         Q_token_list = tokenizer.encode(Q,add_special_tokens=False) 
-        print(f"在每轮Q-A后补充一个 tokenizer.eos_token_id = {tokenizer.eos_token_id}")
+        #print(f"在每轮Q-A后补充一个 tokenizer.eos_token_id = {tokenizer.eos_token_id}")
         A_token_list = tokenizer.encode(A,add_special_tokens=False) + [tokenizer.eos_token_id] # 在每一个Q-A对话的[A ]后面加[</s> id]
         input_ids.extend(Q_token_list)
         input_ids.extend(A_token_list)
@@ -212,7 +212,7 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在g
         Q = Q_temp.format(int(idx//2)+1,q)
         A = A_temp.format(a)
         Q_token_list = tokenizer.encode(Q,add_special_tokens=False)
-        print(f"在每轮Q-A后补充一个 tokenizer.eos_token_id = {tokenizer.eos_token_id}")
+        #print(f"在每轮Q-A后补充一个 tokenizer.eos_token_id = {tokenizer.eos_token_id}")
         A_token_list = tokenizer.encode(A,add_special_tokens=False) + [tokenizer.eos_token_id] # 在每轮Q-A后面补充一个eos_token_id
         input_ids.extend(Q_token_list)
         input_ids.extend(A_token_list)
