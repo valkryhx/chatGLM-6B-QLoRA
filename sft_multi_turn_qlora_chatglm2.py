@@ -177,7 +177,11 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  #
     #print(input_ids_token_to_str)
     #print(labels_token_to_str)
     
-    return({"input_ids":input_ids , "labels":labels})
+    return {
+            "input_ids":input_ids , 
+            "labels":labels ,
+            "attention_mask" :input_ids.ne(tokenizer.pad_token_id),
+            }
 
 # 用于shareGPT 格式数据集的处理
 def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在get_multi_turn_conversations_datset函数中用到了
@@ -226,7 +230,11 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在g
     #print(input_ids_token_to_str)
     #print(labels_token_to_str)
     
-    return({"input_ids":input_ids , "labels":labels})
+    return {
+            "input_ids":input_ids , 
+            "labels":labels ,
+            "attention_mask" :input_ids.ne(tokenizer.pad_token_id),
+            }
 
 def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，只采样max_samples个参与训练/评估。
@@ -625,7 +633,7 @@ def train(global_args):
         args=hf_train_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        data_collator = very_clear_data_collator
+        ##data_collator = very_clear_data_collator , #modify 不使用这个collator 试试 20230804
     )
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
