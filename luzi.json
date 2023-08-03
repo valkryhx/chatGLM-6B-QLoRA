@@ -2,6 +2,7 @@
     "output_dir":"out/1",
     "lr_scheduler_type": "linear",
     "warmup_ratio": 0.1,
+    "warmup_steps":10,
     "logging_steps": 10,
     "save_strategy": "steps",
     "save_steps": 10,
