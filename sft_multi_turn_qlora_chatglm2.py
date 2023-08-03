@@ -233,7 +233,9 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在g
     return {
             "input_ids":input_ids , 
             "labels":labels ,
-            "attention_mask" :input_ids.ne(tokenizer.pad_token_id),
+            "attention_mask" :torch.Tensor(input_ids).ne(tokenizer.pad_token_id).int(), 
+            ## https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L754 
+            ## https://cloud.tencent.com/developer/article/1885829
             }
 
 def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,global_args=None):
