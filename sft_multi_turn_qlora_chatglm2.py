@@ -184,7 +184,7 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  #
             }
 
 # 用于shareGPT 格式数据集的处理
-def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在get_multi_turn_conversations_datset函数中用到了
+def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100，max_length=8192): # 在get_multi_turn_conversations_datset函数中用到了
     """
        多轮对话使用每个example（也就是一行json样本）中的example['history'] 拼接多轮对话 构建一个包含多轮对话的总的input_ids和总的labels
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
@@ -229,10 +229,14 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100): # 在g
     #labels_token_to_str = tokenizer.batch_decode(labels,skip_special_tokens=True)
     #print(input_ids_token_to_str)
     #print(labels_token_to_str)
-    
+
+    # padding
+    pad_len = max_len - len(input_ids)
+    input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
+    labels  = labels + [ignore_label_id ] * pad_len
     return {
-            "input_ids":input_ids , 
-            "labels":labels ,
+            "input_ids":torch.Tensor(input_ids) , 
+            "labels":torch.Tensor(labels) ,
             "attention_mask" :torch.Tensor(input_ids).ne(tokenizer.pad_token_id).int(), 
             ## https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L754 
             ## https://cloud.tencent.com/developer/article/1885829
