@@ -394,10 +394,12 @@ class LoRATrainer(Trainer):
         print("begin to save  !!!")
         if output_dir is None:
             output_dir = self.args.output_dir
-        self.model.save_pretrained(output_dir)
-        torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
-        print("save done !!!")
-
+        if self.is_world_process_zero():  
+            self.model.save_pretrained(output_dir)
+            torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+            print("save done !!!")
+        else :
+            print("this process is not main process , do not save model.[for distributed training scenario]")
 def find_all_linear_names(model):
     """
     找出所有全连接层，为所有全连接添加adapter
