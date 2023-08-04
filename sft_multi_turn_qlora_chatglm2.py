@@ -297,7 +297,7 @@ def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,glo
     print(f"tokenizer.decode(tokenized_dataset[0]['labels'],skip_special_tokens=False)=\n{tokenizer.decode(tokenized_dataset[0]['labels'],skip_special_tokens=False)}")
     print(f"tokenized_dataset[0]['input_ids']=\n{tokenized_dataset[0]['input_ids']}")
     print(f"tokenized_dataset[0]['labels']=\n{tokenized_dataset[0]['labels']}")
-    print(f"tokenized_dataset[0]['attention_mask']=\n{tokenized_dataset[0]['attention_mask']}")
+    #print(f"tokenized_dataset[0]['attention_mask']=\n{tokenized_dataset[0]['attention_mask']}")
     print(f"len(tokenized_dataset[0]['input_ids']={len(tokenized_dataset[0]['input_ids'])}")
     print(f"len(tokenized_dataset[0]['labels']={len(tokenized_dataset[0]['labels'])}")
     ## 验证完毕
