@@ -550,7 +550,7 @@ def train(global_args):
 
     ### STEP 3  load model
     # Quantization
-    q_config = BitsAndBytesConfig(load_in_4bit=True,
+    q_config = BitsAndBytesConfig(load_in_4bit=False,#True,
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
                                   bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
@@ -582,7 +582,7 @@ def train(global_args):
         
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
-                                          load_in_4bit=global_args.load_in_4bit,
+                                          load_in_4bit=False,#global_args.load_in_4bit,
                                           torch_dtype=torch.float16,
                                           quantization_config=q_config,
                                            # empty_init这是最关键的参数 如果不设置 那即使用deepspeed也oom
