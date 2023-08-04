@@ -346,7 +346,7 @@ class DataCollatorForChatGLM:
                 label = label[: self.max_length]
             input_ids.append(torch.LongTensor(ids))
             labels.append(torch.LongTensor(label))
-            attention_mask.append(torch.Tensor(ids).ne(pad_token_id).int())
+            attention_mask.append(torch.Tensor(ids).ne(self.pad_token_id).int())
         input_ids = torch.stack(input_ids)
         labels = torch.stack(labels)
         attention_mask = torch.stack(attention_mask)
