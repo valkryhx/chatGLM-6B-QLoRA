@@ -139,18 +139,18 @@ def parse_args():
 
 
 # 用于普通history格式数据集的处理
-def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  # 在get_multi_turn_conversations_datset函数中用到了
+def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100, max_length=8192):  # 在get_multi_turn_conversations_datset函数中用到了
     """
        多轮对话使用每个example（也就是一行json样本）中的example['history'] 拼接多轮对话 构建一个包含多轮对话的总的input_ids和总的labels
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
        这里用chatglm2-6b官网的tokenization_chatglm.py中的
     """
-    ## Q_temp = "[Round {}]\n\n问：{}"
-    ## A_temp = "\n\n答：{}\n\n"
+    Q_temp = "[Round {}]\n\n问：{}"
+    A_temp = "\n\n答：{}\n\n"
 
     ## modify 20230803
-    Q_temp = "问：{}"
-    A_temp = "答：{}"
+    #Q_temp = "问：{}"
+    #A_temp = "答：{}"
     input_ids =[]
     labels =[]
     for turn_number,conversation in enumerate(example['history']):
@@ -159,8 +159,8 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  #
         a = conversation[1]
         #print(Q_temp.format(turn_number+1,q))
         #print(A_temp.format(a))
-        #Q = Q_temp.format(turn_number+1,q)  ## modify 20230803
-        Q = Q_temp.format(q)   ## ## modify 20230803
+        Q = Q_temp.format(turn_number+1,q)  ## modify 20230803
+        #Q = Q_temp.format(q)   ## ## modify 20230803
         A = A_temp.format(a)
         Q_token_list = tokenizer.encode(Q,add_special_tokens=False) 
         #print(f"在每轮Q-A后补充一个 tokenizer.eos_token_id = {tokenizer.eos_token_id}")
@@ -177,10 +177,18 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100):  #
     #print(input_ids_token_to_str)
     #print(labels_token_to_str)
     
+    # cut and padding
+    input_ids = input_ids[:max_length]
+    labels  = labels[:max_length]
+    pad_len = max_length - len(input_ids)
+    input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
+    labels  = labels + [ignore_label_id ] * pad_len
     return {
             "input_ids":input_ids , 
-            "labels":labels ,
-            "attention_mask" :input_ids.ne(tokenizer.pad_token_id),
+            "labels": labels,
+            "attention_mask" :torch.Tensor(input_ids).ne(tokenizer.pad_token_id).int(),   # input_ids 中为pad token attenmask =0 其余token attenmask =1
+            ## https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L754 
+            ## https://cloud.tencent.com/developer/article/1885829
             }
 
 # 用于shareGPT 格式数据集的处理
@@ -190,11 +198,11 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100 ,max_len
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
        这里用chatglm2-6b官网的tokenization_chatglm.py中的
     """
-    #Q_temp = "[Round {}]\n\n问：{}"
-    #A_temp = "\n\n答：{}\n\n"
+    Q_temp = "[Round {}]\n\n问：{}"
+    A_temp = "\n\n答：{}\n\n"
     
-    Q_temp = "问：{}"
-    A_temp = "答：{}"
+    #Q_temp = "问：{}"
+    #A_temp = "答：{}"
     
     input_ids =[]
     labels =[]
@@ -207,7 +215,7 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100 ,max_len
     # must_be_even_len > 0 这个 条件由filter保证
     # my_dataset['train'].filter(lambda example : len(example["conversations"])>1)
     
-    for idx in range(0,must_be_even_len,2):
+    for idx in range(0,must_be_even_len,step=2):
         #print(turn_number + 1)
         q = example['conversations'][idx]['value']
         a = example['conversations'][idx+1]['value']
