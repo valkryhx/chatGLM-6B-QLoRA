@@ -345,14 +345,16 @@ class DataCollatorForChatGLM:
             #print(f"batch_max_len={batch_max_len}")
             
             pad_len = right_len - len(ids)
-            print(f"pad_len={pad_len}")
+            
             ids = ids + [self.pad_token_id] * pad_len
             label = label + [self.ignore_label_id] * pad_len  # 注意这里是在右边padding 而且labels使用的是ignore_token_id
-          
-            print(f"len_ids={len(ids)}")
-            print(f"len_label={len(label)}")
-            print(f"len_attmask={len(ids)}")
-            print("======")
+
+            # 查看用的 能发现每一batch的maxlen都不同 现在一个batch里面2个sample 经常一个padlen=0 正常
+            #print(f"pad_len={pad_len}")
+            #print(f"len_ids={len(ids)}")
+            #print(f"len_label={len(label)}")
+            #print(f"len_attmask={len(ids)}")
+            #print("======")
             input_ids.append(torch.LongTensor(ids))
             labels.append(torch.LongTensor(label))
             attention_mask.append(torch.Tensor(ids).ne(self.pad_token_id).int())
