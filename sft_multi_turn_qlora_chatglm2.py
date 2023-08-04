@@ -338,12 +338,13 @@ class DataCollatorForChatGLM:
         batch_max_len = max(len_list)
         input_ids, labels ,attention_mask= [], [] ,[]
         for len_of_d, d in sorted(zip(len_list, batch_data), key=lambda x: -x[0]):
-            if batch_max_len > self.max_length:
-                ids = d['input_ids'][: self.max_length]
-                label = d['labels'][: self.max_length]
-            print(f"batch_max_len={batch_max_len}")
+            #if batch_max_len > self.max_length:
+            right_len = min(batch_max_len,self.max_length)
+            ids = d['input_ids'][: right_len]
+            label = d['labels'][: right_len]
+            #print(f"batch_max_len={batch_max_len}")
             
-            pad_len = max(batch_max_len - len(ids),0)
+            pad_len = right_len - len(ids)
             print(f"pad_len={pad_len}")
             ids = ids + [self.pad_token_id] * pad_len
             label = label + [self.ignore_label_id] * pad_len  # 注意这里是在右边padding 而且labels使用的是ignore_token_id
