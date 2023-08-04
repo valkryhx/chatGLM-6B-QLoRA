@@ -582,7 +582,7 @@ def train(global_args):
         
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
-                                          load_in_4bit=False,#global_args.load_in_4bit,
+                                          load_in_4bit=global_args.load_in_4bit,
                                           torch_dtype=torch.float16,
                                           quantization_config=q_config,
                                            # empty_init这是最关键的参数 如果不设置 那即使用deepspeed也oom
