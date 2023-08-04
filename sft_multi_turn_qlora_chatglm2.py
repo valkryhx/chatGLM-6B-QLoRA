@@ -338,18 +338,20 @@ class DataCollatorForChatGLM:
         batch_max_len = max(len_list)
         input_ids, labels ,attention_mask= [], [] ,[]
         for len_of_d, d in sorted(zip(len_list, batch_data), key=lambda x: -x[0]):
-            print(f"batch_max_len={batch_max_len}")
-            pad_len = batch_max_len - len_of_d
-            print(f"pad_len={pad_len}")
-            ids = d['input_ids'] + [self.pad_token_id] * pad_len
-            label = d['labels'] + [self.ignore_label_id] * pad_len  # 注意这里是在右边padding 而且labels使用的是ignore_token_id
-            print(f'batch_max_len = {batch_max_len} , max_length={self.max_length}')
             if batch_max_len > self.max_length:
-                ids = ids[: self.max_length]
-                label = label[: self.max_length]
+                ids = d['input_ids'][: self.max_length]
+                label = d['labels'][: self.max_length]
+            print(f"batch_max_len={batch_max_len}")
+            
+            pad_len = max(batch_max_len - len(ids),0)
+            print(f"pad_len={pad_len}")
+            ids = ids + [self.pad_token_id] * pad_len
+            label = label + [self.ignore_label_id] * pad_len  # 注意这里是在右边padding 而且labels使用的是ignore_token_id
+          
             print(f"len_ids={len(ids)}")
             print(f"len_label={len(label)}")
             print(f"len_attmask={len(ids)}")
+            print("======")
             input_ids.append(torch.LongTensor(ids))
             labels.append(torch.LongTensor(label))
             attention_mask.append(torch.Tensor(ids).ne(self.pad_token_id).int())
