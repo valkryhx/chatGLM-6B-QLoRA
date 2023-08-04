@@ -344,9 +344,9 @@ class DataCollatorForChatGLM:
             if batch_max_len > self.max_length:
                 ids = ids[: self.max_length]
                 label = label[: self.max_length]
-            print(f"len_ids=len{ids}")
-            print(f"len_label=len{label}")
-            print(f"len_attmask=len{ids}")
+            print(f"len_ids={len(ids)}")
+            print(f"len_label={len(label)}")
+            print(f"len_attmask={len(ids)}")
             input_ids.append(torch.LongTensor(ids))
             labels.append(torch.LongTensor(label))
             attention_mask.append(torch.Tensor(ids).ne(self.pad_token_id).int())
