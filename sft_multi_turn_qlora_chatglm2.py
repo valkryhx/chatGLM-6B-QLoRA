@@ -240,14 +240,14 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100 ,max_len
 
     # 1.cut and 2.padding
     input_ids = input_ids[:max_length]
-    labels  = labels[:max_length]
-    pad_len = max_length - len(input_ids)
-    input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
-    labels  = labels + [ignore_label_id ] * pad_len
+    #labels  = labels[:max_length]
+    #pad_len = max_length - len(input_ids)
+    #input_ids = input_ids + [tokenizer.pad_token_id] * pad_len
+    #labels  = labels + [ignore_label_id ] * pad_len
     return {
             "input_ids":input_ids , 
             "labels": labels,
-            "attention_mask" :torch.Tensor(input_ids).ne(tokenizer.pad_token_id).int(), 
+            #"attention_mask" :torch.Tensor(input_ids).ne(tokenizer.pad_token_id).int(), 
             ## https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L754 
             ## https://cloud.tencent.com/developer/article/1885829
             }
@@ -336,7 +336,7 @@ class DataCollatorForChatGLM:
         """
         len_list = [len(d['input_ids']) for d in batch_data]
         batch_max_len = max(len_list)
-        input_ids, labels = [], []
+        input_ids, labels ,attention_mask= [], [] ,[]
         for len_of_d, d in sorted(zip(len_list, batch_data), key=lambda x: -x[0]):
             pad_len = batch_max_len - len_of_d
             ids = d['input_ids'] + [self.pad_token_id] * pad_len
@@ -346,9 +346,11 @@ class DataCollatorForChatGLM:
                 label = label[: self.max_length]
             input_ids.append(torch.LongTensor(ids))
             labels.append(torch.LongTensor(label))
+            attention_mask.append(torch.Tensor(input_ids).ne(pad_token_id).int())
         input_ids = torch.stack(input_ids)
         labels = torch.stack(labels)
-        return {'input_ids': input_ids, 'labels': labels}
+        attention_mask = torch.stack(attention_mask)
+        return {'input_ids': input_ids, 'labels': labels , 'attention_mask':attention_mask}
 
 """
 # 验证get_dataset(包含了tokenizer_function)
@@ -650,7 +652,7 @@ def train(global_args):
         args=hf_train_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        ##data_collator = very_clear_data_collator , #modify 不使用这个collator 试试 20230804
+        data_collator = very_clear_data_collator , #modify 不使用这个collator 试试 20230804
     )
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
