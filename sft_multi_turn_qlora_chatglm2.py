@@ -215,7 +215,7 @@ def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100 ,max_len
     # must_be_even_len > 0 这个 条件由filter保证
     # my_dataset['train'].filter(lambda example : len(example["conversations"])>1)
     
-    for idx in range(0,must_be_even_len,step=2):
+    for idx in range(0,must_be_even_len,2):
         #print(turn_number + 1)
         q = example['conversations'][idx]['value']
         a = example['conversations'][idx+1]['value']
