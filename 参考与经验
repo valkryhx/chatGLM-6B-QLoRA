@@ -467,6 +467,18 @@ https://huggingface.co/THUDM/chatglm2-6b/blob/main/tokenization_chatglm.py#L168
 #----------20230805----------#
 多轮对话sft 成功  格式为sharegpt 使用的是sharegpt_1K + medi_1k 对话效果还行 能识别出继续 这种 使用的是chat 而非stream chat
 经验 lr=1.8e-5 跑了15个小时 loss从8下降到0.06 
+注意多轮对话格式一定要跟官网format一致：注意Q_temp A_temp 以及Q A的处理
+ Q_temp = "[Round {}]\n\n问：{}"
+ A_temp = "\n\n答：{}\n\n"
+    input_ids =[]
+    labels =[]
+    for turn_number,conversation in enumerate(example['history']):
+        q = conversation[0]
+        a = conversation[1]
+        Q = Q_temp.format(turn_number+1,q)  ## modify 20230803
+        A = A_temp.format(a)
+
+
 项目在https://www.kaggle.com/code/shxhuang/0804-sft/edit/run/138881384
 peft_model_path= "/kaggle/working/chatGLM-6B-QLoRA/output-sharegpt-2k-sft-0805-v1/checkpoint-250 
 另外这个是从./output-sharegpt-2k-sft-0804-v4/checkpoint-3980 继续sft得到 这个2980ckpt loss也很低 到0.1了
