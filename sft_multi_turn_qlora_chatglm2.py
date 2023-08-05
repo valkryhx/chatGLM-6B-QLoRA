@@ -196,7 +196,7 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100, max
 # 用于shareGPT 格式数据集的处理
 def tokenize_function_sharegpt(example,tokenizer,ignore_label_id = -100 ,max_length=8192): # 在get_multi_turn_conversations_datset函数中用到了
     """
-       多轮对话使用每个example（也就是一行json样本）中的example['history'] 拼接多轮对话 构建一个包含多轮对话的总的input_ids和总的labels
+       多轮对话使用每个example（也就是一行json样本）中的example['conversatiosn'] 拼接多轮对话 构建一个包含多轮对话的总的input_ids和总的labels
        这个Q_temp和A_temp 不同的model 都不一样 但是很重要 
        这里用chatglm2-6b官网的tokenization_chatglm.py中的
     """
