@@ -186,7 +186,7 @@ def tokenize_function_history(example,tokenizer,ignore_label_id: int = -100, max
     return {
             "input_ids":input_ids , 
             "labels": labels,
-            "attention_mask" :torch.Tensor(input_ids).ne(tokenizer.pad_token_id).int(),   # input_ids 中为pad token attenmask =0 其余token attenmask =1
+            #"attention_mask" :torch.Tensor(input_ids).ne(tokenizer.pad_token_id).int(),   # input_ids 中为pad token attenmask =0 其余token attenmask =1
             ## https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L754 
             ## https://cloud.tencent.com/developer/article/1885829
             }
