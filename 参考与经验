@@ -463,3 +463,40 @@ SFT的数据格式一定要注意和chatglm2的格式保持一致 不然微调�
 [Round {可以填1}]\n\n问：{}\n\n答：
 https://huggingface.co/THUDM/chatglm2-6b/blob/main/tokenization_chatglm.py#L168
 参考本项目主页
+
+#----------20230805----------#
+多轮对话sft 成功  格式为sharegpt 使用的是sharegpt_1K + medi_1k 对话效果还行 能识别出继续 这种 使用的是chat 而非stream chat
+经验 lr=1.8e-5 跑了15个小时 loss从8下降到0.06 
+项目在https://www.kaggle.com/code/shxhuang/0804-sft/edit/run/138881384
+peft_model_path= "/kaggle/working/chatGLM-6B-QLoRA/output-sharegpt-2k-sft-0805-v1/checkpoint-250 
+另外这个是从./output-sharegpt-2k-sft-0804-v4/checkpoint-3980 继续sft得到 这个2980ckpt loss也很低 到0.1了
+脚本
+# ./data/sharegpt_multi_turn_data 目录不能有空白json文件
+!git pull --all --force 
+#!pip install  -U git+https://github.com/huggingface/peft.git   # 20230717 peft==0.4.0正式发布了 不用调版本了推理完后再训练需要重新升级到0.4.0dev 所以有这句
+!deepspeed --include localhost:0,1  sft_multi_turn_qlora_chatglm2.py  \
+  --train_args_json luzi.json \
+  --model_name_or_path THUDM/chatglm2-6b \
+  --output_dir output-sharegpt-2k-sft-0805-v1 \
+  --num_train_samples -1 \
+  --num_eval_samples 2 \
+  --resume_from_checkpoint ./output-sharegpt-2k-sft-0804-v4/checkpoint-3980 \
+  --train_data_path ./data/sharegpt_data  \
+  --eval_data_path  ./data/sharegpt_data    \
+  --data_type sharegpt  \
+  --max_length 1800 \
+  --lora_rank 64 \
+  --lora_dropout 0.05 \
+  --compute_dtype fp16 \
+  --per_device_train_batch_size 2 \
+  --per_device_eval_batch_size 2  \
+  --gradient_accumulation_steps 1 \
+  --learning_rate  1.8e-5 \
+  --num_train_epochs  40  \
+  --save_total_limit 2 \
+  --load_in_4bit True \
+--deepspeed ds_zero2_config.json
+
+
+
+
