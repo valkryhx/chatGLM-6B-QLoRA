@@ -3,7 +3,7 @@
 # file: rm_qlora_chatglm2.py
 # author: hx
 # https://github.com/valkryhx
-
+from torch.nn.parallel import DistributedDataParallel
 import random
 import os
 import evaluate
@@ -590,6 +590,8 @@ def train(global_args):
     model.print_trainable_parameters()
     model = RewardModel(model.config, model.transformer, tokenizer)
     print(model)
+    model = DistributedDataParallel(model) 
+    model._set_static_graph()
     logger.info(f"Finished loading model and tokenizer")
     
 
