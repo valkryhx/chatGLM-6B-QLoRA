@@ -214,7 +214,7 @@ class RewardModel(PreTrainedModel):
             output_hidden_states=False,
     ):
 
-        if chosen_input_ids is not None and  rejected_input_ids is not None::
+        if chosen_input_ids is not None and  rejected_input_ids is not None:
             if len(chosen_input_ids) > len(rejected_input_ids) :
                 pad_len = len(chosen_input_ids) - len(rejected_input_ids) 
                 rejected_input_ids  += [0] *(pad_len)
