@@ -590,7 +590,7 @@ def train(global_args):
     model.print_trainable_parameters()
     model = RewardModel(model.config, model.transformer, tokenizer)
     print(model)
-    model = DistributedDataParallel(model) 
+    model = DistributedDataParallel(model.cuda()) 
     model._set_static_graph()
     logger.info(f"Finished loading model and tokenizer")
     
