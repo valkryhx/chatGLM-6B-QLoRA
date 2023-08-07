@@ -291,14 +291,25 @@ def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     
     return tokenized_dataset
 
-
+# 不加datclass那就写__init__函数 参考https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/sft_multi_turn_qlora_chatglm2.py#L325
 class RewardDataCollatorWithPadding:
     tokenizer: PreTrainedTokenizerBase
     padding: Union[bool, str, PaddingStrategy] = True
     max_length: Optional[int] = None
     pad_to_multiple_of: Optional[int] = None
     return_tensors: str = "pt"
-
+    def __init__(self,
+                 tokenizer: PreTrainedTokenizerBase,
+                 padding: Union[bool, str, PaddingStrategy] = True,
+                 max_length: Optional[int] = None,
+                 pad_to_multiple_of: Optional[int] = None,
+                 return_tensors: str = "pt"):
+        self.tokenizer = tokenizer
+        self.padding = padding
+        self.max_length = max_length
+        self.pad_to_multiple_of = pad_to_multiple_of
+        self.return_tensors = return_tensors
+    
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
         features_j = []
         features_k = []
