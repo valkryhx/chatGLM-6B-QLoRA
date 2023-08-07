@@ -111,12 +111,23 @@ def parse_args():
 """
 
 ##################################################################################
-class PairWiseLoss(nn.Module):
-    """
-    Pairwise Loss for Reward Model
-    """
+# class PairWiseLoss(nn.Module):
+#     """
+#     Pairwise Loss for Reward Model
+#     """
 
-    def forward(self, chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
+#     def forward(self, chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
+#         probs = torch.sigmoid(chosen_reward - reject_reward)
+#         log_probs = torch.log(probs)
+#         loss = -log_probs.mean()
+#         return loss
+
+
+   
+def PairWiseLoss(chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
+         """
+         Pairwise Loss for Reward Model
+         """
         probs = torch.sigmoid(chosen_reward - reject_reward)
         log_probs = torch.log(probs)
         loss = -log_probs.mean()
