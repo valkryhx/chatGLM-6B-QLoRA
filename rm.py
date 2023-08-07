@@ -624,7 +624,7 @@ def train(global_args):
     model=model,
     args=hf_train_args,
     train_dataset=train_dataset,
-    eval_dataset=eval_dataset,
+    eval_dataset=train_dataset,#eval_dataset,
     compute_metrics=compute_metrics,
     data_collator=rm_data_collator,
        )
