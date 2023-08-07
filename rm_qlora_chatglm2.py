@@ -125,13 +125,12 @@ def parse_args():
 
    
 def PairWiseLoss(chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
-         """
-         Pairwise Loss for Reward Model
-         """
-        probs = torch.sigmoid(chosen_reward - reject_reward)
-        log_probs = torch.log(probs)
-        loss = -log_probs.mean()
-        return loss
+    """     Pairwise Loss for Reward Model
+    """
+    probs = torch.sigmoid(chosen_reward - reject_reward)
+    log_probs = torch.log(probs)
+    loss = -log_probs.mean()
+    return loss
 
 ##################################################################################
 ## part of codes are from https://github.com/valkryhx/ChatGLM-LoRA-RLHF-PyTorch/blob/4d3b8df2d6b7908a924b91b339f4468ed357761e/reward_model.py#L54
