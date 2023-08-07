@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # @author: Kun
 
+from dataclasses import dataclass, field
 import random
 import os
 import evaluate
