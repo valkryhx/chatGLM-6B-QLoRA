@@ -203,7 +203,7 @@ class RewardModel(PreTrainedModel):
             output_attentions=False,
             output_hidden_states=False,
     ):
-        print(f"chosen_input_ids={chosen_input_ids}")
+        print(f"in forward  chosen_input_ids={chosen_input_ids}")
         if chosen_input_ids is not None:
             chosen_reward = self.reward(chosen_input_ids, attention_mask=chosen_attention_mask, position_ids=chosen_position_ids)
             # print("chosen_reward: ", chosen_reward.shape)
