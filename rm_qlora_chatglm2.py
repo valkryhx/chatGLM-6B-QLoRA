@@ -617,7 +617,7 @@ def train(global_args):
     data_collator=rm_data_collator,
        )
 
-    model.config.use_cache = False
+    #model.config.use_cache = False
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     trainer.model.save_pretrained(hf_train_args.output_dir)
