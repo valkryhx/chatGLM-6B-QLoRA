@@ -2,113 +2,42 @@
 # -*- coding: utf-8 -*-
 # @author: Kun
 
-from dataclasses import dataclass, field
-import random
-import os
-import evaluate
-import argparse
-from typing import List, Dict, Optional, Any, Mapping, Union
-from accelerate import init_empty_weights  # load an empty model,just structure , no real weight.
-import bitsandbytes as bnb
-import torch
-import torch.nn as nn
+
+
 from glob import glob
 from loguru import logger
+import os
+import torch
+import evaluate
+import numpy as np
+import torch.nn as nn
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Union
 from datasets import load_dataset
+from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_int8_training, prepare_model_for_kbit_training
+import bitsandbytes as bnb
 from transformers import (
-    AutoModel,
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    HfArgumentParser,
-    set_seed,
-    TrainingArguments,
-    Trainer,
-    BitsAndBytesConfig ,
     AutoConfig,
     AutoModelForSequenceClassification,
+    AutoTokenizer,
+    AutoModel,
+    HfArgumentParser,
     PreTrainedTokenizerBase,
-    LlamaForSequenceClassification, 
-    LlamaConfig, 
-    LlamaTokenizer,
-    AutoModelForSeq2SeqLM
+    Trainer,
+    TrainingArguments,
+    BitsAndBytesConfig
 )
 from transformers.utils import PaddingStrategy
-from transformers.modeling_utils import PreTrainedModel
-from transformers.configuration_utils import PretrainedConfig
-from transformers.tokenization_utils import PreTrainedTokenizer
+from transformers import LlamaForSequenceClassification, LlamaConfig, LlamaTokenizer
+from transformers import AutoModelForSeq2SeqLM , AutoModel
 
-from peft import (
-    TaskType,
-    LoraConfig,
-    #AdaLoraConfig ,  #  提出自2020年 感觉和lora区别不大 而且和qlora有冲突 这里代码没有用到 
-                     #例子https://www.zhihu.com/question/596950521/answer/3109759716
-    get_peft_model,
-    set_peft_model_state_dict,
-    prepare_model_for_kbit_training
-)
-from peft.utils import TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING
-from transformers.deepspeed import HfDeepSpeedConfig
-import deepspeed
-import json
-
-_compute_dtype_map = {
-    'fp32': torch.float32,
-    'fp16': torch.float16,
-    'bf16': torch.bfloat16
-}
-
-from datasets import set_caching_enabled
-set_caching_enabled(False)
+from reward_model import RewardModel
 
 DEFAULT_PAD_TOKEN = "[PAD]"
 DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
 
-
-# Define and parse arguments.
-def parse_args():
-    parser = argparse.ArgumentParser(description='ChatGLM-6B QLoRA')
-    parser.add_argument('--train_args_json', type=str, required=True, help='TrainingArguments的json文件')
-    parser.add_argument('--model_name_or_path', type=str, default='THUDM/chatglm-6b', help='模型id或local path')
-    parser.add_argument('--train_data_path', type=str, required=True, help='训练数据路径')
-    parser.add_argument('--eval_data_path', type=str, default=None, help='验证数据路径')
-    parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--max_input_length', type=int, default=512, help='多个轮次对话的总文本的最大长度 也就是history对应的多个对话的Q+A的整体长度')
-    parser.add_argument('--lora_rank', type=int, default=4, help='lora rank')
-    parser.add_argument('--lora_alpha', type=int, default=32, help='lora_alpha')
-    parser.add_argument('--lora_dropout', type=float, default=0.05, help='lora dropout')
-    parser.add_argument('--resume_from_checkpoint', type=str, default=None, help='恢复训练的checkpoint路径')
-    parser.add_argument('--prompt_text', type=str, default='', help='统一添加在所有数据前的指令文本')
-    parser.add_argument('--compute_dtype', type=str, default='fp32',
-                        choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
-    parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument("--deepspeed", type=str, default="ds_zero2_config.json")
-    parser.add_argument("--output_dir",type=str,default="output/lora",help="模型训练输出目录")
-    parser.add_argument("--per_device_train_batch_size",type=int,default=1)
-    parser.add_argument("--per_device_eval_batch_size",type=int,default=1)
-    parser.add_argument("--gradient_accumulation_steps",type=int,default=1)
-    parser.add_argument("--learning_rate",type=float,default=2e-5)
-    parser.add_argument("--num_train_epochs",type=float,default=1.0)
-    parser.add_argument("--num_train_samples",type=int,default= -1,help="用于train的样本数量，可选,若为-1则是全部样本。")
-    parser.add_argument("--num_eval_samples",type=int,default= -1,help="用于eval的样本数量，可选，若为-1则是全部样本。")
-    parser.add_argument("--save_total_limit" , type=int ,default=None)
-    parser.add_argument("--load_in_4bit" , type=bool ,default=True)
-    parser.add_argument("--load_best_model_at_end",type=bool,default=True)  # https://huggingface.co/docs/transformers/main_classes/trainer
-    parser.add_argument("--block_size",type=int,default=256,help="将篇章级别文本分词后的长tokens结果 按照block_size划分成固定大小 想象一下长火车分成多个车厢")
-    parser.add_argument("--max_length",type=int,default=256,help="每个样本的最大长度，一般会小于等于block_size")
-    parser.add_argument('--ddp_find_unused_parameters',
-                      help='This is a boolean flag.',
-                      type=eval, 
-                      choices=[True, False], 
-                      default='False')
-    #"output_dir": "output/qlora_ds_zero",
-    #"per_device_train_batch_size": 8, 
-    #"per_device_eval_batch_size":  2,
-    #"gradient_accumulation_steps": 8,
-    #"learning_rate": 2e-5,
-    #"num_train_epochs": 10.0,  
-    return parser.parse_args()
 
 
 class PairWiseLoss(nn.Module):
@@ -227,79 +156,219 @@ class RewardModel(PreTrainedModel):
             "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
         }
 
-
-
-
-
-# Turn the dataset into pairs of post + summaries, where text_j is the preferred question + answer and text_k is the other.
-# Then tokenize the dataset.
-def preprocess_function(example,tokenizer):
-    new_examples = {
-        "input_ids_j": [],
-        "attention_mask_j": [],
-        "input_ids_k": [],
-        "attention_mask_k": [],
-    }
-    # for question, response_j, response_k in zip(examples["question"], examples["response_j"], examples["response_k"]):
-    for question, response_j, response_k in zip(example["user_input"], example["completion_a"], example["completion_b"]):
-        chatglm2_prompt = "[Round 1]\n\n问：{}\n\n答：{}\n\n"
-        tokenized_j = tokenizer(
-            #"Question: " + question + "\n\nAnswer: " + response_j, truncation=True
-              chatglm2_prompt.format(question,response_j),truncation=True
-              )
-        tokenized_k = tokenizer(
-            #"Question: " + question + "\n\nAnswer: " + response_k, truncation=True
-              chatglm2_prompt.format(question,response_k),truncation=True
-              )
-        
-        new_examples["input_ids_j"].append(tokenized_j["input_ids"])
-        new_examples["attention_mask_j"].append(tokenized_j["attention_mask"])
-        new_examples["input_ids_k"].append(tokenized_k["input_ids"])
-        new_examples["attention_mask_k"].append(tokenized_k["attention_mask"])
-    return new_examples
-    
-def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
-    """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，只采样max_samples个参与训练/评估。
-    并tokenize，shuffle，返回datasets.dataset
+# Define and parse arguments.
+@dataclass
+class ScriptArguments:
     """
-    
-    if not (data_path is not None and os.path.exists(data_path)):
-        raise ValueError("data_path requires a directory pointing to   jsons/jsonls")
-    """https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L383"""
-    data_files_list = glob(f'{data_path}/**/*.json', recursive=True) + glob(
-                f'{data_path}/**/*.jsonl', recursive=True)
-    logger.info(f"data files: {', '.join(data_files_list)}")
-          
-    data = load_dataset('json', data_files=data_files_list)
-    ''' 只使用max_samples 个样本来参与train和eval  
-        https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L453
-    '''
-    logger.info(f"在取样之前 data len ={len(data['train'])}")
-    if max_samples is not None and max_samples > 0:
-            max_samples = min(len(data['train']), max_samples)  # 
-            data['train'] =  data['train'].select(range(max_samples))
-    logger.info(f"在取样之后 data len ={len(data['train'])}")
-    
-    column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
-    """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
-    logger.info("preprocessing dataset...")
-    
-    tokenized_dataset = data['train'].map(
-                                lambda example: preprocess_function(example, tokenizer=tokenizer),
-                                batched=True, 
-                                remove_columns=data['train'].column_names)
-    # 验证打印一些信息
-    # print(f"tokenized_dataset={tokenized_dataset}")
-    # print(f"tokenizer.decode(tokenized_dataset[0]['input_ids'],skip_special_tokens=False)=\n{tokenizer.decode(tokenized_dataset[0]['input_ids'],skip_special_tokens=False)}")
-    # print(f"tokenizer.decode(tokenized_dataset[0]['labels'],skip_special_tokens=False)=\n{tokenizer.decode(tokenized_dataset[0]['labels'],skip_special_tokens=False)}")
-    # print(f"tokenized_dataset[0]['input_ids']=\n{tokenized_dataset[0]['input_ids']}")
-    # print(f"tokenized_dataset[0]['labels']=\n{tokenized_dataset[0]['labels']}")
-    # #print(f"tokenized_dataset[0]['attention_mask']=\n{tokenized_dataset[0]['attention_mask']}")
-    # print(f"len(tokenized_dataset[0]['input_ids']={len(tokenized_dataset[0]['input_ids'])}")
-    # print(f"len(tokenized_dataset[0]['labels']={len(tokenized_dataset[0]['labels'])}")
-    
-    return tokenized_dataset
+    These arguments vary depending on how many GPUs you have, what their capacity and features are, and what size model you want to train.
+    """
 
+    local_rank: Optional[int] = field(
+        default=-1, metadata={"help": "Used for multi-gpu"})
+    resume_from_checkpoint: Optional[bool] = field(
+        default=False,
+        metadata={"help": "If you want to resume training where it left off."},
+    )
+    deepspeed: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Path to deepspeed config if using deepspeed. You may need this if the model that you want to train doesn't fit on a single GPU."
+        },
+    )
+    per_device_train_batch_size: Optional[int] = field(default=4)
+    per_device_eval_batch_size: Optional[int] = field(default=1)
+    gradient_accumulation_steps: Optional[int] = field(default=1)
+    learning_rate: Optional[float] = field(default=2e-5)
+    weight_decay: Optional[int] = field(default=0.001)
+    model_name: Optional[str] = field(
+        default="decapoda-research/llama-7b-hf",
+        metadata={
+            "help": "The model that you want to train from the Hugging Face hub or local."
+        },
+    )
+    bf16: Optional[bool] = field(
+        default=False,
+        metadata={
+            "help": "This essentially cuts the training time in half if you want to sacrifice a little precision and have a supported GPU."
+        },
+    )
+    num_train_epochs: Optional[int] = field(
+        default=1,
+        metadata={"help": "The number of training epochs for the reward model."},
+    )
+    train_subset: Optional[int] = field(
+        default=100000,
+        metadata={"help": "The size of the subset of the training data to use"},
+    )
+    eval_subset: Optional[int] = field(
+        default=50000,
+        metadata={"help": "The size of the subset of the eval data to use"},
+    )
+    gradient_checkpointing: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Enables gradient checkpointing."},
+    )
+    optim: Optional[str] = field(
+        default="adamw_hf",
+        metadata={"help": "Enables gradient checkpointing."},
+    )
+    lr_scheduler_type: Optional[str] = field(
+        default="linear",
+        metadata={"help": "The lr scheduler"},
+    )
+
+
+parser = HfArgumentParser(ScriptArguments)
+script_args = parser.parse_args_into_dataclasses()[0]
+
+data_path="./data/rm_data"
+data_files_list = glob(f'{data_path}/**/*.json', recursive=True) + glob(
+                f'{data_path}/**/*.jsonl', recursive=True)
+          
+
+
+train_dataset = load_dataset("json",data_files=data_files_list, split="train")
+if script_args.train_subset > 0:
+    train_dataset = train_dataset.select(range(script_args.train_subset))
+# eval_dataset = load_dataset("lvwerra/stack-exchange-paired", data_dir="data/evaluation", split="train")
+eval_dataset = load_dataset("json",data_files=data_files_list, split="train")
+if script_args.eval_subset > 0:
+    eval_dataset = eval_dataset.select(range(script_args.eval_subset))
+# Define the training args. Needs to be done before the model is loaded if you are using deepspeed.
+model_name_split = script_args.model_name.split("/")[-1]
+# output_name = (
+#     f"{model_name_split}_peft_gpt-4-llm_rm_{script_args.train_subset}_{script_args.learning_rate}"
+# )
+# output_name = (
+#     f"{model_name_split}_peft_comparision_data-paired_rmts__{script_args.train_subset}_{script_args.learning_rate}"
+# )
+output_name = (
+    f"reward_model_{model_name_split}__{script_args.train_subset}_{script_args.learning_rate}"
+)
+
+training_args = TrainingArguments(
+    output_dir=output_name,
+    learning_rate=script_args.learning_rate,
+    per_device_train_batch_size=script_args.per_device_train_batch_size,
+    per_device_eval_batch_size=script_args.per_device_eval_batch_size,
+    num_train_epochs=script_args.num_train_epochs,
+    weight_decay=script_args.weight_decay,
+    evaluation_strategy="steps",
+    eval_steps=200,  # 500,
+    save_strategy="steps",
+    save_steps=200,  # 500,
+    save_total_limit=2,
+    gradient_accumulation_steps=script_args.gradient_accumulation_steps,
+    gradient_checkpointing=script_args.gradient_checkpointing,
+    deepspeed=script_args.deepspeed,
+    # local_rank=script_args.local_rank,
+    remove_unused_columns=False,
+    label_names=[],
+    # bf16=script_args.bf16,
+    # fp16=True, #! this is important! if True, cuda out of memory.
+    logging_strategy="steps",
+    logging_steps=2,
+    optim=script_args.optim,
+    lr_scheduler_type=script_args.lr_scheduler_type,
+    report_to =["tensorboard"]
+)
+
+# Load the value-head model and tokenizer.
+# tokenizer = AutoTokenizer.from_pretrained(script_args.model_name, use_auth_token=True)
+if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
+    tokenizer = LlamaTokenizer.from_pretrained(script_args.model_name)
+    config = LlamaConfig.from_pretrained(script_args.model_name)
+
+elif "chatglm" in script_args.model_name:
+    tokenizer = AutoTokenizer.from_pretrained(
+        script_args.model_name, trust_remote_code=True)
+    config = AutoConfig.from_pretrained(
+        script_args.model_name, trust_remote_code=True)
+    
+else:
+    tokenizer = AutoTokenizer.from_pretrained(
+        script_args.model_name, trust_remote_code=True)
+    config = AutoConfig.from_pretrained(
+        script_args.model_name, trust_remote_code=True)
+
+print("tokenizer: ", type(tokenizer)) 
+
+if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
+    # required for llama
+    tokenizer.add_special_tokens(
+        {
+            "eos_token": DEFAULT_EOS_TOKEN,
+            "bos_token": DEFAULT_BOS_TOKEN,
+            "unk_token": DEFAULT_UNK_TOKEN,
+            "pad_token": DEFAULT_PAD_TOKEN,
+        }
+    )
+else:
+    # required for gpt2
+    #tokenizer.pad_token = tokenizer.eos_token
+    print(f"tokenizer.pad_token={tokenizer.pad_token}")
+
+device_map = "auto"
+world_size = int(os.environ.get("WORLD_SIZE", 1))
+ddp = world_size != 1
+if ddp:
+    device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
+print("device_map: ", device_map)
+# model = AutoModelForSequenceClassification.from_pretrained(
+#    script_args.model_name, num_labels=1, torch_dtype=torch.bfloat16
+# )
+
+if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
+    model = LlamaForSequenceClassification.from_pretrained(
+        script_args.model_name,
+        num_labels=1,
+        # torch_dtype=torch.bfloat16,
+        torch_dtype=torch.float16,
+        load_in_8bit=True,
+        device_map=device_map,
+    )
+elif "chatglm" in script_args.model_name:
+    q_config = BitsAndBytesConfig(load_in_4bit= True,
+                                  bnb_4bit_quant_type='nf4',
+                                  bnb_4bit_use_double_quant=True,
+                                  bnb_4bit_compute_dtype=torch.float16)
+    # model = AutoModelForSeq2SeqLM.from_pretrained(
+    #     script_args.model_name,
+    #     num_labels=1,
+    #     # torch_dtype=torch.bfloat16,
+    #     torch_dtype=torch.float16,
+    #     trust_remote_code=True,
+    #     load_in_4bit=True,
+    #     device_map=device_map,
+    #     quantization_config=q_config,
+    # )
+    model = AutoModel.from_pretrained(
+        script_args.model_name,
+        #num_labels=1,
+        # torch_dtype=torch.bfloat16,
+        torch_dtype=torch.float16,
+        trust_remote_code=True,
+        load_in_4bit=True,
+        device_map=device_map,
+        quantization_config=q_config,
+    )
+else:
+    model = AutoModelForSequenceClassification.from_pretrained(
+        script_args.model_name,
+        num_labels=1,
+        # torch_dtype=torch.bfloat16,
+        torch_dtype=torch.float32,
+        trust_remote_code=True,
+        load_in_8bit=True,
+        device_map=device_map,
+        
+    )
+
+print("model: ", type(model))
+
+model = prepare_model_for_kbit_training(model)
+print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
+print("model: ", type(model))
 def find_all_linear_names(model):
     """
     找出所有全连接层，为所有全连接添加adapter
@@ -316,6 +385,86 @@ def find_all_linear_names(model):
     if  'output_layer' in lora_module_names:
         lora_module_names.remove('output_layer')
     return list(lora_module_names)
+
+target_modules = find_all_linear_names(model)
+peft_config = LoraConfig(
+    task_type=TaskType.SEQ_CLS,
+    inference_mode=False,
+    target_modules = target_modules ,
+    r=64,  # for qlora 64 is ok
+    lora_alpha=16,  # 32,
+    lora_dropout=0.05,  # 0.1,
+    bias="none",
+)
+
+model = get_peft_model(model, peft_config)
+
+model.print_trainable_parameters()
+
+# Need to do this for gpt2, because it doesn't have an official pad token.
+#tokenizer.pad_token = tokenizer.eos_token
+#model.config.pad_token_id = tokenizer.eos_token_id
+#model.config.use_cache = not script_args.gradient_checkpointing
+num_proc = 1  # Can adjust to be higher if you have more processors.
+original_columns = train_dataset.column_names
+
+reward_model = RewardModel(model.config, model.transformer, tokenizer)
+print(reward_model)
+#layers = reward_model.transformer.layers
+# Freeze the first 70% of the hidden layers of the reward model backbone
+# parser.add_argument("--freeze_ratio", type=float, default=0.0, help="ratio of layers frozen for reward training")
+#num_layers = len(layers)
+#num_frozen = int(0.7 * num_layers)
+#for layer in layers[:num_frozen]:
+#    layer.requires_grad_(False)
+
+# if args.checkpoint is not None:
+#     checkpoints = glob.glob(args.checkpoint.replace("star", "*"))
+#     st = dict()
+#     for checkpoint in checkpoints:
+#         st.update(torch.load(checkpoint, map_location="cpu"))
+#     res = reward_model.load_state_dict(st, strict=False)
+print(f"Finished loading model and tokenizer")
+
+# Turn the dataset into pairs of post + summaries, where text_j is the preferred question + answer and text_k is the other.
+# Then tokenize the dataset.
+def preprocess_function(examples):
+    new_examples = {
+        "input_ids_j": [],
+        "attention_mask_j": [],
+        "input_ids_k": [],
+        "attention_mask_k": [],
+    }
+    # for question, response_j, response_k in zip(examples["question"], examples["response_j"], examples["response_k"]):
+    for question, response_j, response_k in zip(examples["user_input"], examples["completion_a"], examples["completion_b"]):
+        tokenized_j = tokenizer(
+            "Question: " + question + "\n\nAnswer: " + response_j, truncation=True)
+        tokenized_k = tokenizer(
+            "Question: " + question + "\n\nAnswer: " + response_k, truncation=True)
+
+        new_examples["input_ids_j"].append(tokenized_j["input_ids"])
+        new_examples["attention_mask_j"].append(tokenized_j["attention_mask"])
+        new_examples["input_ids_k"].append(tokenized_k["input_ids"])
+        new_examples["attention_mask_k"].append(tokenized_k["attention_mask"])
+
+    return new_examples
+
+
+# preprocess the dataset and filter out QAs that are longer than 512
+print("train_dataset: ", len(train_dataset))
+train_dataset = train_dataset.map(
+    preprocess_function, batched=True, num_proc=num_proc, remove_columns=original_columns
+)
+train_dataset = train_dataset.filter(lambda x: len(
+    x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
+print("train_dataset: ", len(train_dataset))
+
+print("eval_dataset: ", len(eval_dataset))
+eval_dataset = eval_dataset.map(
+    preprocess_function, batched=True, num_proc=num_proc, remove_columns=original_columns)
+eval_dataset = eval_dataset.filter(lambda x: len(
+    x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
+print("eval_dataset: ", len(eval_dataset))
 
 # We need to define a special data collator that batches the data in our j vs k format.
 @dataclass
@@ -398,6 +547,7 @@ class RewardTrainer(Trainer):
         if return_outputs:
             return loss, {"rewards_j": rewards_j, "rewards_k": rewards_k}
         return loss
+
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
         """只保存adapter"""
         print("begin to save  !!!")
@@ -410,230 +560,24 @@ class RewardTrainer(Trainer):
         else :
             print("this process is not main process , do not save model.[for distributed training scenario]")
 
-# Define the metric that we'll use for validation.
-accuracy = evaluate.load("accuracy")
 
-
-def compute_metrics(eval_pred):
-    predictions, _ = eval_pred
-    # Here, predictions is rewards_j and rewards_k.
-    # We want to see how much of the time rewards_j > rewards_k.
-    predictions = np.argmax(predictions, axis=0)
-    labels = np.zeros(predictions.shape)
-    return accuracy.compute(predictions=predictions, references=labels)
-def train(global_args):
-
-    ##STEP 0 从命令行获取参数，包括trainingArgs在内的，以及各类附属参数
-    logger.info("loading parameters...")
-    # ADD by hx 20230629
-    # https://huggingface.co/docs/transformers/main_classes/deepspeed 参考 【Constructing Massive Models】一节 
-    # 直接在TrainingArgs中加入deepspeed=ds_config即可
-    # https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html
-    
-    hf_parser = HfArgumentParser(TrainingArguments)
-    '''读取json中默认配置作为训练参数'''
-    """
-    注意下面代码的 , 很重要 ，根据https://github.com/huggingface/transformers/blob/main/src/transformers/hf_argparser.py#L379C32-L379C32
-     HfArgumentParser.parse_json_file 返回的是一个tuple 【outputs = self.parse_dict(data, allow_extra_keys=allow_extra_keys)
-        return tuple(outputs)】
-        所以如果不加, 那hf_train_args就是一个tuple 而不是一个TrainingArguments对象 下面的类似hf_train_args.seed = global_args.seed 代码就会报错
-        加上，逗号之后 那就把tuple解开了 
-        （即使tuple里面只有一个TrainingArguments对象 也需要解开真操蛋！多个A,B=HfArgumentParser.parse_json_file  可能还看不出来，
-        但是单个A=HfArgumentParser.parse_json_file  不加逗号就是错误的）
-        那就拿到了真正的TrainingArguments对象的hf_train_args 真的操蛋
-        那个源码中其他parse方法都是return tuple 都要注意
-        例如 parse_yaml_file /  parse_dict /parse_args_into_dataclasses
-    """
-    hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
-
-    
-    with open(global_args.deepspeed,'r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
-        hf_train_args.deepspeed = json.load(fr)  # set trainingArgs中deepspeed=ds_config
-
-    '''读取命令行传入参数 这个优先级高  覆盖对应的默认参数'''
-    set_seed(global_args.seed)
-    hf_train_args.seed = global_args.seed
-    hf_train_args.optim="paged_adamw_8bit"
-
-    hf_train_args.output_dir = global_args.output_dir 
-    hf_train_args.logging_dir = global_args.output_dir 
-    hf_train_args.per_device_train_batch_size = global_args.per_device_train_batch_size
-    hf_train_args.per_device_eval_batch_size = global_args.per_device_eval_batch_size
-    hf_train_args.gradient_accumulation_steps = global_args.gradient_accumulation_steps
-    hf_train_args.learning_rate = global_args.learning_rate
-    hf_train_args.num_train_epochs = global_args.num_train_epochs
-    hf_train_args.save_total_limit = global_args.save_total_limit
-    hf_train_args.ddp_find_unused_parameters = global_args.ddp_find_unused_parameters
-    
-    tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
-
-
-    ###STEP 1 加载train / eval data
-   
-    logger.info("loading dataset...")
-    # train_dataset = get_datset(global_args.train_data_path, tokenizer, 
-    #                            global_args,
-    #                            max_samples=global_args.num_train_samples )
-    
-    # train_dataset = get_multi_turn_conversations(data_path=global_args.train_data_path,
-    #                               tokenizer = tokenizer,
-    #                               block_size = global_args.block_size,
-    #                               global_args_max_length=global_args.max_length,
-    #                               max_samples=global_args.num_train_samples)
-
-    # train_dataset =  get_multi_turn_conversations_datset(data_path=global_args.train_data_path, 
-    #                                                      tokenizer=tokenizer, 
-    #                                                      max_samples=global_args.num_train_samples,global_args=global_args)
-
-    train_dataset = get_rm_datset(data_path=global_args.train_data_path, tokenizer=tokenizer, max_samples=global_args.num_train_samples,global_args=global_args)
-    
-    """ 
-     eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
-     eval_data至少要 >= 后面3者的乘积
-     RuntimeError: unscale_() has already been called on this optimizer since the last update().
-     https://github.com/huggingface/transformers/issues/23935#issuecomment-1597170127
-     """
-    eval_dataset = None
-    # if global_args.eval_data_path:
-    #     eval_dataset = get_datset(global_args.eval_data_path, tokenizer, 
-    #                               global_args,
-    #                               max_samples=global_args.num_eval_samples)
-    
-    # eval_dataset = get_dataset_for_pretrain(data_path=global_args.eval_data_path,
-    #                               tokenizer = tokenizer,
-    #                               block_size = global_args.block_size,
-    #                               global_args_max_length=global_args.max_length,
-    #                               max_samples=global_args.num_eval_samples)
-
-    # eval_dataset =  get_multi_turn_conversations_datset(data_path=global_args.eval_data_path, 
-    #                                                      tokenizer=tokenizer, 
-    #                                                      max_samples=global_args.num_eval_samples,global_args=global_args)
-    eval_dataset = get_rm_datset(data_path=global_args.eval_data_path, tokenizer=tokenizer, max_samples=global_args.num_eval_samples,global_args=global_args)
-    
-    ### STEP 2 定义 data collator
-    rm_data_collator = RewardDataCollatorWithPadding(
-                                   tokenizer=tokenizer, 
-                                   max_length=global_args.max_length, 
-                                   pad_to_multiple_of=8)
-
-  
-     
-
-
-    ### STEP 3  load model
-    # Quantization
-    q_config = BitsAndBytesConfig(load_in_4bit= True,
-                                  bnb_4bit_quant_type='nf4',
-                                  bnb_4bit_use_double_quant=True,
-                                  bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
-        
-    model = AutoModel.from_pretrained(global_args.model_name_or_path,
-                                          trust_remote_code=True,                           
-                                          load_in_4bit=global_args.load_in_4bit,
-                                          torch_dtype=torch.float16,
-                                          quantization_config=q_config,
-                                           # empty_init这是最关键的参数 如果不设置 那即使用deepspeed也oom
-                                  # 当您使用 AutoModel.from_pretrained() 方法加载预训练模型时，模型权重会被存储在 PyTorch 的 nn.Parameter 对象中。
-                                  # 在没有指定 empty_init=False 参数时，nn.Parameter 对象的值将被初始化为全零的张量。
-                                  # 但是，由于 nn.Parameter 对象不是真正的张量，而是具有元数据的张量包装器，因此无法将这些对象直接复制到 DeepSpeed 使用的元数据张量中。
-                                  # 在指定 empty_init=False 参数后，nn.Parameter 对象将被初始化为包含预训练权重的张量，
-                                  # 这使得 DeepSpeed 能够正常地将权重复制到元数据张量中
-                                  # THUDM/chatglm2 估计modeling_chatglm.py 默认是True  好坑！
-                                  # 果然 一查真的是 https://huggingface.co/THUDM/chatglm2-6b/blob/main/modeling_chatglm.py#L732
-                                          empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
-                                          #device_map=new_hf_device_map,
-                                          # device_map="auto"   # add 20230713
-                                     )
-
-    
-    
-    print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
-    # 
-    # .gradient_checkpointing_enable()
-    # .enable_input_require_grads()
-    # .is_parallelizable
-    # 这三个都是 transformers 模型的函数/参数(见 transformers/modeling_utils.py 文件)
-    #
-    
-    model.gradient_checkpointing_enable() 
-    # note: use gradient checkpointing to save memory at the expense of slower backward pass.
-    model.enable_input_require_grads()
-    # note: Enables the gradients for the input embeddings. This is useful for fine-tuning adapter weights while keeping the model weights fixed. 
-    # See https://github.com/huggingface/transformers/blob/ee88ae59940fd4b2c8fc119373143d7a1175c651/src/transformers/modeling_utils.py#L1190
-
-
-    # STEP 4 : 将model转化为peftModel 准备loRA微调
-    logger.info("prepare_model_for_kbit_training...")
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
-    
-    # LoRA
-    #target_modules = TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING['chatglm']
-    target_modules = find_all_linear_names(model)
-    lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
-        r=global_args.lora_rank,
-        lora_alpha=global_args.lora_alpha,
-        target_modules=target_modules,
-        lora_dropout=global_args.lora_dropout,
-        bias='none',
-        inference_mode=False,
-        task_type=TaskType.SEQ_CLS #TaskType.CAUSAL_LM
-    )
-    model = get_peft_model(model, lora_config)
-
-    resume_from_checkpoint = global_args.resume_from_checkpoint
-    if resume_from_checkpoint is not None:
-        checkpoint_name = os.path.join(resume_from_checkpoint, 'pytorch_model.bin')
-        if not os.path.exists(checkpoint_name):
-            checkpoint_name = os.path.join(
-                resume_from_checkpoint, 'adapter_model.bin'
-            )
-            resume_from_checkpoint = False
-        if os.path.exists(checkpoint_name):
-            logger.info(f'Restarting from {checkpoint_name}')
-            adapters_weights = torch.load(checkpoint_name)
-            set_peft_model_state_dict(model, adapters_weights)
-        else:
-            logger.info(f'Checkpoint {checkpoint_name} not found')
-
-    model.print_trainable_parameters()
-    model = RewardModel(model.config, model.transformer, tokenizer)
-    print(model)
-    #model = DistributedDataParallel(model.cuda()) 
-    #model._set_static_graph()
-    logger.info(f"Finished loading model and tokenizer")
-    
-
-    # print hf_train_args to see the manually set paras
-    print(f"number_train_samples={len(train_dataset)}\nnumber_of_eval_numbers={len(eval_dataset)}")
-    print(hf_train_args)
-    # raise ValueError("TEST")
-    
-    ### STEP  5   train
-    # trainer = LoRATrainer(
-    #     model=model,
-    #     args=hf_train_args,
-    #     train_dataset=train_dataset,
-    #     eval_dataset=eval_dataset,
-    #     data_collator = very_clear_data_collator , #modify 不使用这个collator 试试 20230804
-    # )
-    # if torch.cuda.device_count() > 1:
-    #     # Keeps Trainer from trying its own DataParallelism when more than 1 gpu is available
-    #     model.is_parallelizable = True
-    #     model.model_parallel = True
-    trainer = RewardTrainer(
-    model=model,
-    args=hf_train_args,
+# Train the model, woohoo.
+trainer = RewardTrainer(
+    # model=model,
+    model=reward_model,
+    args=training_args,
     train_dataset=train_dataset,
-    eval_dataset=train_dataset,#eval_dataset,
+    eval_dataset=eval_dataset,
     compute_metrics=compute_metrics,
-    data_collator=rm_data_collator,
-       )
+    data_collator=RewardDataCollatorWithPadding(
+        tokenizer=tokenizer, max_length=512, pad_to_multiple_of=8),
+    
+)
 
-    #model.config.use_cache = False
+model.config.use_cache = False
 
-    trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-    trainer.model.save_pretrained(hf_train_args.output_dir)
+trainer.train(script_args.resume_from_checkpoint)
 
-if __name__ == "__main__":
-    args = parse_args()
-    train(args)
+print("Saving last checkpoint of the model")
+# model.save_pretrained(script_args.output_dir + "peft_last_checkpoint")
+model.save_pretrained(output_name)
