@@ -359,19 +359,21 @@ class RewardTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         # print('inputs["input_ids_j"]: ', inputs["input_ids_j"].shape)
         # print('inputs["attention_mask_j"]: ', inputs["attention_mask_j"].shape)
-        rewards_j = model(chosen_input_ids=inputs["input_ids_j"], chosen_attention_mask=inputs["attention_mask_j"])["chosen_reward"]
+        rewards_j = model(
+            chosen_input_ids=inputs["input_ids_j"], chosen_attention_mask=inputs["attention_mask_j"])["chosen_reward"]
         # print("rewards_j: ", type(rewards_j), rewards_j.shape)
 
         # print('inputs["input_ids_k"]: ', inputs["input_ids_k"].shape)
         # print('inputs["attention_mask_k"]: ', inputs["attention_mask_k"].shape)
-        rewards_k = model(rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
+        rewards_k = model(
+            rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
         # print("rewards_k: ", type(rewards_k), rewards_k.shape)
-
-       
+        
         loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
         if return_outputs:
             return loss, {"rewards_j": rewards_j, "rewards_k": rewards_k}
         return loss
+
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
         """只保存adapter"""
         print("begin to save  !!!")
@@ -383,6 +385,9 @@ class RewardTrainer(Trainer):
             print("save done !!!")
         else :
             print("this process is not main process , do not save model.[for distributed training scenario]")
+            
+
+    
 
 def find_all_linear_names(model):
     """
