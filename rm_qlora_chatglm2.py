@@ -369,9 +369,10 @@ class RewardTrainer(Trainer):
 
         dict_loss_and_rewards_j_k =  model(
                    chosen_input_ids = inputs["input_ids_j"],
-                   reject_input_ids = inputs["input_ids_k"], 
                    chosen_attention_mask=inputs["attention_mask_j"] ,
-                   reject_attention_mask = inputs["attention_mask_k"])
+                   rejected_input_ids = inputs["input_ids_k"], 
+                   rejected_attention_mask = inputs["attention_mask_k"]
+                   )
         loss = dict_loss_and_rewards_j_k["loss"]
         rewards_j = dict_loss_and_rewards_j_k["chosen_reward"]
         rewards_k = dict_loss_and_rewards_j_k["reject_reward"]
