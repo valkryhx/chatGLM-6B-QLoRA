@@ -604,3 +604,7 @@ def train(global_args):
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     trainer.model.save_pretrained(hf_train_args.output_dir)
+
+if __name__ == "__main__":
+    args = parse_args()
+    train(args)
