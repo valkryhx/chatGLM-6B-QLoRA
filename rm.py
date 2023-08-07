@@ -256,9 +256,8 @@ def preprocess_function(example,tokenizer):
         new_examples["attention_mask_j"].append(tokenized_j["attention_mask"])
         new_examples["input_ids_k"].append(tokenized_k["input_ids"])
         new_examples["attention_mask_k"].append(tokenized_k["attention_mask"])
-        
-
     return new_examples
+    
 def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，只采样max_samples个参与训练/评估。
     并tokenize，shuffle，返回datasets.dataset
@@ -300,6 +299,23 @@ def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     # print(f"len(tokenized_dataset[0]['labels']={len(tokenized_dataset[0]['labels'])}")
     
     return tokenized_dataset
+
+def find_all_linear_names(model):
+    """
+    找出所有全连接层，为所有全连接添加adapter
+    """
+    cls = bnb.nn.Linear4bit
+    lora_module_names = set()
+    for name, module in model.named_modules():
+        if isinstance(module, cls):
+            names = name.split('.')
+            lora_module_names.add(names[0] if len(names) == 1 else names[-1])
+
+    if 'lm_head' in lora_module_names:  # needed for 16-bit
+        lora_module_names.remove('lm_head')
+    if  'output_layer' in lora_module_names:
+        lora_module_names.remove('output_layer')
+    return list(lora_module_names)
 
 # We need to define a special data collator that batches the data in our j vs k format.
 @dataclass
@@ -394,7 +410,17 @@ class RewardTrainer(Trainer):
         else :
             print("this process is not main process , do not save model.[for distributed training scenario]")
 
+# Define the metric that we'll use for validation.
+accuracy = evaluate.load("accuracy")
 
+
+def compute_metrics(eval_pred):
+    predictions, _ = eval_pred
+    # Here, predictions is rewards_j and rewards_k.
+    # We want to see how much of the time rewards_j > rewards_k.
+    predictions = np.argmax(predictions, axis=0)
+    labels = np.zeros(predictions.shape)
+    return accuracy.compute(predictions=predictions, references=labels)
 def train(global_args):
 
     ##STEP 0 从命令行获取参数，包括trainingArgs在内的，以及各类附属参数
