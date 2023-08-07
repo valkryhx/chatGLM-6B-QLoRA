@@ -31,7 +31,7 @@ from transformers.utils import PaddingStrategy
 from transformers import LlamaForSequenceClassification, LlamaConfig, LlamaTokenizer
 from transformers import AutoModelForSeq2SeqLM , AutoModel
 
-from reward_model import RewardModel
+# from reward_model import RewardModel
 
 DEFAULT_PAD_TOKEN = "[PAD]"
 DEFAULT_EOS_TOKEN = "</s>"
