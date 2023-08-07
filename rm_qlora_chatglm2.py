@@ -369,7 +369,7 @@ class RewardTrainer(Trainer):
 
         total_rewards_j_k =  model(
                    chosen_input_ids=inputs["input_ids_j"]+inputs["input_ids_k"], 
-                   chosen_attention_mask=inputs["attention_mask_j"] + inputs["attention_mask_k"]
+                   chosen_attention_mask=inputs["attention_mask_j"] + inputs["attention_mask_k"])
         reward_j = total_rewards_j_k[:len(inputs["input_ids_j"])]["chosen_reward"]
         reward_k = total_rewards_j_k[len(inputs["input_ids_j"]):]["reject_reward"]
         loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
