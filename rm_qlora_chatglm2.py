@@ -538,7 +538,7 @@ def train(global_args):
                                   # 这使得 DeepSpeed 能够正常地将权重复制到元数据张量中
                                   # THUDM/chatglm2 估计modeling_chatglm.py 默认是True  好坑！
                                   # 果然 一查真的是 https://huggingface.co/THUDM/chatglm2-6b/blob/main/modeling_chatglm.py#L732
-                                          empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
+                                          #empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
                                           #device_map=new_hf_device_map,
                                           # device_map="auto"   # add 20230713
                                      )
