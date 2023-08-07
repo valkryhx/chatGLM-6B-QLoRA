@@ -462,7 +462,7 @@ def train(global_args):
     #                                                      tokenizer=tokenizer, 
     #                                                      max_samples=global_args.num_train_samples,global_args=global_args)
 
-    train_dataset = get_rm_datset(data_path=global_args.train_data_path, tokenizer=tokenizer, global_args.num_train_samples,global_args=global_args)
+    train_dataset = get_rm_datset(data_path=global_args.train_data_path, tokenizer=tokenizer, max_samples=global_args.num_train_samples,global_args=global_args)
     
     """ 
      eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
@@ -485,7 +485,7 @@ def train(global_args):
     # eval_dataset =  get_multi_turn_conversations_datset(data_path=global_args.eval_data_path, 
     #                                                      tokenizer=tokenizer, 
     #                                                      max_samples=global_args.num_eval_samples,global_args=global_args)
-    eval_dataset = get_rm_datset(data_path=global_args.eval_data_path, tokenizer=tokenizer, global_args.num_eval_samples,global_args=global_args)
+    eval_dataset = get_rm_datset(data_path=global_args.eval_data_path, tokenizer=tokenizer, max_samples=global_args.num_eval_samples,global_args=global_args)
     
     ### STEP 2 定义 data collator
     rm_data_collator = RewardDataCollatorWithPadding(
