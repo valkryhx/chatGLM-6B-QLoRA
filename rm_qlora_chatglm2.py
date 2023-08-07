@@ -225,7 +225,7 @@ class RewardModel(PreTrainedModel):
                 chosen_input_ids  = torch.tensor( chosen_input_ids.tolist() +  [0] *(pad_len))
                 chosen_attention_mask =  torch.tensor( chosen_attention_mask.tolist() +  [0] *(pad_len))
                 chosen_position_ids = torch.tensor( chosen_position_ids.tolist() +  [0] *(pad_len))   if chosen_position_ids else None
-            chosen_reward, reject_reward = self.reward([chosen_input_ids,rejected_input_ids], attention_mask=[chosen_attention_mask,rejected_attention_mask], position_ids=[chosen_position_ids,rejected_position_ids]) 
+            chosen_reward, reject_reward = self.reward(torch.tensor([chosen_input_ids,rejected_input_ids]), attention_mask=torch.tensor([chosen_attention_mask,rejected_attention_mask]), position_ids=None) 
             loss = self.loss_fn(chosen_reward, reject_reward)   
         else:
             loss = None
