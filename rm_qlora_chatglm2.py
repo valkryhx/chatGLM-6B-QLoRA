@@ -367,12 +367,15 @@ class RewardTrainer(Trainer):
         #rewards_k = model(rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
         # print("rewards_k: ", type(rewards_k), rewards_k.shape)
 
-        total_rewards_j_k =  model(
-                   chosen_input_ids=inputs["input_ids_j"]+inputs["input_ids_k"], 
-                   chosen_attention_mask=inputs["attention_mask_j"] + inputs["attention_mask_k"])
-        reward_j = total_rewards_j_k[:len(inputs["input_ids_j"])]["chosen_reward"]
-        reward_k = total_rewards_j_k[len(inputs["input_ids_j"]):]["reject_reward"]
-        loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
+        dict_loss_and_rewards_j_k =  model(
+                   chosen_input_ids = inputs["input_ids_j"],
+                   reject_input_ids = inputs["input_ids_k"], 
+                   chosen_attention_mask=inputs["attention_mask_j"] ,
+                   reject_attention_mask = inputs["attention_mask_k"])
+        loss = dict_loss_and_rewards_j_k["loss"]
+        rewards_j = dict_loss_and_rewards_j_k["chosen_reward"]
+        rewards_k = dict_loss_and_rewards_j_k["reject_reward"]
+        #loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
         if return_outputs:
             return loss, {"rewards_j": rewards_j, "rewards_k": rewards_k}
         return loss
