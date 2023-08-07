@@ -148,7 +148,7 @@ class RewardModel(PreTrainedModel):
         self.transformer = model
         #定义v_head时也要注意dtype是float32避免 RuntimeError: expected scalar type Float but found Half
         self.v_head = nn.Linear(config.hidden_size, 1, bias=False, dtype=torch.float32) 
-        self.loss_fn = PairWiseLoss()
+        self.loss_fn = PairWiseLoss
 
     def gradient_checkpointing_enable(self):
         self.transformer.gradient_checkpointing_enable()
