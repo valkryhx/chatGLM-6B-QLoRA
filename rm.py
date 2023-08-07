@@ -233,7 +233,7 @@ class RewardModel(PreTrainedModel):
 
 # Turn the dataset into pairs of post + summaries, where text_j is the preferred question + answer and text_k is the other.
 # Then tokenize the dataset.
-def preprocess_function(examples):
+def preprocess_function(example,tokenizer):
     new_examples = {
         "input_ids_j": [],
         "attention_mask_j": [],
@@ -241,19 +241,24 @@ def preprocess_function(examples):
         "attention_mask_k": [],
     }
     # for question, response_j, response_k in zip(examples["question"], examples["response_j"], examples["response_k"]):
-    for question, response_j, response_k in zip(examples["user_input"], examples["completion_a"], examples["completion_b"]):
+    for question, response_j, response_k in zip(example["user_input"], example["completion_a"], example["completion_b"]):
+        chatglm2_prompt = "[Round 1]\n\n问：{}\n\n答：{}\n\n"
         tokenized_j = tokenizer(
-            "Question: " + question + "\n\nAnswer: " + response_j, truncation=True)
+            #"Question: " + question + "\n\nAnswer: " + response_j, truncation=True
+              chatglm2_prompt.format(question,response_j),truncation=True
+              )
         tokenized_k = tokenizer(
-            "Question: " + question + "\n\nAnswer: " + response_k, truncation=True)
-
+            #"Question: " + question + "\n\nAnswer: " + response_k, truncation=True
+              chatglm2_prompt.format(question,response_k),truncation=True
+              )
+        
         new_examples["input_ids_j"].append(tokenized_j["input_ids"])
         new_examples["attention_mask_j"].append(tokenized_j["attention_mask"])
         new_examples["input_ids_k"].append(tokenized_k["input_ids"])
         new_examples["attention_mask_k"].append(tokenized_k["attention_mask"])
+        
 
     return new_examples
-
 def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，只采样max_samples个参与训练/评估。
     并tokenize，shuffle，返回datasets.dataset
