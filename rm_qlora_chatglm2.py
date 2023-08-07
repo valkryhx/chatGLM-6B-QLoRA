@@ -614,10 +614,10 @@ def train(global_args):
     #     eval_dataset=eval_dataset,
     #     data_collator = very_clear_data_collator , #modify 不使用这个collator 试试 20230804
     # )
-    if torch.cuda.device_count() > 1:
-        # Keeps Trainer from trying its own DataParallelism when more than 1 gpu is available
-        model.is_parallelizable = True
-        model.model_parallel = True
+    # if torch.cuda.device_count() > 1:
+    #     # Keeps Trainer from trying its own DataParallelism when more than 1 gpu is available
+    #     model.is_parallelizable = True
+    #     model.model_parallel = True
     trainer = RewardTrainer(
     model=model,
     args=hf_train_args,
