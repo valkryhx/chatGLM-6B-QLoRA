@@ -217,14 +217,14 @@ class RewardModel(PreTrainedModel):
         if chosen_input_ids is not None and  rejected_input_ids is not None:
             if len(chosen_input_ids) > len(rejected_input_ids) :
                 pad_len = len(chosen_input_ids) - len(rejected_input_ids) 
-                rejected_input_ids  += [0] *(pad_len)
-                rejected_attention_mask +=  [0] *(pad_len)
-                rejected_position_ids += [0] *(pad_len)
+                rejected_input_ids  = torch.tensor( rejected_input_ids.tolist() +  [0] *(pad_len))
+                rejected_attention_mask =  torch.tensor( rejected_attention_mask.tolist() +  [0] *(pad_len))
+                rejected_position_ids = torch.tensor( rejected_position_ids.tolist() +  [0] *(pad_len))
             else:
                 pad_len = len(rejected_input_ids) - len(chosen_input_ids) 
-                chosen_input_ids  += [0] *(pad_len)
-                chosen_attention_mask +=  [0] *(pad_len)
-                chosen_position_ids += [0] *(pad_len)
+                chosen_input_ids  = torch.tensor( chosen_input_ids.tolist() +  [0] *(pad_len))
+                chosen_attention_mask =  torch.tensor( chosen_attention_mask.tolist() +  [0] *(pad_len))
+                chosen_position_ids = torch.tensor( chosen_position_ids.tolist() +  [0] *(pad_len))
             chosen_reward, reject_reward = self.reward([chosen_input_ids,rejected_input_ids], attention_mask=[chosen_attention_mask,rejected_attention_mask], position_ids=[chosen_position_ids,rejected_position_ids]) 
             loss = self.loss_fn(chosen_reward, reject_reward)   
         else:
