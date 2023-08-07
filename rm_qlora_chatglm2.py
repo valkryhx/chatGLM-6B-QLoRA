@@ -111,26 +111,16 @@ def parse_args():
 """
 
 ##################################################################################
-# class PairWiseLoss(nn.Module):
-#     """
-#     Pairwise Loss for Reward Model
-#     """
-
-#     def forward(self, chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
-#         probs = torch.sigmoid(chosen_reward - reject_reward)
-#         log_probs = torch.log(probs)
-#         loss = -log_probs.mean()
-#         return loss
-
-
-   
-def PairWiseLoss(chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
-    """     Pairwise Loss for Reward Model
+class PairWiseLoss(nn.Module):
     """
-    probs = torch.sigmoid(chosen_reward - reject_reward)
-    log_probs = torch.log(probs)
-    loss = -log_probs.mean()
-    return loss
+    Pairwise Loss for Reward Model
+    """
+
+    def forward(self, chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
+        probs = torch.sigmoid(chosen_reward - reject_reward)
+        log_probs = torch.log(probs)
+        loss = -log_probs.mean()
+        return loss
 
 ##################################################################################
 ## part of codes are from https://github.com/valkryhx/ChatGLM-LoRA-RLHF-PyTorch/blob/4d3b8df2d6b7908a924b91b339f4468ed357761e/reward_model.py#L54
@@ -147,7 +137,7 @@ class RewardModel(PreTrainedModel):
         self.transformer = model
         #定义v_head时也要注意dtype是float32避免 RuntimeError: expected scalar type Float but found Half
         self.v_head = nn.Linear(config.hidden_size, 1, bias=False, dtype=torch.float32) 
-        self.loss_fn = PairWiseLoss
+        self.loss_fn = PairWiseLoss()
 
     def gradient_checkpointing_enable(self):
         self.transformer.gradient_checkpointing_enable()
@@ -213,29 +203,6 @@ class RewardModel(PreTrainedModel):
             output_attentions=False,
             output_hidden_states=False,
     ):
-
-        if chosen_input_ids is not None and  rejected_input_ids is not None:
-            if len(chosen_input_ids) > len(rejected_input_ids) :
-                pad_len = len(chosen_input_ids) - len(rejected_input_ids) 
-                rejected_input_ids  = torch.tensor( rejected_input_ids.tolist() +  [0] *(pad_len))
-                rejected_attention_mask =  torch.tensor( rejected_attention_mask.tolist() +  [0] *(pad_len))
-                rejected_position_ids = torch.tensor( rejected_position_ids.tolist() +  [0] *(pad_len)) if rejected_position_ids else None
-            else:
-                pad_len = len(rejected_input_ids) - len(chosen_input_ids) 
-                chosen_input_ids  = torch.tensor( chosen_input_ids.tolist() +  [0] *(pad_len))
-                chosen_attention_mask =  torch.tensor( chosen_attention_mask.tolist() +  [0] *(pad_len))
-                chosen_position_ids = torch.tensor( chosen_position_ids.tolist() +  [0] *(pad_len))   if chosen_position_ids else None
-            chosen_reward, reject_reward = self.reward(torch.tensor([chosen_input_ids,rejected_input_ids]), attention_mask=torch.tensor([chosen_attention_mask,rejected_attention_mask]), position_ids=None) 
-            loss = self.loss_fn(chosen_reward, reject_reward)   
-        else:
-            loss = None
-
-        return {
-            "loss": loss,
-            "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
-            "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
-        }
-        
         if chosen_input_ids is not None:
             chosen_reward = self.reward(chosen_input_ids, attention_mask=chosen_attention_mask, position_ids=chosen_position_ids)
             # print("chosen_reward: ", chosen_reward.shape)
@@ -248,7 +215,6 @@ class RewardModel(PreTrainedModel):
         else:
             reject_reward = None
 
-        
         if chosen_reward is not None and reject_reward is not None:
             loss = self.loss_fn(chosen_reward, reject_reward)   
         else:
@@ -393,24 +359,16 @@ class RewardTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         # print('inputs["input_ids_j"]: ', inputs["input_ids_j"].shape)
         # print('inputs["attention_mask_j"]: ', inputs["attention_mask_j"].shape)
-        #rewards_j = model(chosen_input_ids=inputs["input_ids_j"], chosen_attention_mask=inputs["attention_mask_j"])["chosen_reward"]
+        rewards_j = model(chosen_input_ids=inputs["input_ids_j"], chosen_attention_mask=inputs["attention_mask_j"])["chosen_reward"]
         # print("rewards_j: ", type(rewards_j), rewards_j.shape)
 
         # print('inputs["input_ids_k"]: ', inputs["input_ids_k"].shape)
         # print('inputs["attention_mask_k"]: ', inputs["attention_mask_k"].shape)
-        #rewards_k = model(rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
+        rewards_k = model(rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
         # print("rewards_k: ", type(rewards_k), rewards_k.shape)
 
-        dict_loss_and_rewards_j_k =  model(
-                   chosen_input_ids = inputs["input_ids_j"],
-                   chosen_attention_mask=inputs["attention_mask_j"] ,
-                   rejected_input_ids = inputs["input_ids_k"], 
-                   rejected_attention_mask = inputs["attention_mask_k"]
-                   )
-        loss = dict_loss_and_rewards_j_k["loss"]
-        rewards_j = dict_loss_and_rewards_j_k["chosen_reward"]
-        rewards_k = dict_loss_and_rewards_j_k["reject_reward"]
-        #loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
+       
+        loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
         if return_outputs:
             return loss, {"rewards_j": rewards_j, "rewards_k": rewards_k}
         return loss
