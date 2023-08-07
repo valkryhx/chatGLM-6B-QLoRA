@@ -92,6 +92,7 @@ def parse_args():
     parser.add_argument("--load_best_model_at_end",type=bool,default=True)  # https://huggingface.co/docs/transformers/main_classes/trainer
     parser.add_argument("--block_size",type=int,default=256,help="将篇章级别文本分词后的长tokens结果 按照block_size划分成固定大小 想象一下长火车分成多个车厢")
     parser.add_argument("--max_length",type=int,default=256,help="每个样本的最大长度，一般会小于等于block_size")
+    parser.add_argument("--ddp_find_unused_parameters",type=bool ,default=True)
     #"output_dir": "output/qlora_ds_zero",
     #"per_device_train_batch_size": 8, 
     #"per_device_eval_batch_size":  2,
@@ -451,7 +452,7 @@ def train(global_args):
     hf_train_args.learning_rate = global_args.learning_rate
     hf_train_args.num_train_epochs = global_args.num_train_epochs
     hf_train_args.save_total_limit = global_args.save_total_limit
-    
+    hf_train_args.ddp_find_unused_parameters = global_args.ddp_find_unused_parameters
     
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
