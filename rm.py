@@ -3,7 +3,9 @@
 # @author: Kun
 
 
-
+from transformers.modeling_utils import PreTrainedModel
+from transformers.configuration_utils import PretrainedConfig
+from transformers.tokenization_utils import PreTrainedTokenizer
 from glob import glob
 from loguru import logger
 import os
