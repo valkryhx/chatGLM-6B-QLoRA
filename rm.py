@@ -158,6 +158,144 @@ class RewardModel(PreTrainedModel):
             "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
         }
 
+def preprocess_function(examples):
+    new_examples = {
+        "input_ids_j": [],
+        "attention_mask_j": [],
+        "input_ids_k": [],
+        "attention_mask_k": [],
+    }
+    # for question, response_j, response_k in zip(examples["question"], examples["response_j"], examples["response_k"]):
+    for question, response_j, response_k in zip(examples["user_input"], examples["completion_a"], examples["completion_b"]):
+        chatglm2_prompt = "[Round 1]\n\n问：{}\n\n答：{}\n\n"
+        tokenized_j = tokenizer(
+            #"Question: " + question + "\n\nAnswer: " + response_j, truncation=True
+             chatglm2_prompt.format(question,response_j),truncation=True
+              )
+        tokenized_k = tokenizer(
+            #"Question: " + question + "\n\nAnswer: " + response_k, truncation=True
+              chatglm2_prompt.format(question,response_k),truncation=True
+             )
+
+        new_examples["input_ids_j"].append(tokenized_j["input_ids"])
+        new_examples["attention_mask_j"].append(tokenized_j["attention_mask"])
+        new_examples["input_ids_k"].append(tokenized_k["input_ids"])
+        new_examples["attention_mask_k"].append(tokenized_k["attention_mask"])
+
+    return new_examples
+
+# We need to define a special data collator that batches the data in our j vs k format.
+@dataclass
+class RewardDataCollatorWithPadding:
+    tokenizer: PreTrainedTokenizerBase
+    padding: Union[bool, str, PaddingStrategy] = True
+    max_length: Optional[int] = None
+    pad_to_multiple_of: Optional[int] = None
+    return_tensors: str = "pt"
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+        features_j = []
+        features_k = []
+        for feature in features:
+            features_j.append(
+                {
+                    "input_ids": feature["input_ids_j"],
+                    "attention_mask": feature["attention_mask_j"],
+                }
+            )
+            features_k.append(
+                {
+                    "input_ids": feature["input_ids_k"],
+                    "attention_mask": feature["attention_mask_k"],
+                }
+            )
+        batch_j = self.tokenizer.pad(
+            features_j,
+            padding=self.padding,
+            max_length=self.max_length,
+            pad_to_multiple_of=self.pad_to_multiple_of,
+            return_tensors=self.return_tensors,
+        )
+        batch_k = self.tokenizer.pad(
+            features_k,
+            padding=self.padding,
+            max_length=self.max_length,
+            pad_to_multiple_of=self.pad_to_multiple_of,
+            return_tensors=self.return_tensors,
+        )
+        batch = {
+            "input_ids_j": batch_j["input_ids"],
+            "attention_mask_j": batch_j["attention_mask"],
+            "input_ids_k": batch_k["input_ids"],
+            "attention_mask_k": batch_k["attention_mask"],
+            "return_loss": True,
+        }
+        return batch
+
+
+# Define the metric that we'll use for validation.
+accuracy = evaluate.load("accuracy")
+
+
+def compute_metrics(eval_pred):
+    predictions, _ = eval_pred
+    # Here, predictions is rewards_j and rewards_k.
+    # We want to see how much of the time rewards_j > rewards_k.
+    predictions = np.argmax(predictions, axis=0)
+    labels = np.zeros(predictions.shape)
+    return accuracy.compute(predictions=predictions, references=labels)
+
+
+class RewardTrainer(Trainer):
+    # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
+    def compute_loss(self, model, inputs, return_outputs=False):
+        # print('inputs["input_ids_j"]: ', inputs["input_ids_j"].shape)
+        # print('inputs["attention_mask_j"]: ', inputs["attention_mask_j"].shape)
+        rewards_j = model(
+            chosen_input_ids=inputs["input_ids_j"], chosen_attention_mask=inputs["attention_mask_j"])["chosen_reward"]
+        # print("rewards_j: ", type(rewards_j), rewards_j.shape)
+
+        # print('inputs["input_ids_k"]: ', inputs["input_ids_k"].shape)
+        # print('inputs["attention_mask_k"]: ', inputs["attention_mask_k"].shape)
+        rewards_k = model(
+            rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
+        # print("rewards_k: ", type(rewards_k), rewards_k.shape)
+        
+        loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
+        if return_outputs:
+            return loss, {"rewards_j": rewards_j, "rewards_k": rewards_k}
+        return loss
+
+    def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
+        """只保存adapter"""
+        print("begin to save  !!!")
+        if output_dir is None:
+            output_dir = self.args.output_dir
+        if self.is_world_process_zero():  
+            self.model.save_pretrained(output_dir)
+            torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+            print("save done !!!")
+        else :
+            print("this process is not main process , do not save model.[for distributed training scenario]")
+
+
+def find_all_linear_names(model):
+    """
+    找出所有全连接层，为所有全连接添加adapter
+    """
+    cls = bnb.nn.Linear4bit
+    lora_module_names = set()
+    for name, module in model.named_modules():
+        if isinstance(module, cls):
+            names = name.split('.')
+            lora_module_names.add(names[0] if len(names) == 1 else names[-1])
+
+    if 'lm_head' in lora_module_names:  # needed for 16-bit
+        lora_module_names.remove('lm_head')
+    if  'output_layer' in lora_module_names:
+        lora_module_names.remove('output_layer')
+    return list(lora_module_names)
+    
 # Define and parse arguments.
 @dataclass
 class ScriptArguments:
@@ -362,22 +500,7 @@ print("model: ", type(model))
 model = prepare_model_for_kbit_training(model)
 print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
 print("model: ", type(model))
-def find_all_linear_names(model):
-    """
-    找出所有全连接层，为所有全连接添加adapter
-    """
-    cls = bnb.nn.Linear4bit
-    lora_module_names = set()
-    for name, module in model.named_modules():
-        if isinstance(module, cls):
-            names = name.split('.')
-            lora_module_names.add(names[0] if len(names) == 1 else names[-1])
 
-    if 'lm_head' in lora_module_names:  # needed for 16-bit
-        lora_module_names.remove('lm_head')
-    if  'output_layer' in lora_module_names:
-        lora_module_names.remove('output_layer')
-    return list(lora_module_names)
 
 target_modules = find_all_linear_names(model)
 peft_config = LoraConfig(
@@ -421,31 +544,7 @@ print(f"Finished loading model and tokenizer")
 
 # Turn the dataset into pairs of post + summaries, where text_j is the preferred question + answer and text_k is the other.
 # Then tokenize the dataset.
-def preprocess_function(examples):
-    new_examples = {
-        "input_ids_j": [],
-        "attention_mask_j": [],
-        "input_ids_k": [],
-        "attention_mask_k": [],
-    }
-    # for question, response_j, response_k in zip(examples["question"], examples["response_j"], examples["response_k"]):
-    for question, response_j, response_k in zip(examples["user_input"], examples["completion_a"], examples["completion_b"]):
-        chatglm2_prompt = "[Round 1]\n\n问：{}\n\n答：{}\n\n"
-        tokenized_j = tokenizer(
-            #"Question: " + question + "\n\nAnswer: " + response_j, truncation=True
-             chatglm2_prompt.format(question,response_j),truncation=True
-              )
-        tokenized_k = tokenizer(
-            #"Question: " + question + "\n\nAnswer: " + response_k, truncation=True
-              chatglm2_prompt.format(question,response_k),truncation=True
-             )
 
-        new_examples["input_ids_j"].append(tokenized_j["input_ids"])
-        new_examples["attention_mask_j"].append(tokenized_j["attention_mask"])
-        new_examples["input_ids_k"].append(tokenized_k["input_ids"])
-        new_examples["attention_mask_k"].append(tokenized_k["attention_mask"])
-
-    return new_examples
 
 
 # preprocess the dataset and filter out QAs that are longer than 512
@@ -464,99 +563,7 @@ eval_dataset = eval_dataset.filter(lambda x: len(
     x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
 print("eval_dataset: ", len(eval_dataset))
 
-# We need to define a special data collator that batches the data in our j vs k format.
-@dataclass
-class RewardDataCollatorWithPadding:
-    tokenizer: PreTrainedTokenizerBase
-    padding: Union[bool, str, PaddingStrategy] = True
-    max_length: Optional[int] = None
-    pad_to_multiple_of: Optional[int] = None
-    return_tensors: str = "pt"
 
-    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
-        features_j = []
-        features_k = []
-        for feature in features:
-            features_j.append(
-                {
-                    "input_ids": feature["input_ids_j"],
-                    "attention_mask": feature["attention_mask_j"],
-                }
-            )
-            features_k.append(
-                {
-                    "input_ids": feature["input_ids_k"],
-                    "attention_mask": feature["attention_mask_k"],
-                }
-            )
-        batch_j = self.tokenizer.pad(
-            features_j,
-            padding=self.padding,
-            max_length=self.max_length,
-            pad_to_multiple_of=self.pad_to_multiple_of,
-            return_tensors=self.return_tensors,
-        )
-        batch_k = self.tokenizer.pad(
-            features_k,
-            padding=self.padding,
-            max_length=self.max_length,
-            pad_to_multiple_of=self.pad_to_multiple_of,
-            return_tensors=self.return_tensors,
-        )
-        batch = {
-            "input_ids_j": batch_j["input_ids"],
-            "attention_mask_j": batch_j["attention_mask"],
-            "input_ids_k": batch_k["input_ids"],
-            "attention_mask_k": batch_k["attention_mask"],
-            "return_loss": True,
-        }
-        return batch
-
-
-# Define the metric that we'll use for validation.
-accuracy = evaluate.load("accuracy")
-
-
-def compute_metrics(eval_pred):
-    predictions, _ = eval_pred
-    # Here, predictions is rewards_j and rewards_k.
-    # We want to see how much of the time rewards_j > rewards_k.
-    predictions = np.argmax(predictions, axis=0)
-    labels = np.zeros(predictions.shape)
-    return accuracy.compute(predictions=predictions, references=labels)
-
-
-class RewardTrainer(Trainer):
-    # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
-    def compute_loss(self, model, inputs, return_outputs=False):
-        # print('inputs["input_ids_j"]: ', inputs["input_ids_j"].shape)
-        # print('inputs["attention_mask_j"]: ', inputs["attention_mask_j"].shape)
-        rewards_j = model(
-            chosen_input_ids=inputs["input_ids_j"], chosen_attention_mask=inputs["attention_mask_j"])["chosen_reward"]
-        # print("rewards_j: ", type(rewards_j), rewards_j.shape)
-
-        # print('inputs["input_ids_k"]: ', inputs["input_ids_k"].shape)
-        # print('inputs["attention_mask_k"]: ', inputs["attention_mask_k"].shape)
-        rewards_k = model(
-            rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
-        # print("rewards_k: ", type(rewards_k), rewards_k.shape)
-        
-        loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
-        if return_outputs:
-            return loss, {"rewards_j": rewards_j, "rewards_k": rewards_k}
-        return loss
-
-    def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
-        """只保存adapter"""
-        print("begin to save  !!!")
-        if output_dir is None:
-            output_dir = self.args.output_dir
-        if self.is_world_process_zero():  
-            self.model.save_pretrained(output_dir)
-            torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
-            print("save done !!!")
-        else :
-            print("this process is not main process , do not save model.[for distributed training scenario]")
 
 
 # Train the model.
