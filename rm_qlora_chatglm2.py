@@ -747,10 +747,10 @@ def train(global_args):
     eval_dataset = get_rm_datset(data_path=global_args.eval_data_path, tokenizer=tokenizer, max_samples=global_args.num_eval_samples,global_args=global_args)
     
     ### STEP 2 定义 data collator
-    # rm_data_collator = RewardDataCollatorWithPadding2(
-    #                                tokenizer=tokenizer, 
-    #                                max_length=global_args.max_length, 
-    #                                pad_to_multiple_of=8)
+    rm_data_collator = RewardDataCollatorWithPadding2(
+                                   tokenizer=tokenizer, 
+                                   max_length=global_args.max_length, 
+                                   pad_to_multiple_of=8)
 
   
      
