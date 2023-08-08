@@ -297,10 +297,11 @@ class RewardModel(nn.Module):
                 **kwargs
                ):
         loss = None
-        
+        logger.error(f"input_ids={type(input_ids)} ,= {input_ids}")
+        logger.error(f"attention_mask={type(attention_mask)} ,= {attention_mask}")
         transformer_outputs = self.rwtranrsformer(
             input_ids,
-            past_key_values=past_key_values,
+            #past_key_values=past_key_values,
             attention_mask=attention_mask,
             #head_mask=head_mask,   #ChatGLMForConditionalGeneration.forward() got an unexpected keyword argument 'head_mask'
             #inputs_embeds=inputs_embeds,
