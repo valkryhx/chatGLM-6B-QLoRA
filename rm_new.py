@@ -136,7 +136,10 @@ class RewardModel(PreTrainedModel):
             output_hidden_states=False,
     ):
         #print(f"in forward  chosen_input_ids={chosen_input_ids}")
-        logger.error("in rw model forward")
+        print("in rw model forward")
+        print("chosen_input_ids={chosen_input_ids}")
+        print("rejected_input_ids={rejected_input_ids}")
+        
         if chosen_input_ids is not None and rejected_input_ids is not None :
             logger.error("both not None")
             total_ids = torch.cat((chosen_input_ids,rejected_input_ids),dim=0)
@@ -154,13 +157,13 @@ class RewardModel(PreTrainedModel):
             "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
             "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
               }
-        logger.error("chosen_input_ids not None ")
+        
         if chosen_input_ids is not None:
             chosen_reward = self.reward(chosen_input_ids, attention_mask=chosen_attention_mask, position_ids=chosen_position_ids)
             # print("chosen_reward: ", chosen_reward.shape)
         else:
             chosen_reward = None
-        logger.error("rejected_input_ids not None ")
+        
         if rejected_input_ids is not None:
             reject_reward = self.reward(rejected_input_ids, attention_mask=rejected_attention_mask, position_ids=rejected_position_ids)
             # print("reject_reward: ", reject_reward.shape)
