@@ -519,14 +519,18 @@ class RewardDataCollatorWithPadding2:
             )
         batch_j = self.tokenizer.pad(
             features_j,
-            padding=self.padding,
+            #padding=self.padding,
+            padding='max_length',
+            truncation=True,
             max_length=self.max_length,
             pad_to_multiple_of=self.pad_to_multiple_of,
             return_tensors=self.return_tensors,
         )
         batch_k = self.tokenizer.pad(
             features_k,
-            padding=self.padding,
+            #padding=self.padding,
+            padding='max_length',
+            truncation=True,
             max_length=self.max_length,
             pad_to_multiple_of=self.pad_to_multiple_of,
             return_tensors=self.return_tensors,
