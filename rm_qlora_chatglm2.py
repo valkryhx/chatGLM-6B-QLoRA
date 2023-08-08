@@ -409,6 +409,9 @@ def preprocess_function2(example,tokenizer):
     #
     # for question, response_j, response_k in zip(examples["question"], examples["response_j"], examples["response_k"]):
     #for question, response_j, response_k in zip(example["user_input"], example["completion_a"], example["completion_b"]):
+    question  =  example["user_input"]
+    response_j = example["completion_a"]
+    response_k = example["completion_b"]
     chatglm2_prompt = "[Round 1]\n\n问：{}\n\n答：{}\n\n"
     tokenized_j = tokenizer(
             #"Question: " + question + "\n\nAnswer: " + response_j, truncation=True
