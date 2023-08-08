@@ -467,7 +467,7 @@ def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     logger.info("preprocessing dataset...")
     
     tokenized_dataset = data['train'].map(
-                                lambda example: preprocess_function2(example, tokenizer=tokenizer),
+                                lambda example: preprocess_function_old(example, tokenizer=tokenizer),
                                 batched=False, 
                                 remove_columns=data['train'].column_names)
     # 验证打印一些信息
@@ -538,6 +538,18 @@ class RewardDataCollatorWithPadding2:
             "attention_mask_k": batch_k["attention_mask"],
             "return_loss": True,
         }
+        return batch
+
+
+class DataCollatorReward_new:
+    ## a sample  = {"input_ids_j":XX,"attention_mask_j":XX,"input_ids_k":XX,"attention_mask_k":XX}
+    ## data = list of [{"input_ids_j":XX,"attention_mask_j":XX,"input_ids_k":XX,"attention_mask_k":XX}]
+    def __call__(self, data):
+        batch = {}
+        batch["input_ids"] = torch.cat([f["input_ids_j"] for f in data] + [f["input_ids_k"] for f in data],
+                                        dim=0)
+        batch["attention_mask"] = torch.cat([f["attention_mask_j"] for f in data] + [f["attention_mask_k"] for f in data],
+                                        dim=0)
         return batch
 
 class RewardTrainer(Trainer):
@@ -812,7 +824,7 @@ def train(global_args):
     train_dataset=train_dataset,
     eval_dataset=eval_dataset,
     compute_metrics=compute_metrics,
-    data_collator=DataCollatorReward(),
+    data_collator=DataCollatorReward_new(),
        )
 
     #model.config.use_cache = False
