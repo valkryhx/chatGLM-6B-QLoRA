@@ -291,7 +291,9 @@ class RewardModel(nn.Module):
                 head_mask=None,
                 inputs_embeds=None,
                 use_cache=False,
-                labels=None,):
+                labels=None,
+                output_attentions=None,
+               ):
         loss = None
 
         transformer_outputs = self.rwtranrsformer(
