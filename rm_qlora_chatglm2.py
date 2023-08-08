@@ -756,7 +756,7 @@ def train(global_args):
     
     model.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
-    model.enable_input_require_grads()
+    #model.enable_input_require_grads()
     # note: Enables the gradients for the input embeddings. This is useful for fine-tuning adapter weights while keeping the model weights fixed. 
     # See https://github.com/huggingface/transformers/blob/ee88ae59940fd4b2c8fc119373143d7a1175c651/src/transformers/modeling_utils.py#L1190
 
