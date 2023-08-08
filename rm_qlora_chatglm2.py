@@ -554,8 +554,8 @@ class RewardDataCollatorWithPadding2:
         print([len(item) for item in batch_j["input_ids"]])
         print([len(item) for item in batch_k["input_ids"]])
         batch = {
-            "input_ids": batch_j["input_ids"],  #+ batch_j["input_ids"]  ,
-            "attention_mask": batch_j["attention_mask"], # + batch_j["attention_mask"],
+            "input_ids": batch_j["input_ids"]+ batch_k["input_ids"]  ,
+            "attention_mask": batch_j["attention_mask"] + batch_k["attention_mask"],
             #"input_ids_k": batch_k["input_ids"],
             #"attention_mask_k": batch_k["attention_mask"],
             #"return_loss": True,
