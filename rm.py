@@ -563,8 +563,8 @@ def train():
     #tokenizer.pad_token = tokenizer.eos_token
     #model.config.pad_token_id = tokenizer.eos_token_id
     #model.config.use_cache = not script_args.gradient_checkpointing
-    num_proc = 1  # Can adjust to be higher if you have more processors.
-    original_columns = train_dataset.column_names
+    #num_proc = 1  # Can adjust to be higher if you have more processors.
+    #original_columns = train_dataset.column_names
 
     reward_model = RewardModel(model.config, model.transformer, tokenizer)
     print(reward_model)
