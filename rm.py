@@ -532,7 +532,7 @@ def train():
     # preprocess the dataset and filter out QAs that are longer than 512
     print("train_dataset: ", len(train_dataset))
     train_dataset = train_dataset.map(
-       lambda example: preprocess_function(example, tokenizer=tokenizer),
+       lambda example: preprocess_function(examples, tokenizer=tokenizer),
        batched=True, num_proc=num_proc, remove_columns=original_columns
      )
     train_dataset = train_dataset.filter(lambda x: len(
@@ -541,7 +541,7 @@ def train():
 
     print("eval_dataset: ", len(eval_dataset))
     eval_dataset = eval_dataset.map(
-        lambda example: preprocess_function(example, tokenizer=tokenizer), 
+        lambda example: preprocess_function(examples, tokenizer=tokenizer), 
         batched=True, num_proc=num_proc, remove_columns=original_columns)
     eval_dataset = eval_dataset.filter(lambda x: len(
         x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
