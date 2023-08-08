@@ -158,7 +158,7 @@ class RewardModel(PreTrainedModel):
             "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
         }
 
-def preprocess_function(example,tokenizer):
+def preprocess_function(examples,tokenizer):
     new_examples = {
         "input_ids_j": [],
         "attention_mask_j": [],
