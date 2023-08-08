@@ -276,7 +276,8 @@ class RewardModel(nn.Module):
             self.v_head = nn.Linear(self.config.n_embd, 1, bias=False)
         self.rwtranrsformer = base_model
         self.PAD_ID = tokenizer.pad_token_id
-
+        logger.error(f"{len(tokenizer)} = {self.config.padded_vocab_size}")
+        
     def gradient_checkpointing_enable(self):
         self.rwtranrsformer.gradient_checkpointing_enable()
 
@@ -296,7 +297,7 @@ class RewardModel(nn.Module):
                 **kwargs
                ):
         loss = None
-        logger.error(f"{len(tokenizer)} = {self.config.padded_vocab_size}")
+        
         transformer_outputs = self.rwtranrsformer(
             input_ids,
             past_key_values=past_key_values,
