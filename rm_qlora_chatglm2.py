@@ -195,10 +195,10 @@ class RewardModel_old(PreTrainedModel):
             rejected_position_ids=None,
             past_key_values=None,
             token_type_ids=None,
-            #head_mask=None,  # chatglm2 llama没有这个参数  全部注释https://github.com/microsoft/DeepSpeedExamples/issues/349
+            head_mask=None,  # chatglm2 llama没有这个参数  全部注释https://github.com/microsoft/DeepSpeedExamples/issues/349
             inputs_embeds=None,
             mc_token_ids=None,
-            labels=None,
+            #labels=None,
             return_dict=False,
             output_attentions=False,
             output_hidden_states=False,
@@ -288,7 +288,7 @@ class RewardModel(nn.Module):
                 past_key_values=None,
                 attention_mask=None,
                 position_ids=None,
-                #head_mask=None,
+                head_mask=None,
                 inputs_embeds=None,
                 use_cache=False):
         loss = None
@@ -297,7 +297,7 @@ class RewardModel(nn.Module):
             input_ids,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
-            #head_mask=head_mask,
+            head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             use_cache=use_cache)
 
@@ -366,7 +366,7 @@ class RewardModel(nn.Module):
                       attention_mask=None,
                       past_key_values=None,
                       position_ids=None,
-                      #head_mask=None,
+                      head_mask=None,
                       inputs_embeds=None,
                       return_value_only=False,
                       prompt_length=0,
@@ -376,7 +376,7 @@ class RewardModel(nn.Module):
             input_ids,
             past_key_values=past_key_values,
             attention_mask=attention_mask,
-            #head_mask=head_mask,
+            head_mask=head_mask,
             inputs_embeds=inputs_embeds,
             use_cache=use_cache)
         hidden_states = transformer_outputs[0]
@@ -791,7 +791,7 @@ def train(global_args):
                                      )
 
     
-    #model = RewardModel(model,tokenizer)
+    model = RewardModel(model,tokenizer)
     print(model)
     #print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
     # 
@@ -825,8 +825,9 @@ def train(global_args):
         task_type=TaskType.SEQ_CLS #TaskType.CAUSAL_LM
     )
     model = get_peft_model(model, lora_config)
-    model = RewardModel(model,tokenizer)
-    print("reward model after peft")
+    #model = RewardModel(model,tokenizer)
+    #print("reward model after peft")
+    #print("peft model after reward")
     print(model)
     resume_from_checkpoint = global_args.resume_from_checkpoint
     if resume_from_checkpoint is not None:
