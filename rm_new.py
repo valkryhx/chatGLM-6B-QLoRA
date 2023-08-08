@@ -119,6 +119,8 @@ class RewardModel(PreTrainedModel):
 
     def forward(
             self,
+            input_ids=None,
+            attention_mask=None,
             chosen_input_ids=None,
             chosen_attention_mask=None,
             chosen_position_ids=None,
@@ -135,11 +137,20 @@ class RewardModel(PreTrainedModel):
             output_attentions=False,
             output_hidden_states=False,
     ):
-        #print(f"in forward  chosen_input_ids={chosen_input_ids}")
-        print("in rw model forward")
-        print("chosen_input_ids={chosen_input_ids}")
-        print("rejected_input_ids={rejected_input_ids}")
-        
+        if input_ids is not None and attention_mask is not None :
+            
+            total_reward = self.reward(total_ids ,attention_mask=total_attention_mask , position_ids=None)
+            half = input_ids.shape[0]//2
+            chosen_reward = total_reward[:half]
+            reject_reward = total_reward[half:]
+            loss = self.loss_fn(chosen_reward, reject_reward)
+            logger.error(f"use new method2,loss ={loss}")
+            return {
+            "loss": loss,
+            "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
+            "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
+              }
+            
         if chosen_input_ids is not None and rejected_input_ids is not None :
             logger.error("both not None")
             total_ids = torch.cat((chosen_input_ids,rejected_input_ids),dim=0)
