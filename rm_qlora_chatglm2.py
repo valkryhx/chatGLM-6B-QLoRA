@@ -198,7 +198,7 @@ class RewardModel_old(PreTrainedModel):
             head_mask=None,  # chatglm2 llama没有这个参数  全部注释https://github.com/microsoft/DeepSpeedExamples/issues/349
             inputs_embeds=None,
             mc_token_ids=None,
-            #labels=None,
+            labels=None,
             return_dict=False,
             output_attentions=False,
             output_hidden_states=False,
@@ -290,7 +290,8 @@ class RewardModel(nn.Module):
                 position_ids=None,
                 head_mask=None,
                 inputs_embeds=None,
-                use_cache=False):
+                use_cache=False,
+                labels=None,):
         loss = None
 
         transformer_outputs = self.rwtranrsformer(
