@@ -553,6 +553,12 @@ class RewardDataCollatorWithPadding2:
 
         print([len(item) for item in batch_j["input_ids"]])
         print([len(item) for item in batch_k["input_ids"]])
+        print(f"len_batch_j_ids={len(batch_j['input_ids'])}")
+        print(f"len_batch_k_ids={len(batch_k['input_ids'])}")
+        print(f"len_batch_j+k_ids={len(batch_j['input_ids']+ batch_k['input_ids'])}")
+        print(f'batch_j["attention_mask"]={batch_j["attention_mask"]} ,len={len(batch_j["attention_mask"])}')
+        print(f'batch_k["attention_mask"]={batch_k["attention_mask"]},len={len(batch_k["attention_mask"])}')
+        print(f'batch_j+k["attention_mask"]={batch_j["attention_mask"] + batch_k["attention_mask"]},len={len(batch_j["attention_mask"] + batch_k["attention_mask"])}')
         batch = {
             "input_ids": batch_j["input_ids"]+ batch_k["input_ids"]  ,
             "attention_mask": batch_j["attention_mask"] + batch_k["attention_mask"],
