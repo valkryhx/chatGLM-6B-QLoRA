@@ -296,7 +296,7 @@ class RewardModel(nn.Module):
                 **kwargs
                ):
         loss = None
-
+        logger.error(f"{len()tokenizer} = {self.config.padded_vocab_size}")
         transformer_outputs = self.rwtranrsformer(
             input_ids,
             past_key_values=past_key_values,
