@@ -94,6 +94,7 @@ class RewardModel(PreTrainedModel):
         elif self.model_type == "chatglm":
             hidden_states = transformer_outputs[0]
             seq_len, batch_size, hidden_size = hidden_states.shape
+            print(f"seq_len, batch_size, hidden_size = hidden_states.shape={hidden_states.shape}")
             hidden_states = hidden_states.view(batch_size, seq_len, hidden_size)
 
         elif self.model_type == "pangu":
@@ -538,7 +539,7 @@ def train():
         )
 
     print("model: ", type(model))
-    model = RewardModel(model.config, model.transformer, tokenizer)
+    #model = RewardModel(model.config, model.transformer, tokenizer)
     print(model)
     model = prepare_model_for_kbit_training(model)
     print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
@@ -559,7 +560,8 @@ def train():
     model = get_peft_model(model, peft_config)
 
     model.print_trainable_parameters()
-
+    model = RewardModel(model.config, model.transformer, tokenizer)
+    
     # Need to do this for gpt2, because it doesn't have an official pad token.
     #tokenizer.pad_token = tokenizer.eos_token
     #model.config.pad_token_id = tokenizer.eos_token_id
