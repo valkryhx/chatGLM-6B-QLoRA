@@ -158,7 +158,7 @@ class RewardModel(PreTrainedModel):
             "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
         }
 
-def preprocess_function(examples):
+def preprocess_function(example,tokenizer):
     new_examples = {
         "input_ids_j": [],
         "attention_mask_j": [],
@@ -532,7 +532,8 @@ def train():
     # preprocess the dataset and filter out QAs that are longer than 512
     print("train_dataset: ", len(train_dataset))
     train_dataset = train_dataset.map(
-        preprocess_function, batched=True, num_proc=num_proc, remove_columns=original_columns
+       lambda example: preprocess_function(example, tokenizer=tokenizer),
+       batched=True, num_proc=num_proc, remove_columns=original_columns
      )
     train_dataset = train_dataset.filter(lambda x: len(
         x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
@@ -540,7 +541,8 @@ def train():
 
     print("eval_dataset: ", len(eval_dataset))
     eval_dataset = eval_dataset.map(
-        preprocess_function, batched=True, num_proc=num_proc, remove_columns=original_columns)
+        lambda example: preprocess_function(example, tokenizer=tokenizer), 
+        batched=True, num_proc=num_proc, remove_columns=original_columns)
     eval_dataset = eval_dataset.filter(lambda x: len(
         x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
     print("eval_dataset: ", len(eval_dataset))
