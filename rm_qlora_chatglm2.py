@@ -547,9 +547,9 @@ class DataCollatorReward_new:
     def __call__(self, data):
         batch = {}
         print(f"type_data[0]['input_ids_j'] = {type(data[0]['input_ids_j'])}")
-        print(f"type_data[0]["input_ids_k"] = {type(data[0][input_ids_k'])}")
-        print(f"type_data[0]["attention_mask_j"] = {type(data[0][attention_mask_j'])}")
-        print(f"type_data[0]["attention_mask_k"] = {type(data[0][attention_mask_k'])}")
+        print(f"type_data[0]['input_ids_k'] = {type(data[0]['input_ids_k'])}")
+        print(f"type_data[0]['attention_mask_j'] = {type(data[0]['attention_mask_j'])}")
+        print(f"type_data[0]['attention_mask_k'] = {type(data[0]['attention_mask_k'])}")
         batch["input_ids"] = torch.cat([f["input_ids_j"] for f in data] + [f["input_ids_k"] for f in data],
                                         dim=0)
         batch["attention_mask"] = torch.cat([f["attention_mask_j"] for f in data] + [f["attention_mask_k"] for f in data],
