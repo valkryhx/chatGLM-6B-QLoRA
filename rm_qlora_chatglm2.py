@@ -468,7 +468,7 @@ def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     
     tokenized_dataset = data['train'].map(
                                 lambda example: preprocess_function_old(example, tokenizer=tokenizer),
-                                batched=False, 
+                                batched=True, 
                                 remove_columns=data['train'].column_names)
     # 验证打印一些信息
     # print(f"tokenized_dataset={tokenized_dataset}")
