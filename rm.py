@@ -184,6 +184,50 @@ def preprocess_function(examples,tokenizer):
 
     return new_examples
 
+
+
+def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
+    """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，只采样max_samples个参与训练/评估。
+    并tokenize，shuffle，返回datasets.dataset
+    """
+    
+    if not (data_path is not None and os.path.exists(data_path)):
+        raise ValueError("data_path requires a directory pointing to   jsons/jsonls")
+    """https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L383"""
+    data_files_list = glob(f'{data_path}/**/*.json', recursive=True) + glob(
+                f'{data_path}/**/*.jsonl', recursive=True)
+    logger.info(f"data files: {', '.join(data_files_list)}")
+          
+    data = load_dataset('json', data_files=data_files_list)
+    ''' 只使用max_samples 个样本来参与train和eval  
+        https://github.com/shibing624/MedicalGPT/blob/main/supervised_finetuning.py#L453
+    '''
+    logger.info(f"在取样之前 data len ={len(data['train'])}")
+    if max_samples is not None and max_samples > 0:
+            max_samples = min(len(data['train']), max_samples)  # 
+            data['train'] =  data['train'].select(range(max_samples))
+    logger.info(f"在取样之后 data len ={len(data['train'])}")
+    
+    column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
+    """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
+    logger.info("preprocessing dataset...")
+    
+    tokenized_dataset = data['train'].map(
+                                lambda example: preprocess_function(example, tokenizer=tokenizer),
+                                batched=True, 
+                                remove_columns=data['train'].column_names)
+    # 验证打印一些信息
+    # print(f"tokenized_dataset={tokenized_dataset}")
+    # print(f"tokenizer.decode(tokenized_dataset[0]['input_ids'],skip_special_tokens=False)=\n{tokenizer.decode(tokenized_dataset[0]['input_ids'],skip_special_tokens=False)}")
+    # print(f"tokenizer.decode(tokenized_dataset[0]['labels'],skip_special_tokens=False)=\n{tokenizer.decode(tokenized_dataset[0]['labels'],skip_special_tokens=False)}")
+    # print(f"tokenized_dataset[0]['input_ids']=\n{tokenized_dataset[0]['input_ids']}")
+    # print(f"tokenized_dataset[0]['labels']=\n{tokenized_dataset[0]['labels']}")
+    # #print(f"tokenized_dataset[0]['attention_mask']=\n{tokenized_dataset[0]['attention_mask']}")
+    # print(f"len(tokenized_dataset[0]['input_ids']={len(tokenized_dataset[0]['input_ids'])}")
+    # print(f"len(tokenized_dataset[0]['labels']={len(tokenized_dataset[0]['labels'])}")
+    
+    return tokenized_dataset
+
 # We need to define a special data collator that batches the data in our j vs k format.
 @dataclass
 class RewardDataCollatorWithPadding:
@@ -368,14 +412,14 @@ def train():
                 f'{data_path}/**/*.jsonl', recursive=True)
           
 
-
-    train_dataset = load_dataset("json",data_files=data_files_list, split="train")
-    if script_args.train_subset > 0:
-        train_dataset = train_dataset.select(range(script_args.train_subset))
     
-    eval_dataset = load_dataset("json",data_files=data_files_list, split="train")
-    if script_args.eval_subset > 0:
-        eval_dataset = eval_dataset.select(range(script_args.eval_subset))
+    # train_dataset = load_dataset("json",data_files=data_files_list, split="train")
+    # if script_args.train_subset > 0:
+    #     train_dataset = train_dataset.select(range(script_args.train_subset))
+    
+    # eval_dataset = load_dataset("json",data_files=data_files_list, split="train")
+    # if script_args.eval_subset > 0:
+    #     eval_dataset = eval_dataset.select(range(script_args.eval_subset))
 
     # Define the training args. Needs to be done before the model is loaded if you are using deepspeed.
     model_name_split = script_args.model_name.split("/")[-1]
@@ -530,25 +574,25 @@ def train():
     # Turn the dataset into pairs of post + summaries, where text_j is the preferred question + answer and text_k is the other.
     # Then tokenize the dataset.
     # preprocess the dataset and filter out QAs that are longer than 512
-    print("train_dataset: ", len(train_dataset))
-    train_dataset = train_dataset.map(
-       lambda examples: preprocess_function(examples, tokenizer=tokenizer),
-       batched=True, num_proc=num_proc, remove_columns=original_columns
-     )
-    train_dataset = train_dataset.filter(lambda x: len(
-        x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
-    print("train_dataset: ", len(train_dataset))
+    # print("train_dataset: ", len(train_dataset))
+    # train_dataset = train_dataset.map(
+    #    lambda examples: preprocess_function(examples, tokenizer=tokenizer),
+    #    batched=True, num_proc=num_proc, remove_columns=original_columns
+    #  )
+    # train_dataset = train_dataset.filter(lambda x: len(
+    #     x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
+    # print("train_dataset: ", len(train_dataset))
 
-    print("eval_dataset: ", len(eval_dataset))
-    eval_dataset = eval_dataset.map(
-        lambda examples: preprocess_function(examples, tokenizer=tokenizer), 
-        batched=True, num_proc=num_proc, remove_columns=original_columns)
-    eval_dataset = eval_dataset.filter(lambda x: len(
-        x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
-    print("eval_dataset: ", len(eval_dataset))
+    # print("eval_dataset: ", len(eval_dataset))
+    # eval_dataset = eval_dataset.map(
+    #     lambda examples: preprocess_function(examples, tokenizer=tokenizer), 
+    #     batched=True, num_proc=num_proc, remove_columns=original_columns)
+    # eval_dataset = eval_dataset.filter(lambda x: len(
+    #     x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
+    # print("eval_dataset: ", len(eval_dataset))
 
-
-
+    train_dataset = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.train_subset,global_args=None)
+    eval_dataset  = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.eval_subset,global_args=None)
 
     # Train the model.
     trainer = RewardTrainer(
