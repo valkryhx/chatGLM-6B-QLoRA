@@ -721,7 +721,7 @@ def train(global_args):
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
                                   bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
-    model_config = AutoConfig.from_pretrained(global_args.model_name_or_path)
+    model_config = AutoConfig.from_pretrained(global_args.model_name_or_path,trust_remote_code=True,)
     model_config.dropout = 0.0  # RM dropout=0
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
