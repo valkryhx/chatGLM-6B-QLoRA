@@ -315,7 +315,7 @@ class RewardModel(nn.Module):
         #     hidden_states = transformer_outputs[0]
         #     seq_len, batch_size, hidden_size = hidden_states.shape  # s b h  在下面转成了 b s h
         #     hidden_states = hidden_states.view(batch_size, seq_len, hidden_size)
-        hidden_states = transformer_outputs[0]
+        hidden_states = transformer_outputs[0] 
         rewards = self.v_head(hidden_states).squeeze(-1)
         chosen_mean_scores = []
         rejected_mean_scores = []
