@@ -720,7 +720,7 @@ def train(global_args):
     hf_train_args.ddp_find_unused_parameters = global_args.ddp_find_unused_parameters
     
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
-    logger.error("len tk in line 723 = {len(tokenizer)}")
+    logger.error(f"len tk in line 723 = {len(tokenizer)}")
 
     ###STEP 1 加载train / eval data
    
