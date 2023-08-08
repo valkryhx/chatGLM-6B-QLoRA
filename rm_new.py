@@ -137,10 +137,10 @@ class RewardModel(PreTrainedModel):
             output_attentions=False,
             output_hidden_states=False,
     ):
-        print(f"input_ids={input_ids}")
-        print(f"attention_mask={attention_mask}")
-        print(f"chosen_input_ids={chosen_input_ids}")
-        print(f"rejected_input_ids={rejected_input_ids}")
+        #print(f"input_ids={input_ids}")
+        #print(f"attention_mask={attention_mask}")
+        #print(f"chosen_input_ids={chosen_input_ids}")
+        #print(f"rejected_input_ids={rejected_input_ids}")
         if input_ids is not None and attention_mask is not None :
             
             total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
@@ -148,7 +148,7 @@ class RewardModel(PreTrainedModel):
             chosen_reward = total_reward[:half]
             reject_reward = total_reward[half:]
             loss = self.loss_fn(chosen_reward, reject_reward)
-            logger.error(f"use new method2,loss ={loss}")
+            #logger.error(f"use new method2,loss ={loss}")
             return {
             "loss": loss,
             "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
