@@ -189,7 +189,8 @@ class RewardModel(PreTrainedModel):
                 else:
                     # Check if there is any padding otherwise take length of sequence
                     r_inds = (rejected_id == self.pad_id).nonzero()
-                    r_ind = r_inds[self.num_padding_at_beginning].item(
+                    ## 0 =self.num_padding_at_beginning
+                    r_ind = r_inds[0].item(
                     ) if len(r_inds) > 0 else seq_len
                     end_ind = max(c_ind, r_ind)
                     divergence_ind = check_divergence[0]
