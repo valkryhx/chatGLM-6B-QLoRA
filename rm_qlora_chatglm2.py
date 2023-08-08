@@ -302,8 +302,9 @@ class RewardModel(nn.Module):
             past_key_values=past_key_values,
             attention_mask=attention_mask,
             #head_mask=head_mask,   #ChatGLMForConditionalGeneration.forward() got an unexpected keyword argument 'head_mask'
-            inputs_embeds=inputs_embeds,
-            use_cache=use_cache)
+            #inputs_embeds=inputs_embeds,
+            #use_cache=use_cache
+        )
         logger.error(f"self.config={self.config} 注意每个模型的hidden_states处理方式不同")
         logger.error(f"self.config.model_type=={self.config.model_type} 注意每个模型的hidden_states处理方式不同")
         if self.config.model_type == "chatglm":  ## chatglm的hidden_states需要特殊处理 其他模型也要注意 参考https://github.com/valkryhx/ChatGLM-LoRA-RLHF-PyTorch/blob/main/reward_model.py#L65C43-L65C43
