@@ -293,6 +293,7 @@ class RewardModel(nn.Module):
                 use_cache=False,
                 labels=None,
                 output_attentions=None,
+                **kwargs
                ):
         loss = None
 
