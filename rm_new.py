@@ -172,8 +172,8 @@ class RewardModel(PreTrainedModel):
             for i in range(bs):
                 chosen_id = chosen_ids[i]
                 rejected_id = rejected_ids[i]
-                chosen_reward = chosen_rewards[i]
-                rejected_reward = rejected_rewards[i]
+                chosen_reward = chosen_rewards[i].view(-1)
+                rejected_reward = rejected_rewards[i].view(-1)
 
                 c_inds = (chosen_id == self.pad_id).nonzero()
                 ## 0 = self.num_padding_at_beginning
@@ -195,10 +195,10 @@ class RewardModel(PreTrainedModel):
                     end_ind = max(c_ind, r_ind)
                     divergence_ind = check_divergence[0]
                 assert divergence_ind > 0
-                c_truncated_reward = chosen_reward.view(-1)[divergence_ind:end_ind]
-                r_truncated_reward = rejected_reward.view(-1)[divergence_ind:end_ind]
-                chosen_mean_scores.append(chosen_reward.view(-1)[c_ind - 1])  #use the end score for reference
-                rejected_mean_scores.append(rejected_reward.view(-1)[r_ind - 1])
+                c_truncated_reward = chosen_reward[divergence_ind:end_ind]
+                r_truncated_reward = rejected_reward[divergence_ind:end_ind]
+                chosen_mean_scores.append(chosen_reward[c_ind - 1])  #use the end score for reference
+                rejected_mean_scores.append(rejected_reward[r_ind - 1])
 
                 loss += -torch.nn.functional.logsigmoid(c_truncated_reward -
                                                     r_truncated_reward).mean()
