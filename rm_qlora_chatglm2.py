@@ -502,6 +502,8 @@ class RewardDataCollatorWithPadding2:
         self.return_tensors = return_tensors
     
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+        # 关于pad
+        #https://stackoverflow.com/questions/72724748/huggingface-transformers-padding-vs-pad-to-max-length
         features_j = []
         features_k = []
         for feature in features:
@@ -789,7 +791,7 @@ def train(global_args):
                                      )
 
     
-    model = RewardModel(model,tokenizer)
+    #model = RewardModel(model,tokenizer)
     print(model)
     #print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
     # 
@@ -823,7 +825,9 @@ def train(global_args):
         task_type=TaskType.SEQ_CLS #TaskType.CAUSAL_LM
     )
     model = get_peft_model(model, lora_config)
-
+    model = RewardModel(model,tokenizer)
+    print("reward model after peft")
+    print(model)
     resume_from_checkpoint = global_args.resume_from_checkpoint
     if resume_from_checkpoint is not None:
         checkpoint_name = os.path.join(resume_from_checkpoint, 'pytorch_model.bin')
