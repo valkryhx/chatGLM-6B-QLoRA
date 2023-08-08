@@ -713,7 +713,7 @@ def train(global_args):
                                           load_in_4bit=global_args.load_in_4bit,
                                           torch_dtype=torch.float16,
                                           quantization_config=q_config,
-                                          config=model_config
+                                          config=model_config,
                                            # empty_init这是最关键的参数 如果不设置 那即使用deepspeed也oom
                                   # 当您使用 AutoModel.from_pretrained() 方法加载预训练模型时，模型权重会被存储在 PyTorch 的 nn.Parameter 对象中。
                                   # 在没有指定 empty_init=False 参数时，nn.Parameter 对象的值将被初始化为全零的张量。
