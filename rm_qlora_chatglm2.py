@@ -268,12 +268,12 @@ class RewardModel(nn.Module):
             # https://github.com/huggingface/transformers/blob/main/src/transformers/models/opt/modeling_opt.py#L497
             self.v_head = nn.Linear(self.config.word_embed_proj_dim,
                                     1,
-                                    bias=False)
+                                    bias=False,dtype=torch.float32)
         else:
             # `gpt-neo(x)` models use `hidden_size` attribute names instead of `n_embd``
             self.config.n_embd = self.config.hidden_size if hasattr(
                 self.config, "hidden_size") else self.config.n_embd
-            self.v_head = nn.Linear(self.config.n_embd, 1, bias=False)
+            self.v_head = nn.Linear(self.config.n_embd, 1, bias=False,dtype=torch.float32)
         self.rwtranrsformer = base_model
         self.PAD_ID = tokenizer.pad_token_id
         logger.error(f"{len(tokenizer)} = {self.config.padded_vocab_size}={self.rwtranrsformer.config.vocab_size}")
@@ -300,7 +300,7 @@ class RewardModel(nn.Module):
         logger.error(f"input_ids={type(input_ids)} ,= {input_ids}")
         logger.error(f"attention_mask={type(attention_mask)} ,= {attention_mask}")
         transformer_outputs = self.rwtranrsformer(
-            input_ids,
+            input_ids.to(torch.float16) if self.config.model_type =="chatglm",
             #past_key_values=past_key_values,
             attention_mask=attention_mask,
             #head_mask=head_mask,   #ChatGLMForConditionalGeneration.forward() got an unexpected keyword argument 'head_mask'
