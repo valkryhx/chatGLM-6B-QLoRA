@@ -556,7 +556,7 @@ class DataCollatorReward_new:
         #                                 dim=0)
         # return batch
         features_j = []
-        #features_k = []
+        features_k = []
         for feature in features:
             features_j.append(
                 {
