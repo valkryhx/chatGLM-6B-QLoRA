@@ -176,7 +176,8 @@ class RewardModel(PreTrainedModel):
                 rejected_reward = rejected_rewards[i]
 
                 c_inds = (chosen_id == self.pad_id).nonzero()
-                c_ind = c_inds[self.num_padding_at_beginning].item() if len(
+                ## 0 = self.num_padding_at_beginning
+                c_ind = c_inds[0].item() if len(
                 c_inds
             ) > 0 else seq_len  # OPT model pads the first token, so we need to use the second padding token as the end of the sequence
                 check_divergence = (chosen_id != rejected_id).nonzero()
