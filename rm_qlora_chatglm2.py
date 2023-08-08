@@ -310,11 +310,12 @@ class RewardModel(nn.Module):
         )
         logger.error(f"self.config={self.config} 注意每个模型的hidden_states处理方式不同")
         logger.error(f"self.config.model_type=={self.config.model_type} 注意每个模型的hidden_states处理方式不同")
-        # if self.config.model_type == "chatglm":  ## chatglm的hidden_states需要特殊处理 其他模型也要注意 参考https://github.com/valkryhx/ChatGLM-LoRA-RLHF-PyTorch/blob/main/reward_model.py#L65C43-L65C43
-        #     logger.error(f"self.config.model_type=={self.config.model_type} 注意每个模型的hidden_states处理方式不同")
-        #     hidden_states = transformer_outputs[0]
-        #     seq_len, batch_size, hidden_size = hidden_states.shape  # s b h  在下面转成了 b s h
-        #     hidden_states = hidden_states.view(batch_size, seq_len, hidden_size)
+        if self.config.model_type == "chatglm":  ## chatglm的hidden_states需要特殊处理 其他模型也要注意 参考https://github.com/valkryhx/ChatGLM-LoRA-RLHF-PyTorch/blob/main/reward_model.py#L65C43-L65C43
+            logger.error(f"self.config.model_type=={self.config.model_type} 注意每个模型的hidden_states处理方式不同")
+            hidden_states = transformer_outputs[0]
+            print(f"hidden_states.shape ={hidden_states.shape }")
+            seq_len, batch_size, hidden_size = hidden_states.shape  # s b h  在下面转成了 b s h
+            hidden_states = hidden_states.view(batch_size, seq_len, hidden_size)
         hidden_states = transformer_outputs[0] 
         rewards = self.v_head(hidden_states).squeeze(-1)
         chosen_mean_scores = []
