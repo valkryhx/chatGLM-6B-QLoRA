@@ -295,13 +295,13 @@ class RewardTrainer(Trainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         # print('inputs["input_ids_j"]: ', inputs["input_ids_j"].shape)
         # print('inputs["attention_mask_j"]: ', inputs["attention_mask_j"].shape)
-        rewards_j = model(
+        rewards_j = model.forward(
             chosen_input_ids=inputs["input_ids_j"], chosen_attention_mask=inputs["attention_mask_j"])["chosen_reward"]
         # print("rewards_j: ", type(rewards_j), rewards_j.shape)
 
         # print('inputs["input_ids_k"]: ', inputs["input_ids_k"].shape)
         # print('inputs["attention_mask_k"]: ', inputs["attention_mask_k"].shape)
-        rewards_k = model(
+        rewards_k = model.forward(
             rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
         # print("rewards_k: ", type(rewards_k), rewards_k.shape)
         
