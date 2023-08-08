@@ -538,7 +538,8 @@ def train():
         )
 
     print("model: ", type(model))
-
+    model = RewardModel(model.config, model.transformer, tokenizer)
+    print(model)
     model = prepare_model_for_kbit_training(model)
     print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
     print("model: ", type(model))
@@ -566,8 +567,7 @@ def train():
     #num_proc = 1  # Can adjust to be higher if you have more processors.
     #original_columns = train_dataset.column_names
 
-    reward_model = RewardModel(model.config, model.transformer, tokenizer)
-    print(reward_model)
+   
 
     print(f"Finished loading model and tokenizer")
 
@@ -596,8 +596,7 @@ def train():
 
     # Train the model.
     trainer = RewardTrainer(
-        # model=model,
-        model=reward_model,
+        model=model ,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
