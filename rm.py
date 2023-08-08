@@ -134,7 +134,7 @@ class RewardModel(PreTrainedModel):
             output_attentions=False,
             output_hidden_states=False,
     ):
-        print(f"in forward  chosen_input_ids={chosen_input_ids}")
+        #print(f"in forward  chosen_input_ids={chosen_input_ids}")
         if chosen_input_ids is not None:
             chosen_reward = self.reward(chosen_input_ids, attention_mask=chosen_attention_mask, position_ids=chosen_position_ids)
             # print("chosen_reward: ", chosen_reward.shape)
@@ -334,16 +334,7 @@ elif "chatglm" in script_args.model_name:
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
                                   bnb_4bit_compute_dtype=torch.float16)
-    # model = AutoModelForSeq2SeqLM.from_pretrained(
-    #     script_args.model_name,
-    #     num_labels=1,
-    #     # torch_dtype=torch.bfloat16,
-    #     torch_dtype=torch.float16,
-    #     trust_remote_code=True,
-    #     load_in_4bit=True,
-    #     device_map=device_map,
-    #     quantization_config=q_config,
-    # )
+    
     model = AutoModel.from_pretrained(
         script_args.model_name,
         #num_labels=1,
@@ -439,10 +430,15 @@ def preprocess_function(examples):
     }
     # for question, response_j, response_k in zip(examples["question"], examples["response_j"], examples["response_k"]):
     for question, response_j, response_k in zip(examples["user_input"], examples["completion_a"], examples["completion_b"]):
+        chatglm2_prompt = "[Round 1]\n\n问：{}\n\n答：{}\n\n"
         tokenized_j = tokenizer(
-            "Question: " + question + "\n\nAnswer: " + response_j, truncation=True)
+            #"Question: " + question + "\n\nAnswer: " + response_j, truncation=True
+             chatglm2_prompt.format(question,response_j),truncation=True
+              )
         tokenized_k = tokenizer(
-            "Question: " + question + "\n\nAnswer: " + response_k, truncation=True)
+            #"Question: " + question + "\n\nAnswer: " + response_k, truncation=True
+              chatglm2_prompt.format(question,response_k),truncation=True
+             )
 
         new_examples["input_ids_j"].append(tokenized_j["input_ids"])
         new_examples["attention_mask_j"].append(tokenized_j["attention_mask"])
@@ -563,7 +559,7 @@ class RewardTrainer(Trainer):
             print("this process is not main process , do not save model.[for distributed training scenario]")
 
 
-# Train the model, woohoo.
+# Train the model.
 trainer = RewardTrainer(
     # model=model,
     model=reward_model,
