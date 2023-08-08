@@ -202,6 +202,7 @@ class RewardModel_old(PreTrainedModel):
             return_dict=False,
             output_attentions=False,
             output_hidden_states=False,
+           **kwargs
     ):
         print(f"in forward  chosen_input_ids={chosen_input_ids}")
         if chosen_input_ids is not None:
@@ -300,7 +301,7 @@ class RewardModel(nn.Module):
         logger.error(f"input_ids={type(input_ids)} ,= {input_ids}")
         logger.error(f"attention_mask={type(attention_mask)} ,= {attention_mask}")
         transformer_outputs = self.rwtranrsformer(
-            input_ids.long() if self.config.model_type =="chatglm" else input_ids,
+            input_ids,
             #past_key_values=past_key_values,
             attention_mask=attention_mask,
             #head_mask=head_mask,   #ChatGLMForConditionalGeneration.forward() got an unexpected keyword argument 'head_mask'
@@ -851,6 +852,7 @@ def train(global_args):
         target_modules=target_modules,
         lora_dropout=global_args.lora_dropout,
         bias='none',
+        fan_in_fan_out=True, # https://github.com/huggingface/peft/issues/156#issuecomment-1656789762
         inference_mode=False,
         task_type=TaskType.SEQ_CLS #TaskType.CAUSAL_LM
     )
