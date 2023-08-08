@@ -143,7 +143,7 @@ class RewardModel(PreTrainedModel):
         print(f"rejected_input_ids={rejected_input_ids}")
         if input_ids is not None and attention_mask is not None :
             
-            total_reward = self.reward(total_ids ,attention_mask=total_attention_mask , position_ids=None)
+            total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
             half = input_ids.shape[0]//2
             chosen_reward = total_reward[:half]
             reject_reward = total_reward[half:]
@@ -349,6 +349,8 @@ class RewardTrainer(Trainer):
         #rewards_k = model.forward(
         #    rejected_input_ids=inputs["input_ids_k"], rejected_attention_mask=inputs["attention_mask_k"])["reject_reward"]
         # print("rewards_k: ", type(rewards_k), rewards_k.shape)
+
+        ### 上面的写法会导致rewardmodel的forward一会有chosen 一会没chosen
         res = model.forward(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"])
         #loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
         if return_outputs:
