@@ -559,9 +559,17 @@ class RewardDataCollatorWithPadding2:
         print(f'batch_j["attention_mask"]={batch_j["attention_mask"]} ,len={len(batch_j["attention_mask"])}')
         print(f'batch_k["attention_mask"]={batch_k["attention_mask"]},len={len(batch_k["attention_mask"])}')
         print(f'batch_j+k["attention_mask"]={batch_j["attention_mask"] + batch_k["attention_mask"]},len={len(batch_j["attention_mask"] + batch_k["attention_mask"])}')
+        #  注意 下面是错误的写法 两个shape一致的tensor使用+ ，那就是做加法，按位加而不是cat。要换成torch.cat()
+        # batch = {
+        #     "input_ids": batch_j["input_ids"]+ batch_k["input_ids"]  ,
+        #     "attention_mask": batch_j["attention_mask"] + batch_k["attention_mask"],
+        #     #"input_ids_k": batch_k["input_ids"],
+        #     #"attention_mask_k": batch_k["attention_mask"],
+        #     #"return_loss": True,
+        # }
         batch = {
-            "input_ids": batch_j["input_ids"]+ batch_k["input_ids"]  ,
-            "attention_mask": batch_j["attention_mask"] + batch_k["attention_mask"],
+            "input_ids": torch.cat((batch_j["input_ids"], batch_k["input_ids"]),dim=0)  ,
+            "attention_mask": torch.cat((batch_j["attention_mask"] , batch_k["attention_mask"]),dim=0),
             #"input_ids_k": batch_k["input_ids"],
             #"attention_mask_k": batch_k["attention_mask"],
             #"return_loss": True,
