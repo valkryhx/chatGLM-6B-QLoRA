@@ -512,7 +512,7 @@ class RewardDataCollatorWithPadding2:
         self.max_length = max_length
         self.pad_to_multiple_of = pad_to_multiple_of
         self.return_tensors = return_tensors
-    
+        logger.error(f"len_self.tokenizer in 【RewardDataCollatorWithPadding2】 = {len(self.tokenizer)}")
     def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
         # 关于pad
         #https://stackoverflow.com/questions/72724748/huggingface-transformers-padding-vs-pad-to-max-length
@@ -720,7 +720,7 @@ def train(global_args):
     hf_train_args.ddp_find_unused_parameters = global_args.ddp_find_unused_parameters
     
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
-
+    logger.error("len tk in line 723 = {len(tokenizer)}")
 
     ###STEP 1 加载train / eval data
    
