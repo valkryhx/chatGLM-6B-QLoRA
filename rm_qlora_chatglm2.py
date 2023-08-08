@@ -822,7 +822,7 @@ def train(global_args):
                                      )
 
     
-    model = RewardModel(model,tokenizer)
+    #model = RewardModel(model,tokenizer)
     print(model)
     #print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
     # 
@@ -857,8 +857,8 @@ def train(global_args):
         task_type=TaskType.SEQ_CLS #TaskType.CAUSAL_LM
     )
     model = get_peft_model(model, lora_config)
-    #model = RewardModel(model,tokenizer)
-    #print("reward model after peft")
+    model = RewardModel(model,tokenizer)
+    print("reward model after peft")
     #print("peft model after reward")
     print(model)
     resume_from_checkpoint = global_args.resume_from_checkpoint
