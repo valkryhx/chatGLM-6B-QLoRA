@@ -175,7 +175,7 @@ class RewardModel(PreTrainedModel):
                 chosen_reward = chosen_rewards[i]
                 rejected_reward = rejected_rewards[i]
 
-                c_inds = (chosen_id == self.PAD_ID).nonzero()
+                c_inds = (chosen_id == self.pad_id).nonzero()
                 c_ind = c_inds[self.num_padding_at_beginning].item() if len(
                 c_inds
             ) > 0 else seq_len  # OPT model pads the first token, so we need to use the second padding token as the end of the sequence
