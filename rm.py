@@ -358,40 +358,38 @@ class ScriptArguments:
     )
 
 
-parser = HfArgumentParser(ScriptArguments)
-script_args = parser.parse_args_into_dataclasses()[0]
 
-data_path="./data/rm_data"
-data_files_list = glob(f'{data_path}/**/*.json', recursive=True) + glob(
+def train():
+    parser = HfArgumentParser(ScriptArguments)
+    script_args = parser.parse_args_into_dataclasses()[0]
+
+    data_path="./data/rm_data"
+    data_files_list = glob(f'{data_path}/**/*.json', recursive=True) + glob(
                 f'{data_path}/**/*.jsonl', recursive=True)
           
 
 
-train_dataset = load_dataset("json",data_files=data_files_list, split="train")
-if script_args.train_subset > 0:
-    train_dataset = train_dataset.select(range(script_args.train_subset))
-# eval_dataset = load_dataset("lvwerra/stack-exchange-paired", data_dir="data/evaluation", split="train")
-eval_dataset = load_dataset("json",data_files=data_files_list, split="train")
-if script_args.eval_subset > 0:
-    eval_dataset = eval_dataset.select(range(script_args.eval_subset))
-# Define the training args. Needs to be done before the model is loaded if you are using deepspeed.
-model_name_split = script_args.model_name.split("/")[-1]
-# output_name = (
-#     f"{model_name_split}_peft_gpt-4-llm_rm_{script_args.train_subset}_{script_args.learning_rate}"
-# )
-# output_name = (
-#     f"{model_name_split}_peft_comparision_data-paired_rmts__{script_args.train_subset}_{script_args.learning_rate}"
-# )
-output_name = (
-    f"reward_model_{model_name_split}__{script_args.train_subset}_{script_args.learning_rate}"
-)
+    train_dataset = load_dataset("json",data_files=data_files_list, split="train")
+    if script_args.train_subset > 0:
+        train_dataset = train_dataset.select(range(script_args.train_subset))
+    
+    eval_dataset = load_dataset("json",data_files=data_files_list, split="train")
+    if script_args.eval_subset > 0:
+        eval_dataset = eval_dataset.select(range(script_args.eval_subset))
 
-training_args = TrainingArguments(
-    output_dir=output_name,
-    learning_rate=script_args.learning_rate,
-    per_device_train_batch_size=script_args.per_device_train_batch_size,
-    per_device_eval_batch_size=script_args.per_device_eval_batch_size,
-    num_train_epochs=script_args.num_train_epochs,
+    # Define the training args. Needs to be done before the model is loaded if you are using deepspeed.
+    model_name_split = script_args.model_name.split("/")[-1]
+
+    output_name = (
+        f"reward_model_{model_name_split}__{script_args.train_subset}_{script_args.learning_rate}"
+    )
+
+    training_args = TrainingArguments(
+        output_dir=output_name,
+        learning_rate=script_args.learning_rate,
+        per_device_train_batch_size=script_args.per_device_train_batch_size,
+        per_device_eval_batch_size=script_args.per_device_eval_batch_size,
+        num_train_epochs=script_args.num_train_epochs,
     weight_decay=script_args.weight_decay,
     evaluation_strategy="steps",
     eval_steps=10,  # 500,
@@ -413,176 +411,163 @@ training_args = TrainingArguments(
     report_to =["tensorboard"]
 )
 
-# Load the value-head model and tokenizer.
-# tokenizer = AutoTokenizer.from_pretrained(script_args.model_name, use_auth_token=True)
-if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
-    tokenizer = LlamaTokenizer.from_pretrained(script_args.model_name)
-    config = LlamaConfig.from_pretrained(script_args.model_name)
+    # Load the value-head model and tokenizer.
+    # tokenizer = AutoTokenizer.from_pretrained(script_args.model_name, use_auth_token=True)
+    if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
+        tokenizer = LlamaTokenizer.from_pretrained(script_args.model_name)
+        config = LlamaConfig.from_pretrained(script_args.model_name)
 
-elif "chatglm" in script_args.model_name:
-    tokenizer = AutoTokenizer.from_pretrained(
-        script_args.model_name, trust_remote_code=True)
-    config = AutoConfig.from_pretrained(
-        script_args.model_name, trust_remote_code=True)
+    elif "chatglm" in script_args.model_name:
+        tokenizer = AutoTokenizer.from_pretrained(
+            script_args.model_name, trust_remote_code=True)
+        config = AutoConfig.from_pretrained(
+            script_args.model_name, trust_remote_code=True)
     
-else:
-    tokenizer = AutoTokenizer.from_pretrained(
-        script_args.model_name, trust_remote_code=True)
-    config = AutoConfig.from_pretrained(
-        script_args.model_name, trust_remote_code=True)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(
+            script_args.model_name, trust_remote_code=True)
+        config = AutoConfig.from_pretrained(
+            script_args.model_name, trust_remote_code=True)
 
-print("tokenizer: ", type(tokenizer)) 
+    print("tokenizer: ", type(tokenizer)) 
 
-if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
-    # required for llama
-    tokenizer.add_special_tokens(
-        {
+    if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
+        # required for llama
+        tokenizer.add_special_tokens(
+            {
             "eos_token": DEFAULT_EOS_TOKEN,
             "bos_token": DEFAULT_BOS_TOKEN,
             "unk_token": DEFAULT_UNK_TOKEN,
             "pad_token": DEFAULT_PAD_TOKEN,
-        }
-    )
-else:
-    # required for gpt2
-    #tokenizer.pad_token = tokenizer.eos_token
-    print(f"tokenizer.pad_token={tokenizer.pad_token}")
+            }
+        )
+    else:
+        # required for gpt2
+        #tokenizer.pad_token = tokenizer.eos_token
+        print(f"tokenizer.pad_token={tokenizer.pad_token}")
 
-device_map = "auto"
-world_size = int(os.environ.get("WORLD_SIZE", 1))
-ddp = world_size != 1
-if ddp:
-    device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
-print("device_map: ", device_map)
-# model = AutoModelForSequenceClassification.from_pretrained(
-#    script_args.model_name, num_labels=1, torch_dtype=torch.bfloat16
-# )
+    device_map = "auto"
+    world_size = int(os.environ.get("WORLD_SIZE", 1))
+    ddp = world_size != 1
+    if ddp:
+        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
+    print("device_map: ", device_map)
+    # model = AutoModelForSequenceClassification.from_pretrained(
+    #    script_args.model_name, num_labels=1, torch_dtype=torch.bfloat16
+    # )
 
-if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
-    model = LlamaForSequenceClassification.from_pretrained(
-        script_args.model_name,
-        num_labels=1,
-        # torch_dtype=torch.bfloat16,
-        torch_dtype=torch.float16,
-        load_in_8bit=True,
-        device_map=device_map,
-    )
-elif "chatglm" in script_args.model_name:
-    q_config = BitsAndBytesConfig(load_in_4bit= True,
+    if "llama" in script_args.model_name or "vicuna" in script_args.model_name or "Vicuna" in script_args.model_name:
+        model = LlamaForSequenceClassification.from_pretrained(
+            script_args.model_name,
+            num_labels=1,
+            # torch_dtype=torch.bfloat16,
+            torch_dtype=torch.float16,
+            load_in_8bit=True,
+            device_map=device_map,
+        )
+    elif "chatglm" in script_args.model_name:
+        q_config = BitsAndBytesConfig(load_in_4bit= True,
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
                                   bnb_4bit_compute_dtype=torch.float16)
     
-    model = AutoModel.from_pretrained(
-        script_args.model_name,
-        #num_labels=1,
-        # torch_dtype=torch.bfloat16,
-        torch_dtype=torch.float16,
-        trust_remote_code=True,
-        load_in_4bit=True,
-        device_map=device_map,
-        quantization_config=q_config,
-    )
-else:
-    model = AutoModelForSequenceClassification.from_pretrained(
-        script_args.model_name,
-        num_labels=1,
-        # torch_dtype=torch.bfloat16,
-        torch_dtype=torch.float32,
-        trust_remote_code=True,
-        load_in_8bit=True,
-        device_map=device_map,
+        model = AutoModel.from_pretrained(
+            script_args.model_name,
+            #num_labels=1,
+            # torch_dtype=torch.bfloat16,
+            torch_dtype=torch.float16,
+            trust_remote_code=True,
+            load_in_4bit=True,
+            device_map=device_map,
+            quantization_config=q_config,
+        )
+    else:
+        model = AutoModelForSequenceClassification.from_pretrained(
+            script_args.model_name,
+            num_labels=1,
+            # torch_dtype=torch.bfloat16,
+            torch_dtype=torch.float32,
+            trust_remote_code=True,
+            load_in_8bit=True,
+            device_map=device_map,
         
+        )
+
+    print("model: ", type(model))
+
+    model = prepare_model_for_kbit_training(model)
+    print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
+    print("model: ", type(model))
+
+
+    target_modules = find_all_linear_names(model)
+    peft_config = LoraConfig(
+        task_type=TaskType.SEQ_CLS,
+        inference_mode=False,
+        target_modules = target_modules ,
+        r=64,  # for qlora 64 is ok
+        lora_alpha=16,  # 32,
+        lora_dropout=0.05,  # 0.1,
+        bias="none",
     )
 
-print("model: ", type(model))
+    model = get_peft_model(model, peft_config)
 
-model = prepare_model_for_kbit_training(model)
-print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
-print("model: ", type(model))
+    model.print_trainable_parameters()
 
+    # Need to do this for gpt2, because it doesn't have an official pad token.
+    #tokenizer.pad_token = tokenizer.eos_token
+    #model.config.pad_token_id = tokenizer.eos_token_id
+    #model.config.use_cache = not script_args.gradient_checkpointing
+    num_proc = 1  # Can adjust to be higher if you have more processors.
+    original_columns = train_dataset.column_names
 
-target_modules = find_all_linear_names(model)
-peft_config = LoraConfig(
-    task_type=TaskType.SEQ_CLS,
-    inference_mode=False,
-    target_modules = target_modules ,
-    r=64,  # for qlora 64 is ok
-    lora_alpha=16,  # 32,
-    lora_dropout=0.05,  # 0.1,
-    bias="none",
-)
+    reward_model = RewardModel(model.config, model.transformer, tokenizer)
+    print(reward_model)
 
-model = get_peft_model(model, peft_config)
+    print(f"Finished loading model and tokenizer")
 
-model.print_trainable_parameters()
+    # Turn the dataset into pairs of post + summaries, where text_j is the preferred question + answer and text_k is the other.
+    # Then tokenize the dataset.
+    # preprocess the dataset and filter out QAs that are longer than 512
+    print("train_dataset: ", len(train_dataset))
+    train_dataset = train_dataset.map(
+        preprocess_function, batched=True, num_proc=num_proc, remove_columns=original_columns
+     )
+    train_dataset = train_dataset.filter(lambda x: len(
+        x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
+    print("train_dataset: ", len(train_dataset))
 
-# Need to do this for gpt2, because it doesn't have an official pad token.
-#tokenizer.pad_token = tokenizer.eos_token
-#model.config.pad_token_id = tokenizer.eos_token_id
-#model.config.use_cache = not script_args.gradient_checkpointing
-num_proc = 1  # Can adjust to be higher if you have more processors.
-original_columns = train_dataset.column_names
-
-reward_model = RewardModel(model.config, model.transformer, tokenizer)
-print(reward_model)
-#layers = reward_model.transformer.layers
-# Freeze the first 70% of the hidden layers of the reward model backbone
-# parser.add_argument("--freeze_ratio", type=float, default=0.0, help="ratio of layers frozen for reward training")
-#num_layers = len(layers)
-#num_frozen = int(0.7 * num_layers)
-#for layer in layers[:num_frozen]:
-#    layer.requires_grad_(False)
-
-# if args.checkpoint is not None:
-#     checkpoints = glob.glob(args.checkpoint.replace("star", "*"))
-#     st = dict()
-#     for checkpoint in checkpoints:
-#         st.update(torch.load(checkpoint, map_location="cpu"))
-#     res = reward_model.load_state_dict(st, strict=False)
-print(f"Finished loading model and tokenizer")
-
-# Turn the dataset into pairs of post + summaries, where text_j is the preferred question + answer and text_k is the other.
-# Then tokenize the dataset.
-
-
-
-# preprocess the dataset and filter out QAs that are longer than 512
-print("train_dataset: ", len(train_dataset))
-train_dataset = train_dataset.map(
-    preprocess_function, batched=True, num_proc=num_proc, remove_columns=original_columns
-)
-train_dataset = train_dataset.filter(lambda x: len(
-    x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
-print("train_dataset: ", len(train_dataset))
-
-print("eval_dataset: ", len(eval_dataset))
-eval_dataset = eval_dataset.map(
-    preprocess_function, batched=True, num_proc=num_proc, remove_columns=original_columns)
-eval_dataset = eval_dataset.filter(lambda x: len(
-    x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
-print("eval_dataset: ", len(eval_dataset))
+    print("eval_dataset: ", len(eval_dataset))
+    eval_dataset = eval_dataset.map(
+        preprocess_function, batched=True, num_proc=num_proc, remove_columns=original_columns)
+    eval_dataset = eval_dataset.filter(lambda x: len(
+        x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
+    print("eval_dataset: ", len(eval_dataset))
 
 
 
 
-# Train the model.
-trainer = RewardTrainer(
-    # model=model,
-    model=reward_model,
-    args=training_args,
-    train_dataset=train_dataset,
-    eval_dataset=eval_dataset,
-    compute_metrics=compute_metrics,
-    data_collator=RewardDataCollatorWithPadding(
-        tokenizer=tokenizer, max_length=512, pad_to_multiple_of=8),
-    
-)
+    # Train the model.
+    trainer = RewardTrainer(
+        # model=model,
+        model=reward_model,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        compute_metrics=compute_metrics,
+        data_collator=RewardDataCollatorWithPadding(
+        tokenizer=tokenizer, max_length=512, pad_to_multiple_of=8),    
+    )
 
-model.config.use_cache = False
+    model.config.use_cache = False
 
-trainer.train(script_args.resume_from_checkpoint)
+    trainer.train(script_args.resume_from_checkpoint)
 
-print("Saving last checkpoint of the model")
-# model.save_pretrained(script_args.output_dir + "peft_last_checkpoint")
-model.save_pretrained(output_name)
+    print("Saving last checkpoint of the model")
+    # model.save_pretrained(script_args.output_dir + "peft_last_checkpoint")
+    model.save_pretrained(output_name)
+
+if __name__ == "__main__":
+    #args = parse_args()
+    train()
