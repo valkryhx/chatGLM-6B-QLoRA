@@ -136,6 +136,22 @@ class RewardModel(PreTrainedModel):
             output_hidden_states=False,
     ):
         #print(f"in forward  chosen_input_ids={chosen_input_ids}")
+        if chosen_input_ids and rejected_input_ids :
+            total_ids = torch.cat((chosen_input_ids,rejected_input_ids),dim=0)
+            total_attention_mask = torch.cat((chosen_attention_mask,rejected_attention_mask),dim=0)
+            total_position_ids = torch.cat((chosen_position_ids, rejected_position_ids),dim=0)
+            total_reward = self.reward(total_ids ,attention_mask=total_attention_mask , position_ids=total_position_ids)
+            assert chosen_input_ids.shape[0]  == rejected_input_ids.shape[0] 
+            half = chosen_input_ids.shape[0] 
+            chosen_reward = total_reward[:half]
+            reject_reward = total_reward[half:]
+            loss = self.loss_fn(chosen_reward, reject_reward)
+            logger.error(f"use new method,loss ={loss}")
+            return {
+            "loss": loss,
+            "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
+            "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
+              }
         if chosen_input_ids is not None:
             chosen_reward = self.reward(chosen_input_ids, attention_mask=chosen_attention_mask, position_ids=chosen_position_ids)
             # print("chosen_reward: ", chosen_reward.shape)
@@ -256,14 +272,19 @@ class RewardDataCollatorWithPadding:
             )
         batch_j = self.tokenizer.pad(
             features_j,
-            padding=self.padding,
+            #padding=self.padding,
+            padding='max_length',
+            #truncation=True,
+            
             max_length=self.max_length,
             pad_to_multiple_of=self.pad_to_multiple_of,
             return_tensors=self.return_tensors,
         )
         batch_k = self.tokenizer.pad(
             features_k,
-            padding=self.padding,
+            #padding=self.padding,
+            padding='max_length',
+            #truncation=True,
             max_length=self.max_length,
             pad_to_multiple_of=self.pad_to_multiple_of,
             return_tensors=self.return_tensors,
