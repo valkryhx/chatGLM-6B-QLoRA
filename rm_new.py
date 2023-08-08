@@ -164,8 +164,8 @@ class RewardModel(PreTrainedModel):
 
             chosen_ids = input_ids[:bs]  # bs x seq x 1
             rejected_ids = input_ids[bs:]
-            chosen_rewards = rewards[:bs]
-            rejected_rewards = rewards[bs:]
+            chosen_rewards = total_reward[:bs]
+            rejected_rewards = total_reward[bs:]
 
             # Compute pairwise loss. Only backprop on the different tokens before padding
             loss = 0
