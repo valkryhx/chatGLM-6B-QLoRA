@@ -137,6 +137,10 @@ class RewardModel(PreTrainedModel):
             output_attentions=False,
             output_hidden_states=False,
     ):
+        print(f"input_ids={input_ids}")
+        print(f"attention_mask={attention_mask}")
+        print(f"chosen_input_ids={chosen_input_ids}")
+        print(f"rejected_input_ids={rejected_input_ids}")
         if input_ids is not None and attention_mask is not None :
             
             total_reward = self.reward(total_ids ,attention_mask=total_attention_mask , position_ids=None)
