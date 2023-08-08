@@ -746,7 +746,7 @@ def train(global_args):
     
     model = RewardModel(model,tokenizer)
     print(model)
-    print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
+    #print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
     # 
     # .gradient_checkpointing_enable()
     # .enable_input_require_grads()
