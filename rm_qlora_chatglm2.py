@@ -532,11 +532,11 @@ class RewardDataCollatorWithPadding2:
             return_tensors=self.return_tensors,
         )
         batch = {
-            "input_ids_j": batch_j["input_ids"],
-            "attention_mask_j": batch_j["attention_mask"],
-            "input_ids_k": batch_k["input_ids"],
-            "attention_mask_k": batch_k["attention_mask"],
-            "return_loss": True,
+            "input_ids": batch_j["input_ids"] + batch_k["input_ids"]  ,
+            "attention_mask": batch_j["attention_mask"] + batch_k["attention_mask"],
+            #"input_ids_k": batch_k["input_ids"],
+            #"attention_mask_k": batch_k["attention_mask"],
+            #"return_loss": True,
         }
         return batch
 
@@ -747,7 +747,7 @@ def train(global_args):
     eval_dataset = get_rm_datset(data_path=global_args.eval_data_path, tokenizer=tokenizer, max_samples=global_args.num_eval_samples,global_args=global_args)
     
     ### STEP 2 定义 data collator
-    # rm_data_collator = RewardDataCollatorWithPadding(
+    # rm_data_collator = RewardDataCollatorWithPadding2(
     #                                tokenizer=tokenizer, 
     #                                max_length=global_args.max_length, 
     #                                pad_to_multiple_of=8)
@@ -865,7 +865,7 @@ def train(global_args):
     train_dataset=train_dataset,
     eval_dataset=eval_dataset,
     compute_metrics=compute_metrics,
-    data_collator=DataCollatorReward_new(),
+    data_collator=rm_data_collator,
        )
 
     #model.config.use_cache = False
