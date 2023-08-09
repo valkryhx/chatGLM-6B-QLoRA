@@ -317,6 +317,7 @@ class RewardModel(PreTrainedModel):
             # loss = self.loss_fn(chosen_reward, reject_reward)
 
             # 方法2 使用reward tensor   最后一个来计算loss  也就是EOS的reward
+            total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
             print(f"input_ids.shape={input_ids.shape}")
             batch_size = input_ids.size(0) // 2
             chosen_reward, reject_reward = total_reward[-1].split(batch_size, dim=0)
