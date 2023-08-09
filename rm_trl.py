@@ -1046,6 +1046,7 @@ def train():
     
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()
+    
     model = RewardModel(model.config, model.transformer, tokenizer)
     #model = RewardModel(model.config, model, tokenizer)  
     # 这里直接传model 会在外面包裹好几层 导致 .transformer(XX)调用报错
@@ -1084,4 +1085,48 @@ def train():
 
 if __name__ == "__main__":
     #args = parse_args()
+    ## test load ckpt
+    q_config = BitsAndBytesConfig(load_in_4bit= True,
+                                  bnb_4bit_quant_type='nf4',
+                                  bnb_4bit_use_double_quant=True,
+                                  bnb_4bit_compute_dtype=torch.float16)
+    
+    model = AutoModel.from_pretrained(
+            script_args.model_name,
+            #num_labels=1,
+            # torch_dtype=torch.bfloat16,
+            torch_dtype=torch.float16,
+            trust_remote_code=True,
+            load_in_4bit=True,
+            device_map=device_map,
+            quantization_config=q_config,
+        )
+    model = prepare_model_for_kbit_training(model)
+    
+    target_modules = find_all_linear_names(model)
+    lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
+        r=global_args.lora_rank,
+        lora_alpha=global_args.lora_alpha,
+        target_modules=target_modules,
+        lora_dropout=global_args.lora_dropout,
+        bias='none',
+        inference_mode=False,
+        task_type=TaskType.CAUSAL_LM
+    )
+    model = get_peft_model(model, lora_config)
+    ckpt = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0809_v1/checkpoint-20"
+    checkpoint_name = os.path.join(
+                ckpt, 'adapter_model.bin'
+            )
+    adapters_weights = torch.load(checkpoint_name)
+    print(f"adapter_weights={adapters_weights}")
+    set_peft_model_state_dict(model, adapters_weights)
+    model = RewardModel(model.config, model.transformer, tokenizer)
+    v_head_ckpt = os.path.join(
+                ckpt, 'value_head.bin'
+            )
+    v_head_weights = torch.load(v_head_ckpt)
+    print(f"v_head_weights={v_head_weights}")
+    model.load_state_dict(v_head_weights, strict=False)
+    raise ValueError(123)
     train()
