@@ -878,7 +878,7 @@ def train():
 
     target_modules = find_all_linear_names(model)
     peft_config = LoraConfig(
-        task_type=TaskType.SEQ_CLS,
+        task_type=TaskType.CAUSAL_LM,#TaskType.SEQ_CLS,  #https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/core/adapter.py#L87C27-L87C45
         inference_mode=False,
         target_modules = target_modules ,
         r=64,  # for qlora 64 is ok
