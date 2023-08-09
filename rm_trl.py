@@ -719,14 +719,18 @@ class RewardTrainer(Trainer):
         if isinstance(backbone_model, PeftModel): # LoRA tuning
             logger.error("222 backbone_model, PeftModel")
             backbone_model.save_pretrained(output_dir, state_dict=get_state_dict(backbone_model))
-        elif isinstance(backbone_model, PreTrainedModel): # freeze/full-tuning or p_tuning
+        elif isinstance(backbone_model, PreTrainedModel): 
             logger.error("333 backbone_model, PreTrainedModel")
-            backbone_model.config.use_cache = True
-            backbone_model.save_pretrained(
-                output_dir,
-                state_dict=get_state_dict(backbone_model, trainable_only=False),
-                safe_serialization=self.args.save_safetensors
-            )
+            torch.save(get_state_dict(getattr(model, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME))
+            print(f'hasattr(backbone_model, "lora_A")={hasattr(backbone_model, "lora_A")}')
+            backbone_model.save_pretrained(output_dir, state_dict=get_state_dict(backbone_model))
+            if not hasattr(backbone_model, "lora_A") : #  freeze/full-tuning or p_tuning
+                #backbone_model.config.use_cache = True
+                backbone_model.save_pretrained(
+                    output_dir,
+                    state_dict=get_state_dict(backbone_model, trainable_only=False),
+                    safe_serialization=self.args.save_safetensors
+                )
             backbone_model.config.use_cache = False
             if self.tokenizer is not None:
                 self.tokenizer.save_pretrained(output_dir)
@@ -1039,8 +1043,13 @@ def train():
     
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()
-    #model = RewardModel(model.config, model.transformer, tokenizer)
-    model = RewardModel(model.config, model, tokenizer)
+    model = RewardModel(model.config, model.transformer, tokenizer)
+    #model = RewardModel(model.config, model, tokenizer)  
+    # 这里直接传model 会在外面包裹好几层 导致 .transformer(XX)调用报错
+    #(transformer): PeftModelForCausalLM(
+    # (base_model): LoraModel(
+    #  (model): ChatGLMForConditionalGeneration(
+    # (transformer): ChatGLMModel(
     #model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
     
     print(model)
