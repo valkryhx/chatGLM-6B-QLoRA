@@ -506,7 +506,7 @@ class ScriptArguments:
         default="linear",
         metadata={"help": "The lr scheduler"},
     )
-     max_length: Optional[int] = field(
+    max_length: Optional[int] = field(
         default=512,
         metadata={"help": "The max length of token list "},
     )
