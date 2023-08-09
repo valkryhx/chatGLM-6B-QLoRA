@@ -393,11 +393,11 @@ class RewardModel(PreTrainedModel):
             # "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
             #   }
             # reward 不使用sigmoid变换 直接存 原始计算值
-             return {
-            "loss": loss,
-            "chosen_reward": chosen_reward if chosen_reward is not None else chosen_reward,
-            "reject_reward": reject_reward if reject_reward is not None else reject_reward ,
-        }
+            return {
+                "loss": loss,
+                "chosen_reward": chosen_reward if chosen_reward is not None else chosen_reward,
+                "reject_reward": reject_reward if reject_reward is not None else reject_reward ,
+            }
             
             
             
