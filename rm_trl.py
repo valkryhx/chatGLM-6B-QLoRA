@@ -28,6 +28,7 @@ from peft import (
         get_peft_model, 
         prepare_model_for_int8_training, 
         prepare_model_for_kbit_training,
+        set_peft_model_state_dict
        )
 import bitsandbytes as bnb
 from transformers import (
