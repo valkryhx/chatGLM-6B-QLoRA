@@ -868,6 +868,8 @@ def train():
         
         )
 
+    #add lm_head
+    model.lm_head = model.transformer.output_layer
     print("model: ", type(model))
     #model = RewardModel(model.config, model.transformer, tokenizer)
     #print(model)
