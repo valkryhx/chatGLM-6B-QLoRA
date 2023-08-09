@@ -396,7 +396,7 @@ def compute_metrics(eval_pred):
 
 class RewardTrainer(Trainer):
     # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
-    def compute_loss(self, model, inputs, return_outputs=True):
+    def compute_loss(self, model, inputs, return_outputs=False):
         # print('inputs["input_ids_j"]: ', inputs["input_ids_j"].shape)
         # print('inputs["attention_mask_j"]: ', inputs["attention_mask_j"].shape)
         #rewards_j = model.forward(
@@ -414,6 +414,7 @@ class RewardTrainer(Trainer):
         #loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
         if return_outputs:
             return res["loss"], {"rewards_j": res["chosen_reward"], "rewards_k": res["reject_reward"]}
+        print({"rewards_j": res["chosen_reward"], "rewards_k": res["reject_reward"]})
         return res["loss"]
 
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
