@@ -509,6 +509,11 @@ peft_model_path= "/kaggle/working/chatGLM-6B-QLoRA/output-sharegpt-2k-sft-0805-v
   --load_in_4bit True \
 --deepspeed ds_zero2_config.json
 
-
-
-
+#------20230808-------#
+https://blog.csdn.net/weixin_38145317/article/details/104917218
+hasattr(model, "lora_A")
+https://huggingface.co/datasets/Anthropic/hh-rlhf/viewer/Anthropic--hh-rlhf/train?row=98
+https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/rm/trainer.py#L43
+https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/d22a77eb87c36bb353b1e0e7caf064cb7fdf32ac/src/glmtuner/tuner/core/trainer.py#L12
+dpo:https://github.com/lvwerra/trl/blob/main/examples/dpo.py
+dpo:https://huggingface.co/blog/dpo-trl
