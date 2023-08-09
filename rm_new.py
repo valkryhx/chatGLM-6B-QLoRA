@@ -510,6 +510,10 @@ class ScriptArguments:
         default=512,
         metadata={"help": "The max length of token list "},
     )
+    output_dir: Optional[str] = field(
+        default="reward_model_output",
+        metadata={"help": "The dir of reward_model "},
+    )
 
 
 
@@ -534,9 +538,10 @@ def train():
     # Define the training args. Needs to be done before the model is loaded if you are using deepspeed.
     model_name_split = script_args.model_name.split("/")[-1]
 
-    output_name = (
-        f"reward_model_{model_name_split}__{script_args.train_subset}_{script_args.learning_rate}"
-    )
+    # output_name = (
+    #     f"reward_model_{model_name_split}__{script_args.train_subset}_{script_args.learning_rate}"
+    # )
+    output_name = script_args.output_dir
 
     training_args = TrainingArguments(
         output_dir=output_name,
