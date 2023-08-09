@@ -17,7 +17,7 @@ import evaluate
 import numpy as np
 import torch.nn as nn
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union,Sequence
+from typing import Any, Dict, List, Optional, Union,Sequence,Tuple
 
 from datasets import load_dataset
 from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_int8_training, prepare_model_for_kbit_training
@@ -429,6 +429,8 @@ def preprocess_function(examples,tokenizer,max_length=512):
         "attention_mask_j": [],
         "input_ids_k": [],
         "attention_mask_k": [],
+        "accept_ids":[],
+        "reject_ids":[]
     }
     # for question, response_j, response_k in zip(examples["question"], examples["response_j"], examples["response_k"]):
     for question, response_j, response_k in zip(examples["user_input"], examples["completion_a"], examples["completion_b"]):
@@ -447,6 +449,8 @@ def preprocess_function(examples,tokenizer,max_length=512):
         new_examples["input_ids_k"].append(tokenized_k["input_ids"])
         new_examples["attention_mask_k"].append(tokenized_k["attention_mask"])
 
+        new_examples["accept_ids"].append(tokenized_j["input_ids"])
+        new_examples["reject_ids"].append(tokenized_k["input_ids"])
     return new_examples
 
 
@@ -561,6 +565,9 @@ def compute_metrics(eval_pred):
     labels = np.zeros(predictions.shape)
     return accuracy.compute(predictions=predictions, references=labels)
 
+def compute_accuracy(eval_preds: Sequence[Union[np.ndarray, Tuple[np.ndarray]]]) -> Dict[str, float]:
+    preds, _ = eval_preds
+    return {"accuracy": (preds[0] > preds[1]).sum() / len(preds[0])}
 
 class RewardTrainer(Trainer):
     # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
@@ -596,6 +603,46 @@ class RewardTrainer(Trainer):
             print("save done !!!")
         else :
             print("this process is not main process , do not save model.[for distributed training scenario]")
+
+
+
+class RewardTrainer_trl(Trainer):
+    # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
+    def compute_loss(
+        self,
+        model: PreTrainedModel,
+        inputs: Dict[str, torch.Tensor],
+        return_outputs: Optional[bool] = False
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, List[torch.Tensor]]]:
+        r"""
+        Computes pairwise loss. The first n examples are chosen and the last n examples are rejected.
+
+        We use score on the EOS token to represent reward of the whole sentence.
+
+        Subclass and override to inject custom behavior. It should not be directly used by external scripts.
+
+        Note that the first element will be removed from the output tuple.
+
+        See: https://github.com/huggingface/transformers/blob/v4.30.2/src/transformers/trainer.py#L3509
+        """
+        batch_size = inputs["input_ids"].size(0) // 2
+        _, _, values = model(**inputs, output_hidden_states=True, return_dict=True)
+        r_accept, r_reject = values[-1].split(batch_size, dim=0)
+        loss = -torch.log(torch.sigmoid(r_accept - r_reject)).mean()
+        return (loss, [loss, r_accept, r_reject]) if return_outputs else loss
+
+    def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
+        """只保存adapter"""
+        print("begin to save  !!!")
+        if output_dir is None:
+            output_dir = self.args.output_dir
+        if self.is_world_process_zero():  
+            self.model.save_pretrained(output_dir)
+            torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+            print("save done !!!")
+        else :
+            print("this process is not main process , do not save model.[for distributed training scenario]")
+
 
 
 def find_all_linear_names(model):
@@ -823,10 +870,10 @@ def train():
 
     print("model: ", type(model))
     #model = RewardModel(model.config, model.transformer, tokenizer)
-    print(model)
+    #print(model)
     model = prepare_model_for_kbit_training(model)
     print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
-    print("model: ", type(model))
+    #print("model: ", type(model))
 
 
     target_modules = find_all_linear_names(model)
@@ -841,54 +888,28 @@ def train():
     )
 
     # 参考了 很多例子 都是先peft lora 再转换成rewardmodel
-    #model = RewardModel(model.config, model.transformer, tokenizer)
+    
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()
-    model = RewardModel(model.config, model.transformer, tokenizer)
+    #model = RewardModel(model.config, model.transformer, tokenizer)
+    model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
     
-    # Need to do this for gpt2, because it doesn't have an official pad token.
-    #tokenizer.pad_token = tokenizer.eos_token
-    #model.config.pad_token_id = tokenizer.eos_token_id
-    #model.config.use_cache = not script_args.gradient_checkpointing
-    #num_proc = 1  # Can adjust to be higher if you have more processors.
-    #original_columns = train_dataset.column_names
-
-   
-
+    
     print(f"Finished loading model and tokenizer")
 
-    # Turn the dataset into pairs of post + summaries, where text_j is the preferred question + answer and text_k is the other.
-    # Then tokenize the dataset.
-    # preprocess the dataset and filter out QAs that are longer than 512
-    # print("train_dataset: ", len(train_dataset))
-    # train_dataset = train_dataset.map(
-    #    lambda examples: preprocess_function(examples, tokenizer=tokenizer),
-    #    batched=True, num_proc=num_proc, remove_columns=original_columns
-    #  )
-    # train_dataset = train_dataset.filter(lambda x: len(
-    #     x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
-    # print("train_dataset: ", len(train_dataset))
-
-    # print("eval_dataset: ", len(eval_dataset))
-    # eval_dataset = eval_dataset.map(
-    #     lambda examples: preprocess_function(examples, tokenizer=tokenizer), 
-    #     batched=True, num_proc=num_proc, remove_columns=original_columns)
-    # eval_dataset = eval_dataset.filter(lambda x: len(
-    #     x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
-    # print("eval_dataset: ", len(eval_dataset))
+   
 
     train_dataset = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.train_subset,max_length=script_args.max_length,global_args=None)
     eval_dataset  = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.eval_subset,max_length=script_args.max_length,global_args=None)
 
     # Train the model.
-    trainer = RewardTrainer(
+    trainer = RewardTrainer_trl(
         model=model ,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
-        compute_metrics=compute_metrics,
-        data_collator=RewardDataCollatorWithPadding(
-        tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8),    
+        compute_metrics=compute_accuracy,
+        data_collator=data_collator = PairwiseDataCollatorForChatGLM(tokenizer, model.pretrained_model)    
     )
 
     model.config.use_cache = False
