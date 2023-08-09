@@ -328,7 +328,7 @@ class RewardModel(PreTrainedModel):
             # loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward)).mean()
             # #logger.error(f"use new method2,loss ={loss}")
 
-            方法3 找到最后一个非pad token的EOStoken来计算loss
+            #方法3 找到最后一个非pad token的EOStoken来计算loss
             rewards = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
             chosen_mean_scores = []
             rejected_mean_scores = []
