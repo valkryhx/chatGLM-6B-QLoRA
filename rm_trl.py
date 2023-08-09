@@ -1105,13 +1105,13 @@ if __name__ == "__main__":
     
     target_modules = find_all_linear_names(model)
     lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
-        r=global_args.lora_rank,
-        lora_alpha=global_args.lora_alpha,
-        target_modules=target_modules,
-        lora_dropout=global_args.lora_dropout,
-        bias='none',
+        task_type=TaskType.CAUSAL_LM,#TaskType.SEQ_CLS,  #https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/core/adapter.py#L87C27-L87C45
         inference_mode=False,
-        task_type=TaskType.CAUSAL_LM
+        target_modules = target_modules ,
+        r=64,  # for qlora 64 is ok
+        lora_alpha=16,  # 32,
+        lora_dropout=0.05,  # 0.1,
+        bias="none",
     )
     model = get_peft_model(model, lora_config)
     ckpt = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0809_v1/checkpoint-20"
