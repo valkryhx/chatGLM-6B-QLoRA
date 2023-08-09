@@ -317,8 +317,8 @@ class RewardModel(PreTrainedModel):
             # loss = self.loss_fn(chosen_reward, reject_reward)
 
             # 方法2 使用reward tensor   最后一个来计算loss  也就是EOS的reward
-            
-            batch_size = inputs["input_ids"].size(0) // 2
+            print(f"input_ids.shape={input_ids.shape}")
+            batch_size = input_ids.size(0) // 2
             chosen_reward, reject_reward = total_reward[-1].split(batch_size, dim=0)
             loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward)).mean()
             #logger.error(f"use new method2,loss ={loss}")
