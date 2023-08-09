@@ -49,13 +49,13 @@ class PairWiseLoss(nn.Module):
 
     def forward(self, chosen_reward: torch.Tensor, reject_reward: torch.Tensor) -> torch.Tensor:
         print("in PairWiseLoss Func")
-        print(f"【in PairWiseLoss Funcchosen_reward】={chosen_reward}")
-        print(f"【in PairWiseLoss Funcrejected_reward】={rejected_reward}")
+        print(f"【in PairWiseLoss chosen_reward】={chosen_reward}")
+        print(f"【in PairWiseLoss reject_reward】={reject_reward}")
         probs = torch.sigmoid(chosen_reward - reject_reward)
         log_probs = torch.log(probs)
         loss = -log_probs.mean()
-        print(f"【in PairWiseLoss Funclog_probs】={log_probs}")
-        print(f"【in PairWiseLoss Funcloss】={loss}")
+        print(f"【in PairWiseLoss  log_probs】={log_probs}")
+        print(f"【in PairWiseLoss  loss】={loss}")
         return loss
 
 ##################################################################################
