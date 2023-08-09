@@ -329,6 +329,7 @@ class RewardModel(PreTrainedModel):
             # #logger.error(f"use new method2,loss ={loss}")
 
             #方法3 找到最后一个非pad token的EOStoken来计算loss
+            self.num_padding_at_beginning = 0 # for all models except OPT(=1) so we keep this parameter
             rewards = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
             chosen_mean_scores = []
             rejected_mean_scores = []
@@ -351,10 +352,10 @@ class RewardModel(PreTrainedModel):
                 chosen_reward = chosen_rewards[i]
                 rejected_reward = rejected_rewards[i]
 
-                c_inds = (chosen_id == self.PAD_ID).nonzero()
+                c_inds = (chosen_id == self.pad_id).nonzero()
                 c_ind = c_inds[self.num_padding_at_beginning].item() if len(
                 c_inds
-                ) > 0 else seq_len  # self.num_padding_at_beginning =0 here,OPT model pads the first token, so we need to use the second padding token as the end of the sequence
+                ) > self.num_padding_at_beginning else seq_len  # self.num_padding_at_beginning =0 here,OPT model pads the first token, so we need to use the second padding token as the end of the sequence
                 check_divergence = (chosen_id != rejected_id).nonzero()
 
                 if len(check_divergence) == 0:
@@ -365,7 +366,7 @@ class RewardModel(PreTrainedModel):
                     # Check if there is any padding otherwise take length of sequence
                     r_inds = (rejected_id == self.pad_id).nonzero()
                     r_ind = r_inds[self.num_padding_at_beginning].item(
-                    ) if len(r_inds) > 0 else seq_len  # self.num_padding_at_beginning =0
+                    ) if len(r_inds) > self.num_padding_at_beginning else seq_len  # self.num_padding_at_beginning =0
                     end_ind = max(c_ind, r_ind)
                     divergence_ind = check_divergence[0]
                 assert divergence_ind > 0
