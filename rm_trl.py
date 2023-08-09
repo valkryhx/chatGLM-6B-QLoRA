@@ -724,10 +724,10 @@ class RewardTrainer(Trainer):
             torch.save(get_state_dict(getattr(model, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME))
             #print(f'hasattr(backbone_model, "lora_A")={hasattr(backbone_model, "lora_A")}') 这个要具体的layer才行 否则用model级别判定是False的
             if TRAIN_TYPE =="lora" :
-                print(f"TRAIN_TYPE ==lora"")
+                print(f"TRAIN_TYPE ==lora")
                 backbone_model.save_pretrained(output_dir, state_dict=get_state_dict(backbone_model))
             elif TRAIN_TYPE !="lora" : #  freeze/full-tuning or p_tuning
-                print(f"TRAIN_TYPE !=lora"")
+                print(f"TRAIN_TYPE !=lora")
                 #backbone_model.config.use_cache = True
                 backbone_model.save_pretrained(
                     output_dir,
