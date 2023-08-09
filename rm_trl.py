@@ -1098,7 +1098,7 @@ if __name__ == "__main__":
             torch_dtype=torch.float16,
             trust_remote_code=True,
             load_in_4bit=True,
-            device_map=device_map,
+            device_map="auto",#device_map,
             quantization_config=q_config,
         )
     model = prepare_model_for_kbit_training(model)
