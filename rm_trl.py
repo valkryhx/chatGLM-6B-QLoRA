@@ -1116,7 +1116,7 @@ if __name__ == "__main__":
     model = get_peft_model(model, lora_config)
     ckpt = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0809_v1/checkpoint-20"
     checkpoint_name = os.path.join(
-                ckpt, 'adapter_model.bin'
+                ckpt, 'pytorch_model.bin'
             )
     adapters_weights = torch.load(checkpoint_name)
     print(f"adapter_weights={adapters_weights}")
