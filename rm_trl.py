@@ -909,7 +909,7 @@ def train():
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=compute_accuracy,
-        data_collator=data_collator = PairwiseDataCollatorForChatGLM(tokenizer, model.pretrained_model)    
+        data_collator = PairwiseDataCollatorForChatGLM(tokenizer, model.pretrained_model)    
     )
 
     model.config.use_cache = False
