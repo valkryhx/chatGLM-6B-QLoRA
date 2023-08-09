@@ -1,6 +1,6 @@
 #!python
 # -*- coding: utf-8 -*-
-# @author: Kun
+# @author: hx
 
 
 from transformers.modeling_utils import PreTrainedModel
@@ -144,73 +144,74 @@ class RewardModel(PreTrainedModel):
         if input_ids is not None and attention_mask is not None :
             
             total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
-            # half = input_ids.shape[0]//2
-            # chosen_reward = total_reward[:half]
-            # reject_reward = total_reward[half:]
-            # loss = self.loss_fn(chosen_reward, reject_reward)
-            # #logger.error(f"use new method2,loss ={loss}")
-            # return {
-            # "loss": loss,
-            # "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
-            # "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
-            #   }
-            chosen_mean_scores = []
-            rejected_mean_scores = []
-
-            # Split the inputs and rewards into two parts, chosen and rejected
-            assert len(input_ids.shape) == 2
-            bs = input_ids.shape[0] // 2
-            seq_len = input_ids.shape[1]
-
-            chosen_ids = input_ids[:bs]  # bs x seq x 1
-            rejected_ids = input_ids[bs:]
-            chosen_rewards = total_reward[:bs]
-            rejected_rewards = total_reward[bs:]
-
-            # Compute pairwise loss. Only backprop on the different tokens before padding
-            loss = 0
-            for i in range(bs):
-                chosen_id = chosen_ids[i]
-                rejected_id = rejected_ids[i]
-                chosen_reward = chosen_rewards[i]
-                rejected_reward = rejected_rewards[i]
-
-                c_inds = (chosen_id == self.pad_id).nonzero()
-                ## 0 = self.num_padding_at_beginning
-                c_ind = c_inds[0].item() if len(
-                c_inds
-            ) > 0 else seq_len  # OPT model pads the first token, so we need to use the second padding token as the end of the sequence
-                check_divergence = (chosen_id != rejected_id).nonzero()
-
-                if len(check_divergence) == 0:
-                    end_ind = rejected_reward.view(-1).size(-1)
-                    divergence_ind = end_ind - 1
-                    r_ind = c_ind
-                else:
-                    # Check if there is any padding otherwise take length of sequence
-                    r_inds = (rejected_id == self.pad_id).nonzero()
-                    ## 0 =self.num_padding_at_beginning
-                    r_ind = r_inds[0].item(
-                    ) if len(r_inds) > 0 else seq_len
-                    end_ind = max(c_ind, r_ind)
-                    divergence_ind = check_divergence[0]
-                #assert divergence_ind > 0
-                c_truncated_reward = chosen_reward.view(-1)[divergence_ind:end_ind]
-                r_truncated_reward = rejected_reward.view(-1)[divergence_ind:end_ind]
-                chosen_mean_scores.append(chosen_reward.view(-1)[c_ind - 1])  #use the end score for reference
-                rejected_mean_scores.append(rejected_reward.view(-1)[r_ind - 1])
-
-                loss += -torch.nn.functional.logsigmoid(c_truncated_reward -
-                                                    r_truncated_reward).mean()
-
-            loss = loss / bs
-            chosen_mean_scores = torch.stack(chosen_mean_scores)
-            rejected_mean_scores = torch.stack(rejected_mean_scores)
+            half = input_ids.shape[0]//2
+            chosen_reward = total_reward[:half]
+            reject_reward = total_reward[half:]
+            loss = self.loss_fn(chosen_reward, reject_reward)
+            #logger.error(f"use new method2,loss ={loss}")
             return {
-                "loss": loss,
-                "chosen_reward": chosen_mean_scores,
-                "reject_reward": rejected_mean_scores,
-            }
+            "loss": loss,
+            "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
+            "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
+              }
+            
+            # chosen_mean_scores = []
+            # rejected_mean_scores = []
+
+            # # Split the inputs and rewards into two parts, chosen and rejected
+            # assert len(input_ids.shape) == 2
+            # bs = input_ids.shape[0] // 2
+            # seq_len = input_ids.shape[1]
+
+            # chosen_ids = input_ids[:bs]  # bs x seq x 1
+            # rejected_ids = input_ids[bs:]
+            # chosen_rewards = total_reward[:bs]
+            # rejected_rewards = total_reward[bs:]
+
+            # # Compute pairwise loss. Only backprop on the different tokens before padding
+            # loss = 0
+            # for i in range(bs):
+            #     chosen_id = chosen_ids[i]
+            #     rejected_id = rejected_ids[i]
+            #     chosen_reward = chosen_rewards[i]
+            #     rejected_reward = rejected_rewards[i]
+
+            #     c_inds = (chosen_id == self.pad_id).nonzero()
+            #     ## 0 = self.num_padding_at_beginning
+            #     c_ind = c_inds[0].item() if len(
+            #     c_inds
+            # ) > 0 else seq_len  # OPT model pads the first token, so we need to use the second padding token as the end of the sequence
+            #     check_divergence = (chosen_id != rejected_id).nonzero()
+
+            #     if len(check_divergence) == 0:
+            #         end_ind = rejected_reward.view(-1).size(-1)
+            #         divergence_ind = end_ind - 1
+            #         r_ind = c_ind
+            #     else:
+            #         # Check if there is any padding otherwise take length of sequence
+            #         r_inds = (rejected_id == self.pad_id).nonzero()
+            #         ## 0 =self.num_padding_at_beginning
+            #         r_ind = r_inds[0].item(
+            #         ) if len(r_inds) > 0 else seq_len
+            #         end_ind = max(c_ind, r_ind)
+            #         divergence_ind = check_divergence[0]
+            #     #assert divergence_ind > 0
+            #     c_truncated_reward = chosen_reward.view(-1)[divergence_ind:end_ind]
+            #     r_truncated_reward = rejected_reward.view(-1)[divergence_ind:end_ind]
+            #     chosen_mean_scores.append(chosen_reward.view(-1)[c_ind - 1])  #use the end score for reference
+            #     rejected_mean_scores.append(rejected_reward.view(-1)[r_ind - 1])
+
+            #     loss += -torch.nn.functional.logsigmoid(c_truncated_reward -
+            #                                         r_truncated_reward).mean()
+
+            # loss = loss / bs
+            # chosen_mean_scores = torch.stack(chosen_mean_scores)
+            # rejected_mean_scores = torch.stack(rejected_mean_scores)
+            # return {
+            #     "loss": loss,
+            #     "chosen_reward": chosen_mean_scores,
+            #     "reject_reward": rejected_mean_scores,
+            # }
             #return loss
             
         if chosen_input_ids is not None and rejected_input_ids is not None :
@@ -254,7 +255,7 @@ class RewardModel(PreTrainedModel):
             "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
         }
 
-def preprocess_function(examples,tokenizer):
+def preprocess_function(examples,tokenizer,max_length=512):
     new_examples = {
         "input_ids_j": [],
         "attention_mask_j": [],
@@ -266,11 +267,11 @@ def preprocess_function(examples,tokenizer):
         chatglm2_prompt = "[Round 1]\n\n问：{}\n\n答：{}\n\n"
         tokenized_j = tokenizer(
             #"Question: " + question + "\n\nAnswer: " + response_j, truncation=True
-             chatglm2_prompt.format(question,response_j),truncation=True
+             chatglm2_prompt.format(question,response_j),truncation=True,padding='max_length',max_length=max_length
               )
         tokenized_k = tokenizer(
             #"Question: " + question + "\n\nAnswer: " + response_k, truncation=True
-              chatglm2_prompt.format(question,response_k),truncation=True
+              chatglm2_prompt.format(question,response_k),truncation=True,padding='max_length',max_length=max_length
              )
 
         new_examples["input_ids_j"].append(tokenized_j["input_ids"])
@@ -282,7 +283,7 @@ def preprocess_function(examples,tokenizer):
 
 
 
-def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
+def get_rm_datset(data_path, tokenizer, max_samples=-1,max_length=512,global_args=None):
     """读取本地包含json/jsonl文件的目录，将目录中所有文件作为dataset，只采样max_samples个参与训练/评估。
     并tokenize，shuffle，返回datasets.dataset
     """
@@ -309,7 +310,7 @@ def get_rm_datset(data_path, tokenizer, max_samples=-1,global_args=None):
     logger.info("preprocessing dataset...")
     
     tokenized_dataset = data['train'].map(
-                                lambda example: preprocess_function(example, tokenizer=tokenizer),
+                                lambda example: preprocess_function(example, tokenizer=tokenizer,max_length=max_length),
                                 batched=True, 
                                 remove_columns=data['train'].column_names)
     # 验证打印一些信息
@@ -468,7 +469,7 @@ class ScriptArguments:
     per_device_eval_batch_size: Optional[int] = field(default=1)
     gradient_accumulation_steps: Optional[int] = field(default=1)
     learning_rate: Optional[float] = field(default=2e-5)
-    weight_decay: Optional[int] = field(default=0.001)
+    weight_decay: Optional[int] = field(default=0.0001)
     model_name: Optional[str] = field(
         default="decapoda-research/llama-7b-hf",
         metadata={
@@ -504,6 +505,10 @@ class ScriptArguments:
     lr_scheduler_type: Optional[str] = field(
         default="linear",
         metadata={"help": "The lr scheduler"},
+    )
+     max_length: Optional[int] = field(
+        default=512,
+        metadata={"help": "The max length of token list "},
     )
 
 
@@ -697,8 +702,8 @@ def train():
     #     x["input_ids_j"]) <= 512 and len(x["input_ids_k"]) <= 512)
     # print("eval_dataset: ", len(eval_dataset))
 
-    train_dataset = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.train_subset,global_args=None)
-    eval_dataset  = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.eval_subset,global_args=None)
+    train_dataset = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.train_subset,max_length=script_args.max_length,global_args=None)
+    eval_dataset  = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.eval_subset,max_length=script_args.max_length,global_args=None)
 
     # Train the model.
     trainer = RewardTrainer(
@@ -708,7 +713,7 @@ def train():
         eval_dataset=eval_dataset,
         compute_metrics=compute_metrics,
         data_collator=RewardDataCollatorWithPadding(
-        tokenizer=tokenizer, max_length=512, pad_to_multiple_of=8),    
+        tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8),    
     )
 
     model.config.use_cache = False
