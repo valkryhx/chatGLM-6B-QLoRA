@@ -9,6 +9,7 @@ from trl import AutoModelForCausalLMWithValueHead
 from transformers.modeling_utils import PreTrainedModel
 from transformers.configuration_utils import PretrainedConfig
 from transformers.tokenization_utils import PreTrainedTokenizer
+from transformers.modeling_utils import PreTrainedModel, unwrap_model
 from glob import glob
 from loguru import logger
 import os
@@ -20,7 +21,14 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union,Sequence,Tuple
 
 from datasets import load_dataset
-from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_int8_training, prepare_model_for_kbit_training
+from peft import (
+        PeftModel,
+        LoraConfig, 
+        TaskType, 
+        get_peft_model, 
+        prepare_model_for_int8_training, 
+        prepare_model_for_kbit_training,
+       )
 import bitsandbytes as bnb
 from transformers import (
     AutoConfig,
