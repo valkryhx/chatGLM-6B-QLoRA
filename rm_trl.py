@@ -213,7 +213,7 @@ class PairWiseLoss(nn.Module):
         print(f"【in PairWiseLoss chosen_reward】={chosen_reward}")
         print(f"【in PairWiseLoss reject_reward】={reject_reward}")
         probs = torch.sigmoid(chosen_reward - reject_reward)
-        log_probs = torch.log(probs)
+        log_probs = torch.log(probs + 1e-7)  # add to avoid inf loss
         loss = -log_probs.mean()
         print(f"【in PairWiseLoss  log_probs】={log_probs}")
         print(f"【in PairWiseLoss  loss】={loss}")
@@ -325,10 +325,11 @@ class RewardModel(PreTrainedModel):
             # print(f"batch_size={batch_size}")
             # # 注意是 total_reward[:,-1] 而不是  total_reward[-1] 前面保留了维度dim=0和dim=1最后一列 后者是dim=1全保留但是dim=0最后一行
             # chosen_reward, reject_reward = total_reward[:,-1].split(batch_size, dim=0)
-            # loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward)).mean()
+            # loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward) + 1e-7).mean()
             # #logger.error(f"use new method2,loss ={loss}")
 
-            #方法3 找到最后一个非pad token的EOStoken来计算loss
+            #方法3 找到最后一个非pad token的EOStoken来计算loss  参考了deepspeed-chat 注意tokenizer的padding size为right
+            # https://github.com/microsoft/DeepSpeedExamples/blob/master/applications/DeepSpeed-Chat/training/utils/model/reward_model.py#L55
             self.num_padding_at_beginning = 0 # for all models except OPT(=1) so we keep this parameter
             rewards = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
             chosen_mean_scores = []
@@ -390,8 +391,8 @@ class RewardModel(PreTrainedModel):
             # 注意下面的chosen_reward/reject_reward 都是sigmoid之后的 在[0,1]之间 不是真正的reward函数返回的reward 那个reward在[-无穷，+无穷]
             # return {
             # "loss": loss,
-            # "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
-            # "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
+            # "chosen_reward": torch.sigmoid(chosen_reward) + 1e-7 if chosen_reward is not None else chosen_reward,
+            # "reject_reward": torch.sigmoid(reject_reward) + 1e-7 if reject_reward is not None else reject_reward,
             #   }
             # reward 不使用sigmoid变换 直接存 原始计算值
             return {
@@ -416,8 +417,8 @@ class RewardModel(PreTrainedModel):
             logger.error(f"use new method,loss ={loss}")
             return {
             "loss": loss,
-            "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
-            "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
+            "chosen_reward": torch.sigmoid(chosen_reward) +1e-7 if chosen_reward is not None else chosen_reward,
+            "reject_reward": torch.sigmoid(reject_reward) +1e-7 if reject_reward is not None else reject_reward,
               }
         
         if chosen_input_ids is not None:
@@ -439,8 +440,8 @@ class RewardModel(PreTrainedModel):
 
         return {
             "loss": loss,
-            "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
-            "reject_reward": torch.sigmoid(reject_reward) if reject_reward is not None else reject_reward,
+            "chosen_reward": torch.sigmoid(chosen_reward)+1e-7 if chosen_reward is not None else chosen_reward,
+            "reject_reward": torch.sigmoid(reject_reward)+1e-7 if reject_reward is not None else reject_reward,
         }
 
 def preprocess_function(examples,tokenizer,max_length=512):
@@ -707,7 +708,7 @@ class RewardTrainer_trl(Trainer):
         _, _, values = model(**inputs, output_hidden_states=True, return_dict=True)
         # 这里是使用reward最后的一个分布来计算loss  
         r_accept, r_reject = values[-1].split(batch_size, dim=0)
-        loss = -torch.log(torch.sigmoid(r_accept - r_reject)).mean()
+        loss = -torch.log(torch.sigmoid(r_accept - r_reject)+1e-7).mean()
         return (loss, [loss, r_accept, r_reject]) if return_outputs else loss
 
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
@@ -871,9 +872,11 @@ def train():
         tokenizer = LlamaTokenizer.from_pretrained(script_args.model_name)
         config = LlamaConfig.from_pretrained(script_args.model_name)
 
+    #padding_side="right" 是为了 解决方法3中 assert divergence_ind > 0 报错  这个deepspeed-chat的方法3 loss计算代码是预设padding side为right
+    #https://github.com/microsoft/DeepSpeedExamples/issues/338  
     elif "chatglm" in script_args.model_name:
         tokenizer = AutoTokenizer.from_pretrained(
-            script_args.model_name, trust_remote_code=True)
+            script_args.model_name, trust_remote_code=True ,padding_side="right") 
         config = AutoConfig.from_pretrained(
             script_args.model_name, trust_remote_code=True)
     
