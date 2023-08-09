@@ -154,6 +154,8 @@ class RewardModel(PreTrainedModel):
             reject_reward = total_reward[half:]
             loss = self.loss_fn(chosen_reward, reject_reward)
             #logger.error(f"use new method2,loss ={loss}")
+
+            # 注意下面的chosen_reward/reject_reward 都是sigmoid之后的 在[0,1]之间 不是真正的reward函数返回的reward 那个reward在[-无穷，+无穷]
             return {
             "loss": loss,
             "chosen_reward": torch.sigmoid(chosen_reward) if chosen_reward is not None else chosen_reward,
@@ -677,10 +679,10 @@ def train():
         bias="none",
     )
 
-    model = get_peft_model(model, peft_config)
-
-    model.print_trainable_parameters()
     model = RewardModel(model.config, model.transformer, tokenizer)
+    model = get_peft_model(model, peft_config)
+    model.print_trainable_parameters()
+    #model = RewardModel(model.config, model.transformer, tokenizer)
     
     # Need to do this for gpt2, because it doesn't have an official pad token.
     #tokenizer.pad_token = tokenizer.eos_token
