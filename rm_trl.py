@@ -275,12 +275,13 @@ class RewardModel(PreTrainedModel):
         # print("hidden_states: ", type(hidden_states), hidden_states.dtype)
         rewards = self.v_head(hidden_states).squeeze(-1)
         rewards = rewards.to(torch.float32)  # 定义v_head时也要注意dtype是float32避免 RuntimeError: expected scalar type Float but found Half
-        rewards = rewards.mean(dim=-1)
-        if len(rewards.shape) == 2:
-            rewards = rewards.squeeze(1)    # ensure shape is (B)
+        #rewards = rewards.mean(dim=-1)
+        #if len(rewards.shape) == 2:
+        #    rewards = rewards.squeeze(1)    # ensure shape is (B)
 
-        assert len(rewards.shape) == 1 and rewards.shape[0] == batch_size
+        #assert len(rewards.shape) == 1 and rewards.shape[0] == batch_size
 
+        ## 为了适应方法2 直接返回 rewards = self.v_head(hidden_states).squeeze(-1) 
         return rewards
 
     def forward(
@@ -319,6 +320,7 @@ class RewardModel(PreTrainedModel):
             # 方法2 使用reward tensor   最后一个来计算loss  也就是EOS的reward
             total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
             print(f"input_ids.shape={input_ids.shape}")
+            print(f"total_reward.shape={total_reward.shape}")
             batch_size = input_ids.size(0) // 2
             chosen_reward, reject_reward = total_reward[-1].split(batch_size, dim=0)
             loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward)).mean()
