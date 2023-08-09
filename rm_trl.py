@@ -1092,7 +1092,7 @@ if __name__ == "__main__":
                                   bnb_4bit_compute_dtype=torch.float16)
     
     model = AutoModel.from_pretrained(
-            script_args.model_name,
+            "THUDM/chatglm2-6b",#script_args.model_name,
             #num_labels=1,
             # torch_dtype=torch.bfloat16,
             torch_dtype=torch.float16,
