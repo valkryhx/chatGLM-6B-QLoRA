@@ -977,8 +977,9 @@ def train():
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=compute_accuracy,
-        data_collator = RewardDataCollatorWithPadding( tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8),     ),
-        #data_collator=RewardDataCollatorWithPadding_only_input_ids(tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8),)
+        data_collator = RewardDataCollatorWithPadding( tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8), 
+        #data_collator=RewardDataCollatorWithPadding_only_input_ids(tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8),
+        )
 
     model.config.use_cache = False
 
