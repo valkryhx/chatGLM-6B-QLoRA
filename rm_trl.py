@@ -710,17 +710,17 @@ class RewardTrainer(Trainer):
         model = unwrap_model(self.model)
 
         if hasattr(model, "pretrained_model"): # for models with valuehead (currently using LoRA only)
-            logger.error("model, "pretrained_model")
+            logger.error(" 111  model, pretrained_model")
             backbone_model = getattr(model, "pretrained_model")
             torch.save(get_state_dict(getattr(model, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME))
         else:
             backbone_model = model
 
         if isinstance(backbone_model, PeftModel): # LoRA tuning
-            logger.error("backbone_model, PeftModel")
+            logger.error("222 backbone_model, PeftModel")
             backbone_model.save_pretrained(output_dir, state_dict=get_state_dict(backbone_model))
         elif isinstance(backbone_model, PreTrainedModel): # freeze/full-tuning or p_tuning
-            logger.error("backbone_model, PreTrainedModel")
+            logger.error("333 backbone_model, PreTrainedModel")
             backbone_model.config.use_cache = True
             backbone_model.save_pretrained(
                 output_dir,
