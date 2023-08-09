@@ -679,10 +679,11 @@ def train():
         bias="none",
     )
 
-    model = RewardModel(model.config, model.transformer, tokenizer)
+    # 参考了 很多例子 都是先peft lora 再转换成rewardmodel
+    #model = RewardModel(model.config, model.transformer, tokenizer)
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()
-    #model = RewardModel(model.config, model.transformer, tokenizer)
+    model = RewardModel(model.config, model.transformer, tokenizer)
     
     # Need to do this for gpt2, because it doesn't have an official pad token.
     #tokenizer.pad_token = tokenizer.eos_token
