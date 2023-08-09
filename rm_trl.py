@@ -650,6 +650,21 @@ def compute_accuracy(eval_preds: Sequence[Union[np.ndarray, Tuple[np.ndarray]]])
     preds, _ = eval_preds
     return {"accuracy": (preds[0] > preds[1]).sum() / len(preds[0])}
 
+
+# https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/extras/save_and_load.py#L15
+def get_state_dict(model: torch.nn.Module, trainable_only: Optional[bool] = True) -> Dict[str, torch.Tensor]:
+    state_dict = model.state_dict()
+    filtered_state_dict = {}
+
+    for k, v in model.named_parameters():
+        if (not trainable_only) or v.requires_grad:
+            filtered_state_dict[k] = state_dict[k].cpu().clone().detach()
+
+    return filtered_state_dict
+
+VALUE_HEAD_FILE_NAME = "value_head.bin"
+
+
 class RewardTrainer(Trainer):
     # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
     def compute_loss(self, model, inputs, return_outputs=False):
@@ -672,18 +687,52 @@ class RewardTrainer(Trainer):
             return res["loss"], {"rewards_j": res["chosen_reward"], "rewards_k": res["reject_reward"]}
         print({"rewards_j": res["chosen_reward"], "rewards_k": res["reject_reward"]})
         return res["loss"]
+    
+    def _save(self, output_dir: Optional[str] = None, state_dict: Optional[Dict[str, torch.Tensor]] = None) -> None:
+        r"""
+        Saves trainable parameters as model checkpoint.
 
-    def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
-        """只保存adapter"""
-        print("begin to save  !!!")
-        if output_dir is None:
-            output_dir = self.args.output_dir
-        if self.is_world_process_zero():  
-            self.model.save_pretrained(output_dir)
-            torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
-            print("save done !!!")
-        else :
-            print("this process is not main process , do not save model.[for distributed training scenario]")
+        This function will only be executed at the process zero.
+
+        Subclass and override to inject custom behavior. It should not be directly used by external scripts.
+        """
+        output_dir = output_dir if output_dir is not None else self.args.output_dir
+        os.makedirs(output_dir, exist_ok=True)
+        logger.info(f"Saving model checkpoint to {output_dir}")
+        model = unwrap_model(self.model)
+
+        if hasattr(model, "pretrained_model"): # for models with valuehead (currently using LoRA only)
+            backbone_model = getattr(model, "pretrained_model")
+            torch.save(get_state_dict(getattr(model, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME))
+        else:
+            backbone_model = model
+
+        if isinstance(backbone_model, PeftModel): # LoRA tuning
+            backbone_model.save_pretrained(output_dir, state_dict=get_state_dict(backbone_model))
+        elif isinstance(backbone_model, PreTrainedModel): # freeze/full-tuning or p_tuning
+            backbone_model.config.use_cache = True
+            backbone_model.save_pretrained(
+                output_dir,
+                state_dict=get_state_dict(backbone_model, trainable_only=False),
+                safe_serialization=self.args.save_safetensors
+            )
+            backbone_model.config.use_cache = False
+            if self.tokenizer is not None:
+                self.tokenizer.save_pretrained(output_dir)
+        else:
+            logger.warning("No model to save.")
+            
+    # def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
+    #     """只保存adapter"""
+    #     print("begin to save  !!!")
+    #     if output_dir is None:
+    #         output_dir = self.args.output_dir
+    #     if self.is_world_process_zero():  
+    #         self.model.save_pretrained(output_dir)
+    #         torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
+    #         print("save done !!!")
+    #     else :
+    #         print("this process is not main process , do not save model.[for distributed training scenario]")
 
 
 
