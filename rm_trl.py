@@ -672,7 +672,7 @@ def get_state_dict(model: torch.nn.Module, trainable_only: Optional[bool] = True
 
 VALUE_HEAD_FILE_NAME = "value_head.bin"
 
-
+TRAIN_TYPE = "lora"
 class RewardTrainer(Trainer):
     # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
     def compute_loss(self, model, inputs, return_outputs=False):
@@ -722,9 +722,12 @@ class RewardTrainer(Trainer):
         elif isinstance(backbone_model, PreTrainedModel): 
             logger.error("333 backbone_model, PreTrainedModel")
             torch.save(get_state_dict(getattr(model, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME))
-            print(f'hasattr(backbone_model, "lora_A")={hasattr(backbone_model, "lora_A")}')
-            backbone_model.save_pretrained(output_dir, state_dict=get_state_dict(backbone_model))
-            if not hasattr(backbone_model, "lora_A") : #  freeze/full-tuning or p_tuning
+            #print(f'hasattr(backbone_model, "lora_A")={hasattr(backbone_model, "lora_A")}') 这个要具体的layer才行 否则用model级别判定是False的
+            if TRAIN_TYPE =="lora" :
+                print(f"TRAIN_TYPE =="lora"")
+                backbone_model.save_pretrained(output_dir, state_dict=get_state_dict(backbone_model))
+            elif TRAIN_TYPE !="lora" : #  freeze/full-tuning or p_tuning
+                print(f"TRAIN_TYPE !="lora"")
                 #backbone_model.config.use_cache = True
                 backbone_model.save_pretrained(
                     output_dir,
