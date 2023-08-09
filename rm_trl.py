@@ -46,7 +46,7 @@ DEFAULT_UNK_TOKEN = "</s>"
 
 
 
-IGNORE_INDEX
+IGNORE_INDEX = -100
 class DataCollatorForChatGLM(DataCollatorWithPadding):
     r"""
     Data collator for ChatGLM. It is capable of dynamically padding for batched data.
