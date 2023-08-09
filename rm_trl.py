@@ -322,6 +322,8 @@ class RewardModel(PreTrainedModel):
             print(f"input_ids.shape={input_ids.shape}")
             print(f"total_reward.shape={total_reward.shape}")
             batch_size = input_ids.size(0) // 2
+            print(f"batch_size={batch_size}")
+            print(f"total_reward[-1]={total_reward[-1]},{total_reward[-1].shape}")
             chosen_reward, reject_reward = total_reward[-1].split(batch_size, dim=0)
             loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward)).mean()
             #logger.error(f"use new method2,loss ={loss}")
