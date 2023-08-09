@@ -708,7 +708,7 @@ class RewardTrainer(Trainer):
         os.makedirs(output_dir, exist_ok=True)
         logger.info(f"Saving model checkpoint to {output_dir}")
         model = unwrap_model(self.model)
-
+        print(model)
         if hasattr(model, "pretrained_model"): # for models with valuehead (currently using LoRA only)
             logger.error(" 111  model, pretrained_model")
             backbone_model = getattr(model, "pretrained_model")
@@ -1042,7 +1042,7 @@ def train():
     model = RewardModel(model.config, model.transformer, tokenizer)
     #model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
     
-    
+    print(model)
     print(f"Finished loading model and tokenizer")
 
    
