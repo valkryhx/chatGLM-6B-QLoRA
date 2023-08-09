@@ -1122,6 +1122,7 @@ if __name__ == "__main__":
     adapters_weights = torch.load(checkpoint_name)
     print(f"adapter_weights={adapters_weights}")
     set_peft_model_state_dict(model, adapters_weights)
+    tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
     model = RewardModel(model.config, model.transformer, tokenizer)
     v_head_ckpt = os.path.join(
                 ckpt, 'value_head.bin'
@@ -1129,5 +1130,6 @@ if __name__ == "__main__":
     v_head_weights = torch.load(v_head_ckpt)
     print(f"v_head_weights={v_head_weights}")
     model.load_state_dict(v_head_weights, strict=False)
+    print(model)
     raise ValueError(123)
     train()
