@@ -308,12 +308,19 @@ class RewardModel(PreTrainedModel):
         #print(f"chosen_input_ids={chosen_input_ids}")
         #print(f"rejected_input_ids={rejected_input_ids}")
         if input_ids is not None and attention_mask is not None :
+
+            #方法1 使用全部的token的hiddenstate来计算loss
+            # total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
+            # half = input_ids.shape[0]//2
+            # chosen_reward = total_reward[:half]
+            # reject_reward = total_reward[half:]
+            # loss = self.loss_fn(chosen_reward, reject_reward)
+
+            # 方法2 使用reward tensor   最后一个来计算loss  也就是EOS的reward
             
-            total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
-            half = input_ids.shape[0]//2
-            chosen_reward = total_reward[:half]
-            reject_reward = total_reward[half:]
-            loss = self.loss_fn(chosen_reward, reject_reward)
+            batch_size = inputs["input_ids"].size(0) // 2
+            chosen_reward, reject_reward = total_reward[-1].split(batch_size, dim=0)
+            loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward)).mean()
             #logger.error(f"use new method2,loss ={loss}")
 
             # 注意下面的chosen_reward/reject_reward 都是sigmoid之后的 在[0,1]之间 不是真正的reward函数返回的reward 那个reward在[-无穷，+无穷]
@@ -682,7 +689,10 @@ class RewardTrainer_trl(Trainer):
         See: https://github.com/huggingface/transformers/blob/v4.30.2/src/transformers/trainer.py#L3509
         """
         batch_size = inputs["input_ids"].size(0) // 2
+        ## 根据 源码 https://github.com/lvwerra/trl/blob/main/trl/models/modeling_value_head.py#L184
+        ## AutoModelForCausalLMWithValueHead.forard 返回 3个值 return (lm_logits, loss, value) 仅仅 需要最后一个作为reward
         _, _, values = model(**inputs, output_hidden_states=True, return_dict=True)
+        # 这里是使用reward最后的一个分布来计算loss  
         r_accept, r_reject = values[-1].split(batch_size, dim=0)
         loss = -torch.log(torch.sigmoid(r_accept - r_reject)).mean()
         return (loss, [loss, r_accept, r_reject]) if return_outputs else loss
@@ -949,8 +959,8 @@ def train():
     
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()
-    #model = RewardModel(model.config, model.transformer, tokenizer)
-    model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
+    model = RewardModel(model.config, model.transformer, tokenizer)
+    #model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
     
     
     print(f"Finished loading model and tokenizer")
@@ -961,7 +971,7 @@ def train():
     eval_dataset  = get_rm_datset(data_path=data_path, tokenizer=tokenizer, max_samples=script_args.eval_subset,max_length=script_args.max_length,global_args=None)
 
     # Train the model.
-    trainer = RewardTrainer_trl(
+    trainer = RewardTrainer(
         model=model ,
         args=training_args,
         train_dataset=train_dataset,
