@@ -876,11 +876,11 @@ def train():
         tokenizer = LlamaTokenizer.from_pretrained(script_args.model_name)
         config = LlamaConfig.from_pretrained(script_args.model_name)
 
-    #padding_side="right" 是为了 解决方法3中 assert divergence_ind > 0 报错  这个deepspeed-chat的方法3 loss计算代码是预设padding side为right
+    
     #https://github.com/microsoft/DeepSpeedExamples/issues/338  
     elif "chatglm" in script_args.model_name:
         tokenizer = AutoTokenizer.from_pretrained(
-            script_args.model_name, trust_remote_code=True ,padding_side="right") 
+            script_args.model_name, trust_remote_code=True ) 
         config = AutoConfig.from_pretrained(
             script_args.model_name, trust_remote_code=True)
     
