@@ -553,6 +553,62 @@ class RewardDataCollatorWithPadding:
         return batch
 
 
+
+@dataclass
+class RewardDataCollatorWithPadding_only_input_ids:
+    tokenizer: PreTrainedTokenizerBase
+    padding: Union[bool, str, PaddingStrategy] = True
+    max_length: Optional[int] = None
+    pad_to_multiple_of: Optional[int] = None
+    return_tensors: str = "pt"
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+        features_j = []
+        features_k = []
+        for feature in features:
+            features_j.append(
+                {
+                    "input_ids": feature["input_ids_j"],
+                    "attention_mask": feature["attention_mask_j"],
+                }
+            )
+            features_k.append(
+                {
+                    "input_ids": feature["input_ids_k"],
+                    "attention_mask": feature["attention_mask_k"],
+                }
+            )
+        batch_j = self.tokenizer.pad(
+            features_j,
+            #padding=self.padding,
+            padding='max_length',
+            #truncation=True,
+            
+            max_length=self.max_length,
+            pad_to_multiple_of=self.pad_to_multiple_of,
+            return_tensors=self.return_tensors,
+        )
+        batch_k = self.tokenizer.pad(
+            features_k,
+            #padding=self.padding,
+            padding='max_length',
+            #truncation=True,
+            max_length=self.max_length,
+            pad_to_multiple_of=self.pad_to_multiple_of,
+            return_tensors=self.return_tensors,
+        )
+        batch = {
+            #"input_ids_j": batch_j["input_ids"],
+            #"attention_mask_j": batch_j["attention_mask"],
+            #"input_ids_k": batch_k["input_ids"],
+            #"attention_mask_k": batch_k["attention_mask"],
+            #"return_loss": True,
+            "input_ids": torch.cat((batch_j["input_ids"], batch_k["input_ids"]),dim=0)  ,
+            #"attention_mask": torch.cat((batch_j["attention_mask"] , batch_k["attention_mask"]),dim=0),
+        }
+        return batch
+
+
 # Define the metric that we'll use for validation.
 accuracy = evaluate.load("accuracy")
 
@@ -911,7 +967,9 @@ def train():
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=compute_accuracy,
-        data_collator = PairwiseDataCollatorForChatGLM(tokenizer, model.pretrained_model)    
+        #data_collator = PairwiseDataCollatorForChatGLM(tokenizer, model.pretrained_model),
+        data_collator=RewardDataCollatorWithPadding_only_input_ids(
+        tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8),
     )
 
     model.config.use_cache = False
