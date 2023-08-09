@@ -317,70 +317,74 @@ class RewardModel(PreTrainedModel):
             # reject_reward = total_reward[half:]
             # loss = self.loss_fn(chosen_reward, reject_reward)
 
-            # # 方法2 使用reward tensor   最后一个来token（可能 是pad token 有缺陷）计算loss 的reward
-            # total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
-            # print(f"input_ids.shape={input_ids.shape}")
-            # print(f"total_reward.shape={total_reward.shape}")
-            # batch_size = input_ids.size(0) // 2
-            # print(f"batch_size={batch_size}")
-            # # 注意是 total_reward[:,-1] 而不是  total_reward[-1] 前面保留了维度dim=0和dim=1最后一列 后者是dim=1全保留但是dim=0最后一行
-            # chosen_reward, reject_reward = total_reward[:,-1].split(batch_size, dim=0)
-            # loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward) + 1e-7).mean()
-            # #logger.error(f"use new method2,loss ={loss}")
+            # 方法2 使用reward tensor   最后一个来token（不会是pad 因为chatglm2的pad side为left 最后一个token就是eos）计算loss 的reward
+            # 参考了 https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/rm/trainer.py#L43
+            total_reward = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
+            print(f"input_ids.shape={input_ids.shape}")
+            print(f"total_reward.shape={total_reward.shape}")
+            batch_size = input_ids.size(0) // 2
+            print(f"batch_size={batch_size}")
+            # 注意是 total_reward[:,-1] 而不是  total_reward[-1] 前面保留了维度dim=0和dim=1最后一列 后者是dim=1全保留但是dim=0最后一行
+            chosen_reward, reject_reward = total_reward[:,-1].split(batch_size, dim=0)
+            loss = -torch.log(torch.sigmoid(chosen_reward - reject_reward) + 1e-7).mean()
+            #logger.error(f"use new method2,loss ={loss}")
 
             #方法3 找到最后一个非pad token的EOStoken来计算loss  参考了deepspeed-chat 注意tokenizer的padding size为right
             # https://github.com/microsoft/DeepSpeedExamples/blob/master/applications/DeepSpeed-Chat/training/utils/model/reward_model.py#L55
-            self.num_padding_at_beginning = 0 # for all models except OPT(=1) so we keep this parameter
-            rewards = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
-            chosen_mean_scores = []
-            rejected_mean_scores = []
+            # 实际上 pad side为left  那最后一个就是eos 也就不需要像方法3这样费劲去找最后一个非pad字符了
+            # 并且chatglm2不支持设置pad side为right
+            # tokenization_chatglm.py:228  assert self.padding_side == "left" 
+            # self.num_padding_at_beginning = 0 # for all models except OPT(=1) so we keep this parameter
+            # rewards = self.reward(input_ids ,attention_mask=attention_mask , position_ids=None)
+            # chosen_mean_scores = []
+            # rejected_mean_scores = []
 
-            # Split the inputs and rewards into two parts, chosen and rejected
-            assert len(input_ids.shape) == 2
-            bs = input_ids.shape[0] // 2
-            seq_len = input_ids.shape[1]
+            # # Split the inputs and rewards into two parts, chosen and rejected
+            # assert len(input_ids.shape) == 2
+            # bs = input_ids.shape[0] // 2
+            # seq_len = input_ids.shape[1]
 
-            chosen_ids = input_ids[:bs]  # bs x seq x 1
-            rejected_ids = input_ids[bs:]
-            chosen_rewards = rewards[:bs]
-            rejected_rewards = rewards[bs:]
+            # chosen_ids = input_ids[:bs]  # bs x seq x 1
+            # rejected_ids = input_ids[bs:]
+            # chosen_rewards = rewards[:bs]
+            # rejected_rewards = rewards[bs:]
 
-            # Compute pairwise loss. Only backprop on the different tokens before padding
-            loss = 0
-            for i in range(bs):
-                chosen_id = chosen_ids[i]
-                rejected_id = rejected_ids[i]
-                chosen_reward = chosen_rewards[i]
-                rejected_reward = rejected_rewards[i]
+            # # Compute pairwise loss. Only backprop on the different tokens before padding
+            # loss = 0
+            # for i in range(bs):
+            #     chosen_id = chosen_ids[i]
+            #     rejected_id = rejected_ids[i]
+            #     chosen_reward = chosen_rewards[i]
+            #     rejected_reward = rejected_rewards[i]
 
-                c_inds = (chosen_id == self.pad_id).nonzero()
-                c_ind = c_inds[self.num_padding_at_beginning].item() if len(
-                c_inds
-                ) > self.num_padding_at_beginning else seq_len  # self.num_padding_at_beginning =0 here,OPT model pads the first token, so we need to use the second padding token as the end of the sequence
-                check_divergence = (chosen_id != rejected_id).nonzero()
+            #     c_inds = (chosen_id == self.pad_id).nonzero()
+            #     c_ind = c_inds[self.num_padding_at_beginning].item() if len(
+            #     c_inds
+            #     ) > self.num_padding_at_beginning else seq_len  # self.num_padding_at_beginning =0 here,OPT model pads the first token, so we need to use the second padding token as the end of the sequence
+            #     check_divergence = (chosen_id != rejected_id).nonzero()
 
-                if len(check_divergence) == 0:
-                    end_ind = rejected_reward.size(-1)
-                    divergence_ind = end_ind - 1
-                    r_ind = c_ind
-                else:
-                    # Check if there is any padding otherwise take length of sequence
-                    r_inds = (rejected_id == self.pad_id).nonzero()
-                    r_ind = r_inds[self.num_padding_at_beginning].item(
-                    ) if len(r_inds) > self.num_padding_at_beginning else seq_len  # self.num_padding_at_beginning =0
-                    end_ind = max(c_ind, r_ind)
-                    divergence_ind = check_divergence[0]
-                assert divergence_ind > 0
-                c_truncated_reward = chosen_reward[divergence_ind:end_ind]
-                r_truncated_reward = rejected_reward[divergence_ind:end_ind]
-                chosen_mean_scores.append(chosen_reward[c_ind - 1])  #use the end score for reference
-                rejected_mean_scores.append(rejected_reward[r_ind - 1])
+            #     if len(check_divergence) == 0:
+            #         end_ind = rejected_reward.size(-1)
+            #         divergence_ind = end_ind - 1
+            #         r_ind = c_ind
+            #     else:
+            #         # Check if there is any padding otherwise take length of sequence
+            #         r_inds = (rejected_id == self.pad_id).nonzero()
+            #         r_ind = r_inds[self.num_padding_at_beginning].item(
+            #         ) if len(r_inds) > self.num_padding_at_beginning else seq_len  # self.num_padding_at_beginning =0
+            #         end_ind = max(c_ind, r_ind)
+            #         divergence_ind = check_divergence[0]
+            #     assert divergence_ind > 0
+            #     c_truncated_reward = chosen_reward[divergence_ind:end_ind]
+            #     r_truncated_reward = rejected_reward[divergence_ind:end_ind]
+            #     chosen_mean_scores.append(chosen_reward[c_ind - 1])  #use the end score for reference
+            #     rejected_mean_scores.append(rejected_reward[r_ind - 1])
 
-                loss += -torch.nn.functional.logsigmoid(c_truncated_reward - r_truncated_reward).mean()
+            #     loss += -torch.nn.functional.logsigmoid(c_truncated_reward - r_truncated_reward).mean()
 
-            loss = loss / bs
-            chosen_reward = torch.stack(chosen_mean_scores)
-            reject_reward = torch.stack(rejected_mean_scores)
+            # loss = loss / bs
+            # chosen_reward = torch.stack(chosen_mean_scores)
+            # reject_reward = torch.stack(rejected_mean_scores)
         #     return {
         #     "loss": loss,
         #     "chosen_reward": chosen_reward,
