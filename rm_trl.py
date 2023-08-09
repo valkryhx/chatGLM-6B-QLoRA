@@ -1014,9 +1014,9 @@ def train():
         
         )
 
-    #add lm_head
-    model.lm_head = model.transformer.output_layer
-    print("model: ", type(model))
+    #add lm_head  只有使用trl  AutoModelForCausalLMWithValueHead 才需要
+    #model.lm_head = model.transformer.output_layer
+    #print("model: ", type(model))
     #model = RewardModel(model.config, model.transformer, tokenizer)
     #print(model)
     model = prepare_model_for_kbit_training(model)
@@ -1039,7 +1039,8 @@ def train():
     
     model = get_peft_model(model, peft_config)
     model.print_trainable_parameters()
-    model = RewardModel(model.config, model.transformer, tokenizer)
+    #model = RewardModel(model.config, model.transformer, tokenizer)
+    model = RewardModel(model.config, model, tokenizer)
     #model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
     
     print(model)
