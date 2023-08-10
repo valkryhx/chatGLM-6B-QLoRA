@@ -1112,10 +1112,10 @@ def train():
 
     #trainer.train(script_args.resume_from_checkpoint)
     trainer.train()
-    print("Saving last checkpoint of the model")
+    print("Train done!Saving Model...")
     # model.save_pretrained(script_args.output_dir + "peft_last_checkpoint")
-    model.save_pretrained(output_name)
-
+    model.save_pretrained(output_dir)
+    print("Model Saved.")
 if __name__ == "__main__":
     #args = parse_args()
     ## test load ckpt
