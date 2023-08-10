@@ -1123,11 +1123,15 @@ if __name__ == "__main__":
     checkpoint_name = os.path.join( ckpt, 'pytorch_model.bin' )
     adapters_weights = torch.load(checkpoint_name)
     print(f"adapter_weights={adapters_weights}")
-        
-    set_peft_model_state_dict(model.base_model.model, adapters_weights)
+
+    #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
+    #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
+    #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
+
     
     tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
     model = RewardModel(model.config, model.transformer, tokenizer)
+    model.load_state_dict(adapters_weights, strict=False)
     print(f"before load model.v_head.weight={model.v_head.weight}")
     v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
     v_head_weights = torch.load(v_head_ckpt)
