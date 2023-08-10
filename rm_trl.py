@@ -1111,13 +1111,16 @@ def train():
         )
 
     model.config.use_cache = False
-
-    #trainer.train(script_args.resume_from_checkpoint)
     trainer.train()
-    print("Train done!Saving Model...")
-    # model.save_pretrained(script_args.output_dir + "peft_last_checkpoint")
-    model.save_pretrained(output_dir)
+
+    # 下面的写法会保存全量参数的rewardmodel
+    #print("Train done!Saving Model...")
+    #model.save_pretrained(output_dir)
+
+    #使用rewardmodel自定义的save_only_lora_and_vhead(self,output_dir) 只保存可训练参数  这样就跟checkpoint-xx目录中保存的一致 也包括v_head
+    model.save_only_lora_and_vhead(output_dir) 
     print("Model Saved.")
+
 if __name__ == "__main__":
     #args = parse_args()
     ## test load ckpt
