@@ -1065,7 +1065,7 @@ def train():
     if script_args.resume_from_checkpoint :
         ckpt = (script_args.resume_from_checkpoint).strip()
         adapters_name = os.path.join( ckpt, 'pytorch_model.bin' )
-        adapters_weights = torch.load(checkpoint_name)  # 这里能看出adapters_Weigth 其实就是个字典
+        adapters_weights = torch.load(ckpt)  # 这里能看出adapters_Weigth 其实就是个字典
         logger.info(f"adapter_weights={adapters_weights}")
         #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
         #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
