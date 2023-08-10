@@ -1135,6 +1135,6 @@ if __name__ == "__main__":
     print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
     print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
     print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-    print(f"after load model.v_head.weight={odel.v_head.weight}")
+    print(f"after load model.v_head.weight={model.v_head.weight}")
     raise ValueError(123)
     train()
