@@ -54,7 +54,8 @@ DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
 
 
-
+VALUE_HEAD_FILE_NAME = "value_head.bin"
+TRAIN_TYPE = "lora"
 IGNORE_INDEX = -100
 class DataCollatorForChatGLM(DataCollatorWithPadding):
     r"""
@@ -229,6 +230,18 @@ class PairWiseLoss(nn.Module):
         return loss
 
 ##################################################################################
+# 先定义获取requires grad 层的函数 后面用
+# https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/extras/save_and_load.py#L15
+def get_state_dict(model: torch.nn.Module, trainable_only: Optional[bool] = True) -> Dict[str, torch.Tensor]:
+    state_dict = model.state_dict()
+    filtered_state_dict = {}
+
+    for k, v in model.named_parameters():
+        if (not trainable_only) or v.requires_grad:
+            filtered_state_dict[k] = state_dict[k].cpu().clone().detach()
+
+    return filtered_state_dict
+        
 ## part of codes are from https://github.com/valkryhx/ChatGLM-LoRA-RLHF-PyTorch/blob/4d3b8df2d6b7908a924b91b339f4468ed357761e/reward_model.py#L54
 
 # 定义奖励模型 原理是在chatglm2模型的基础上加上v_head层 v_head层的shape为(hidden_size, 1) 也就是输出为一个float 值，注意dtype=torch.float32
@@ -245,6 +258,10 @@ class RewardModel(PreTrainedModel):
         self.v_head = nn.Linear(config.hidden_size, 1, bias=False, dtype=torch.float32) 
         self.loss_fn = PairWiseLoss()
 
+    def save_only_lora_and_vhead(self,output_dir):
+            logger.error("in func_save_only_lora_and_vhead")
+            torch.save(get_state_dict(getattr(self, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME)) 
+            self.save_pretrained(output_dir, state_dict=get_state_dict(self))
     def gradient_checkpointing_enable(self):
         self.transformer.gradient_checkpointing_enable()
 
@@ -659,21 +676,6 @@ def compute_accuracy(eval_preds: Sequence[Union[np.ndarray, Tuple[np.ndarray]]])
     preds, _ = eval_preds
     return {"accuracy": (preds[0] > preds[1]).sum() / len(preds[0])}
 
-
-# https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/extras/save_and_load.py#L15
-def get_state_dict(model: torch.nn.Module, trainable_only: Optional[bool] = True) -> Dict[str, torch.Tensor]:
-    state_dict = model.state_dict()
-    filtered_state_dict = {}
-
-    for k, v in model.named_parameters():
-        if (not trainable_only) or v.requires_grad:
-            filtered_state_dict[k] = state_dict[k].cpu().clone().detach()
-
-    return filtered_state_dict
-
-VALUE_HEAD_FILE_NAME = "value_head.bin"
-
-TRAIN_TYPE = "lora"
 class RewardTrainer(Trainer):
     # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
     def compute_loss(self, model, inputs, return_outputs=False):
@@ -715,7 +717,7 @@ class RewardTrainer(Trainer):
             backbone_model = getattr(model, "pretrained_model")
             torch.save(get_state_dict(getattr(model, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME))
         else:
-            backbone_model = model
+            backbone_model = model   ##　我们的方法会是这种情况　reward model is PreTrainedModel ,so it does not hasattr "pretrained_model"
 
         if isinstance(backbone_model, PeftModel): # LoRA tuning
             logger.error("222 backbone_model, PeftModel")
