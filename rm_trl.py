@@ -1148,8 +1148,8 @@ def test_load_best() :
     best_ck = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2"
     best_w = torch.load(os.path.join( best_ck, 'pytorch_model.bin' ))
     print(f"best_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={best_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
-    best_w = torch.load(os.path.join(best,'value_head.bin'))
-    print(f"best_w={best_w}")
+    best_vhead_w = torch.load(os.path.join(best_ck,'value_head.bin'))
+    print(f"best_vhead_w={best_vhead_w}")
 
     # q_config = BitsAndBytesConfig(load_in_4bit= True,
     #                               bnb_4bit_quant_type='nf4',
