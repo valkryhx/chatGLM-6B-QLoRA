@@ -517,3 +517,95 @@ https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner
 https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/d22a77eb87c36bb353b1e0e7caf064cb7fdf32ac/src/glmtuner/tuner/core/trainer.py#L12
 dpo:https://github.com/lvwerra/trl/blob/main/examples/dpo.py
 dpo:https://huggingface.co/blog/dpo-trl
+
+
+#-------20230810-------#
+查看model中某一层的参数 ，例如model结构如下，print(model)显示下面的结构
+PeftModelForCausalLM(
+  (base_model): LoraModel(
+    (model): ChatGLMForConditionalGeneration(
+      (transformer): ChatGLMModel(
+        (embedding): Embedding(
+          (word_embeddings): Embedding(65024, 4096)
+        )
+        (rotary_pos_emb): RotaryEmbedding()
+        (encoder): GLMTransformer(
+          (layers): ModuleList(
+            (0-27): 28 x GLMBlock(
+              (input_layernorm): RMSNorm()
+              (self_attention): SelfAttention(
+                (query_key_value): Linear4bit(
+                  in_features=4096, out_features=4608, bias=True
+                  (lora_dropout): ModuleDict(
+                    (default): Dropout(p=0.05, inplace=False)
+                  )
+                  (lora_A): ModuleDict(
+                    (default): Linear(in_features=4096, out_features=64, bias=False)
+                  )
+                  (lora_B): ModuleDict(
+                    (default): Linear(in_features=64, out_features=4608, bias=False)
+                  )
+                  (lora_embedding_A): ParameterDict()
+                  (lora_embedding_B): ParameterDict()
+                )
+                (core_attention): CoreAttention(
+                  (attention_dropout): Dropout(p=0.0, inplace=False)
+                )
+                (dense): Linear4bit(
+                  in_features=4096, out_features=4096, bias=False
+                  (lora_dropout): ModuleDict(
+                    (default): Dropout(p=0.05, inplace=False)
+                  )
+                  (lora_A): ModuleDict(
+                    (default): Linear(in_features=4096, out_features=64, bias=False)
+                  )
+                  (lora_B): ModuleDict(
+                    (default): Linear(in_features=64, out_features=4096, bias=False)
+                  )
+                  (lora_embedding_A): ParameterDict()
+                  (lora_embedding_B): ParameterDict()
+                )
+              )
+              (post_attention_layernorm): RMSNorm()
+              (mlp): MLP(
+                (dense_h_to_4h): Linear4bit(
+                  in_features=4096, out_features=27392, bias=False
+                  (lora_dropout): ModuleDict(
+                    (default): Dropout(p=0.05, inplace=False)
+                  )
+                  (lora_A): ModuleDict(
+                    (default): Linear(in_features=4096, out_features=64, bias=False)
+                  )
+                  (lora_B): ModuleDict(
+                    (default): Linear(in_features=64, out_features=27392, bias=False)
+                  )
+                  (lora_embedding_A): ParameterDict()
+                  (lora_embedding_B): ParameterDict()
+                )
+                (dense_4h_to_h): Linear4bit(
+                  in_features=13696, out_features=4096, bias=False
+                  (lora_dropout): ModuleDict(
+                    (default): Dropout(p=0.05, inplace=False)
+                  )
+                  (lora_A): ModuleDict(
+                    (default): Linear(in_features=13696, out_features=64, bias=False)
+                  )
+                  (lora_B): ModuleDict(
+                    (default): Linear(in_features=64, out_features=4096, bias=False)
+                  )
+                  (lora_embedding_A): ParameterDict()
+                  (lora_embedding_B): ParameterDict()
+                )
+              )
+            )
+          )
+          (final_layernorm): RMSNorm()
+        )
+        (output_layer): Linear(in_features=4096, out_features=65024, bias=False)
+      )
+    )
+  )
+)
+查看print(model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight)
+    print(model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight)
+    print(model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight)
