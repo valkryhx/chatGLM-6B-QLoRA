@@ -1135,6 +1135,7 @@ def test_load_best() :
 
 
     # 先加载模型 不然加载完下面的bin再加载model会cpu ram oom
+    tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
     q_config = BitsAndBytesConfig(load_in_4bit= True,
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
