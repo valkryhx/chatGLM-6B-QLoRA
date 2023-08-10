@@ -1151,10 +1151,10 @@ def test_load_best() :
     best_vhead_w = torch.load(os.path.join(best_ck,'value_head.bin'))
     print(f"best_vhead_w={best_vhead_w}")
 
-    # q_config = BitsAndBytesConfig(load_in_4bit= True,
-    #                               bnb_4bit_quant_type='nf4',
-    #                               bnb_4bit_use_double_quant=True,
-    #                               bnb_4bit_compute_dtype=torch.float16)
+    q_config = BitsAndBytesConfig(load_in_4bit= True,
+                                  bnb_4bit_quant_type='nf4',
+                                  bnb_4bit_use_double_quant=True,
+                                  bnb_4bit_compute_dtype=torch.float16)
     
     model = AutoModel.from_pretrained(
             "THUDM/chatglm2-6b",#script_args.model_name,
