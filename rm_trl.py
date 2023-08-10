@@ -1128,6 +1128,11 @@ def train():
 
 def test_load_best() :
     # 验证 load_best_model_at_end = True 这个trainingArgument
+    # 上面的training complete之后会报warning There were missing keys in the checkpoint model loaded: 'transformer.embedding.word_embeddings.weight', 'transformer.rotary_pos_emb.inv_freq', 'transformer.encoder.layers.0.input_layernorm.weight', ....
+    # 是 trainingArguments中设置 load_best_model_at_end = True 后出现的
+    # 说明 trainer的确在最后把最好的那个adapters的参数做了load（只不过load时strict=True要求严格匹配了）
+    # 这说明保存在output_dir中的pytorch_model.bin和vhead.bin参数都是最佳的 我们来验证下
+    
     ck1="/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2/checkpoint-38"
     adapter1_w = torch.load(os.path.join( ck1, 'pytorch_model.bin' ))
     print(f"adapter1_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapter1_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
