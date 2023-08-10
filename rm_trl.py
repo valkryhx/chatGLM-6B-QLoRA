@@ -882,6 +882,10 @@ class ScriptArguments:
         default="reward_model_output",
         metadata={"help": "The dir of reward_model "},
     )
+    resume_from_checkpoint:Optional[str] = field(
+        default=None,
+        metadata={"help" : "continue qlora training from the checkpoint path,the pytorch_model.bin in fact includes the v_head paramters,but we still store the v_head to the v_head.bin file in the path"  }  
+    )
 
 
 
@@ -906,13 +910,13 @@ def train():
     # Define the training args. Needs to be done before the model is loaded if you are using deepspeed.
     model_name_split = script_args.model_name.split("/")[-1]
 
-    # output_name = (
+    # output_dir = (
     #     f"reward_model_{model_name_split}__{script_args.train_subset}_{script_args.learning_rate}"
     # )
-    output_name = script_args.output_dir
+    output_dir = script_args.output_dir
 
     training_args = TrainingArguments(
-        output_dir=output_name,
+        output_dir=output_dir,
         learning_rate=script_args.learning_rate,
         per_device_train_batch_size=script_args.per_device_train_batch_size,
         per_device_eval_batch_size=script_args.per_device_eval_batch_size,
@@ -1056,6 +1060,31 @@ def train():
     #  (model): ChatGLMForConditionalGeneration(
     # (transformer): ChatGLMModel(
     #model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
+
+
+    if script_args.resume_from_checkpoint :
+            ckpt = (script_args.resume_from_checkpoint).strip()
+            adapters_name = os.path.join( ckpt, 'pytorch_model.bin' )
+            adapters_weights = torch.load(checkpoint_name)
+            logger.info(f"adapter_weights={adapters_weights}")
+
+            #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
+            #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
+            #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
+            #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
+            #model = RewardModel(model.config, model.transformer, tokenizer)
+            logger.error(f"before load model.v_head.weight={model.v_head.weight}")
+            model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
+    
+           v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
+           v_head_weights = torch.load(v_head_ckpt)
+           logger.error(f"v_head_weights={v_head_weights}")
+           model.load_state_dict(v_head_weights, strict=False)
+           
+           print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+           print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+           print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+           print(f"after load model.v_head.weight={model.v_head.weight}")
     
     print(model)
     print(f"Finished loading model and tokenizer")
@@ -1078,8 +1107,8 @@ def train():
 
     model.config.use_cache = False
 
-    trainer.train(script_args.resume_from_checkpoint)
-
+    #trainer.train(script_args.resume_from_checkpoint)
+    trainer.train()
     print("Saving last checkpoint of the model")
     # model.save_pretrained(script_args.output_dir + "peft_last_checkpoint")
     model.save_pretrained(output_name)
