@@ -1065,7 +1065,7 @@ def train():
     if script_args.resume_from_checkpoint :
             ckpt = (script_args.resume_from_checkpoint).strip()
             adapters_name = os.path.join( ckpt, 'pytorch_model.bin' )
-            adapters_weights = torch.load(checkpoint_name)
+            adapters_weights = torch.load(checkpoint_name)  # 这里能看出adapters_Weigth 其实就是个字典
             logger.info(f"adapter_weights={adapters_weights}")
 
             #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
@@ -1074,6 +1074,10 @@ def train():
             #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
             #model = RewardModel(model.config, model.transformer, tokenizer)
             logger.error(f"before load model.v_head.weight={model.v_head.weight}")
+            print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+            print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+            print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+            print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights[transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight]}")
             model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
     
            v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
@@ -1116,61 +1120,61 @@ def train():
 if __name__ == "__main__":
     #args = parse_args()
     ## test load ckpt
-    q_config = BitsAndBytesConfig(load_in_4bit= True,
-                                  bnb_4bit_quant_type='nf4',
-                                  bnb_4bit_use_double_quant=True,
-                                  bnb_4bit_compute_dtype=torch.float16)
+    # q_config = BitsAndBytesConfig(load_in_4bit= True,
+    #                               bnb_4bit_quant_type='nf4',
+    #                               bnb_4bit_use_double_quant=True,
+    #                               bnb_4bit_compute_dtype=torch.float16)
     
-    model = AutoModel.from_pretrained(
-            "THUDM/chatglm2-6b",#script_args.model_name,
-            #num_labels=1,
-            # torch_dtype=torch.bfloat16,
-            torch_dtype=torch.float16,
-            trust_remote_code=True,
-            load_in_4bit=True,
-            device_map="auto",#device_map,
-            quantization_config=q_config,
-        )
-    model = prepare_model_for_kbit_training(model)
+    # model = AutoModel.from_pretrained(
+    #         "THUDM/chatglm2-6b",#script_args.model_name,
+    #         #num_labels=1,
+    #         # torch_dtype=torch.bfloat16,
+    #         torch_dtype=torch.float16,
+    #         trust_remote_code=True,
+    #         load_in_4bit=True,
+    #         device_map="auto",#device_map,
+    #         quantization_config=q_config,
+    #     )
+    # model = prepare_model_for_kbit_training(model)
     
-    target_modules = find_all_linear_names(model)
-    lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
-        task_type=TaskType.CAUSAL_LM,#TaskType.SEQ_CLS,  #https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/core/adapter.py#L87C27-L87C45
-        inference_mode=False,
-        target_modules = target_modules ,
-        r=64,  # for qlora 64 is ok
-        lora_alpha=16,  # 32,
-        lora_dropout=0.05,  # 0.1,
-        bias="none",
-    )
-    model = get_peft_model(model, lora_config)
-    print(f"peftmodel={model}")
-    print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-    print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-    print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-    ckpt = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0809_v1/checkpoint-20"
-    checkpoint_name = os.path.join( ckpt, 'pytorch_model.bin' )
-    adapters_weights = torch.load(checkpoint_name)
-    print(f"adapter_weights={adapters_weights}")
+    # target_modules = find_all_linear_names(model)
+    # lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
+    #     task_type=TaskType.CAUSAL_LM,#TaskType.SEQ_CLS,  #https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/core/adapter.py#L87C27-L87C45
+    #     inference_mode=False,
+    #     target_modules = target_modules ,
+    #     r=64,  # for qlora 64 is ok
+    #     lora_alpha=16,  # 32,
+    #     lora_dropout=0.05,  # 0.1,
+    #     bias="none",
+    # )
+    # model = get_peft_model(model, lora_config)
+    # print(f"peftmodel={model}")
+    # print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+    # print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+    # print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+    # ckpt = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0809_v1/checkpoint-20"
+    # checkpoint_name = os.path.join( ckpt, 'pytorch_model.bin' )
+    # adapters_weights = torch.load(checkpoint_name)
+    # print(f"adapter_weights={adapters_weights}")  # 这里能看出adapters_weigth实际就是个字典 内容是各个trainable params 只不过是用.bin格式保存
 
-    #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
-    #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
-    #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
+    # #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
+    # #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
+    # #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
 
     
-    tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
-    model = RewardModel(model.config, model.transformer, tokenizer)
-    print(f"before load model.v_head.weight={model.v_head.weight}")
-    model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
+    # tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
+    # model = RewardModel(model.config, model.transformer, tokenizer)
+    # print(f"before load model.v_head.weight={model.v_head.weight}")
+    # model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
     
-    v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
-    v_head_weights = torch.load(v_head_ckpt)
-    print(f"v_head_weights={v_head_weights}")
-    model.load_state_dict(v_head_weights, strict=False)
-    print(model)
-    print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-    print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-    print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-    print(f"after load model.v_head.weight={model.v_head.weight}")
-    raise ValueError(123)
+    # v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
+    # v_head_weights = torch.load(v_head_ckpt)
+    # print(f"v_head_weights={v_head_weights}")
+    # model.load_state_dict(v_head_weights, strict=False)
+    # print(model)
+    # print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+    # print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+    # print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+    # print(f"after load model.v_head.weight={model.v_head.weight}")
+    # raise ValueError(123)
     train()
