@@ -1132,25 +1132,9 @@ def test_load_best() :
     # 是 trainingArguments中设置 load_best_model_at_end = True 后出现的
     # 说明 trainer的确在最后把最好的那个adapters的参数做了load（只不过load时strict=True要求严格匹配了）
     # 这说明保存在output_dir中的pytorch_model.bin和vhead.bin参数都是最佳的 我们来验证下
-    
-    ck1="/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2/checkpoint-38"
-    adapter1_w = torch.load(os.path.join( ck1, 'pytorch_model.bin' ))
-    print(f"adapter1_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapter1_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
-    vhead1_w = torch.load(os.path.join(ck1,'value_head.bin'))
-    print(f"vhead1_w={vhead1_w}")
 
-    ck2="/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2/checkpoint-40"
-    adapter2_w = torch.load(os.path.join( ck2, 'pytorch_model.bin' ))
-    print(f"adapter2_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapter2_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
-    vhead2_w = torch.load(os.path.join(ck2,'value_head.bin'))
-    print(f"vhead2_w={vhead2_w}")
 
-    best_ck = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2"
-    best_w = torch.load(os.path.join( best_ck, 'pytorch_model.bin' ))
-    print(f"best_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={best_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
-    best_vhead_w = torch.load(os.path.join(best_ck,'value_head.bin'))
-    print(f"best_vhead_w={best_vhead_w}")
-
+    # 先加载模型 不然加载完下面的bin再加载model会cpu ram oom
     q_config = BitsAndBytesConfig(load_in_4bit= True,
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
@@ -1180,6 +1164,27 @@ def test_load_best() :
     )
     model = get_peft_model(model, lora_config)
     model = RewardModel(model.config, model.transformer, tokenizer)
+
+    
+    ck1="/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2/checkpoint-38"
+    adapter1_w = torch.load(os.path.join( ck1, 'pytorch_model.bin' ))
+    print(f"adapter1_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapter1_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+    vhead1_w = torch.load(os.path.join(ck1,'value_head.bin'))
+    print(f"vhead1_w={vhead1_w}")
+
+    ck2="/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2/checkpoint-40"
+    adapter2_w = torch.load(os.path.join( ck2, 'pytorch_model.bin' ))
+    print(f"adapter2_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapter2_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+    vhead2_w = torch.load(os.path.join(ck2,'value_head.bin'))
+    print(f"vhead2_w={vhead2_w}")
+
+    best_ck = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2"
+    best_w = torch.load(os.path.join( best_ck, 'pytorch_model.bin' ))
+    print(f"best_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={best_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+    best_vhead_w = torch.load(os.path.join(best_ck,'value_head.bin'))
+    print(f"best_vhead_w={best_vhead_w}")
+
+   
     model.load_state_dict(best_w, strict=False) # best_w contains vhead ,no need to load vhead.bin once more.
     print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
     print(f"after load model.v_head.weight={model.v_head.weight}")
