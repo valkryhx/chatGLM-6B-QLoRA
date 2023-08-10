@@ -1115,7 +1115,7 @@ if __name__ == "__main__":
         bias="none",
     )
     model = get_peft_model(model, lora_config)
-    
+    print(f"peftmodel={model}")
     print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
     print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
     print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
