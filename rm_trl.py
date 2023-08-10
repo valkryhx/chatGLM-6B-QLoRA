@@ -1115,21 +1115,26 @@ if __name__ == "__main__":
         bias="none",
     )
     model = get_peft_model(model, lora_config)
+    
+    print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+    print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+    print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
     ckpt = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0809_v1/checkpoint-20"
-    checkpoint_name = os.path.join(
-                ckpt, 'pytorch_model.bin'
-            )
+    checkpoint_name = os.path.join( ckpt, 'pytorch_model.bin' )
     adapters_weights = torch.load(checkpoint_name)
     print(f"adapter_weights={adapters_weights}")
     set_peft_model_state_dict(model, adapters_weights)
     tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
     model = RewardModel(model.config, model.transformer, tokenizer)
-    v_head_ckpt = os.path.join(
-                ckpt, 'value_head.bin'
-            )
+    print(f"before load model.v_head.weight={model.v_head.weight}")
+    v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
     v_head_weights = torch.load(v_head_ckpt)
     print(f"v_head_weights={v_head_weights}")
     model.load_state_dict(v_head_weights, strict=False)
     print(model)
+    print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+    print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+    print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+    print(f"after load model.v_head.weight={odel.v_head.weight}")
     raise ValueError(123)
     train()
