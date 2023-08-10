@@ -888,6 +888,7 @@ class ScriptArguments:
         default=None,
         metadata={"help" : "continue qlora training from the checkpoint path,the pytorch_model.bin in fact includes the v_head paramters,but we still store the v_head to the v_head.bin file in the path"  }  
     )
+    
 
 
 
@@ -925,10 +926,11 @@ def train():
         num_train_epochs=script_args.num_train_epochs,
     weight_decay=script_args.weight_decay,
     evaluation_strategy="steps",
-    eval_steps=10,  # 500,
+    eval_steps=2,  # 500,
     save_strategy="steps",
-    save_steps=10,  # 500,
+    save_steps=2,  # 500,
     save_total_limit=2,
+    load_best_model_at_end=True ,
     gradient_accumulation_steps=script_args.gradient_accumulation_steps,
     gradient_checkpointing=script_args.gradient_checkpointing,
     deepspeed=script_args.deepspeed,
