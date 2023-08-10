@@ -1125,6 +1125,61 @@ def train():
     model.save_only_lora_and_vhead(output_dir) 
     print("Model Saved.")
 
+
+def test_load_best() :
+    # 验证 load_best_model_at_end = True 这个trainingArgument
+    ck1="/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2/checkpoint-38"
+    adapter1_w = torch.load(os.path.join( ck1, 'pytorch_model.bin' ))
+    print(f"adapter1_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapter1_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+    vhead1_w = torch.load(os.path.join(ck1,'value_head.bin'))
+    print(f"vhead1_w={vhead1_w}")
+
+    ck2="/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2/checkpoint-40"
+    adapter2_w = torch.load(os.path.join( ck2, 'pytorch_model.bin' ))
+    print(f"adapter2_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapter2_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+    vhead2_w = torch.load(os.path.join(ck2,'value_head.bin'))
+    print(f"vhead2_w={vhead2_w}")
+
+    best_ck = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0810_v2"
+    best_w = torch.load(os.path.join( best_ck, 'pytorch_model.bin' ))
+    print(f"best_w:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={best_w['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+    best_w = torch.load(os.path.join(best,'value_head.bin'))
+    print(f"best_w={best_w}")
+
+    # q_config = BitsAndBytesConfig(load_in_4bit= True,
+    #                               bnb_4bit_quant_type='nf4',
+    #                               bnb_4bit_use_double_quant=True,
+    #                               bnb_4bit_compute_dtype=torch.float16)
+    
+    model = AutoModel.from_pretrained(
+            "THUDM/chatglm2-6b",#script_args.model_name,
+            #num_labels=1,
+            # torch_dtype=torch.bfloat16,
+            torch_dtype=torch.float16,
+            trust_remote_code=True,
+            load_in_4bit=True,
+            device_map="auto",#device_map,
+            quantization_config=q_config,
+        )
+    model = prepare_model_for_kbit_training(model)
+    
+    target_modules = find_all_linear_names(model)
+    lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
+        task_type=TaskType.CAUSAL_LM,#TaskType.SEQ_CLS,  #https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/core/adapter.py#L87C27-L87C45
+        inference_mode=False,
+        target_modules = target_modules ,
+        r=64,  # for qlora 64 is ok
+        lora_alpha=16,  # 32,
+        lora_dropout=0.05,  # 0.1,
+        bias="none",
+    )
+    model = get_peft_model(model, lora_config)
+    model = RewardModel(model.config, model.transformer, tokenizer)
+    model.load_state_dict(best_w, strict=False) # best_w contains vhead ,no need to load vhead.bin once more.
+    print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+    print(f"after load model.v_head.weight={model.v_head.weight}")
+
+
 if __name__ == "__main__":
     #args = parse_args()
     ## test load ckpt
@@ -1185,4 +1240,7 @@ if __name__ == "__main__":
     # print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
     # print(f"after load model.v_head.weight={model.v_head.weight}")
     # raise ValueError(123)
+
+    test_load_best()
+    raise ValueError(123)
     train()
