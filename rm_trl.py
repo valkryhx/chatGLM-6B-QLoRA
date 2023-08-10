@@ -1131,8 +1131,9 @@ if __name__ == "__main__":
     
     tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
     model = RewardModel(model.config, model.transformer, tokenizer)
-    model.load_state_dict(adapters_weights, strict=False)
     print(f"before load model.v_head.weight={model.v_head.weight}")
+    model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
+    
     v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
     v_head_weights = torch.load(v_head_ckpt)
     print(f"v_head_weights={v_head_weights}")
