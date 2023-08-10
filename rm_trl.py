@@ -1077,7 +1077,7 @@ def train():
             print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
             print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
             print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-            print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights[transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight]}")
+            print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights\[transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight\]}")
             model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
     
            v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
