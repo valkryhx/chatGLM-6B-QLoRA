@@ -1063,32 +1063,31 @@ def train():
 
 
     if script_args.resume_from_checkpoint :
-            ckpt = (script_args.resume_from_checkpoint).strip()
-            adapters_name = os.path.join( ckpt, 'pytorch_model.bin' )
-            adapters_weights = torch.load(checkpoint_name)  # 这里能看出adapters_Weigth 其实就是个字典
-            logger.info(f"adapter_weights={adapters_weights}")
-
-            #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
-            #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
-            #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
-            #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
-            #model = RewardModel(model.config, model.transformer, tokenizer)
-            logger.error(f"before load model.v_head.weight={model.v_head.weight}")
-            print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-            print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-            print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-            print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
-            model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
+        ckpt = (script_args.resume_from_checkpoint).strip()
+        adapters_name = os.path.join( ckpt, 'pytorch_model.bin' )
+        adapters_weights = torch.load(checkpoint_name)  # 这里能看出adapters_Weigth 其实就是个字典
+        logger.info(f"adapter_weights={adapters_weights}")
+        #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
+        #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
+        #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
+        #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
+        #model = RewardModel(model.config, model.transformer, tokenizer)
+        logger.error(f"before load model.v_head.weight={model.v_head.weight}")
+        print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+        print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+        print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+        print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+        model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
     
-           v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
-           v_head_weights = torch.load(v_head_ckpt)
-           logger.error(f"v_head_weights={v_head_weights}")
-           model.load_state_dict(v_head_weights, strict=False)
+        v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
+        v_head_weights = torch.load(v_head_ckpt)
+        logger.error(f"v_head_weights={v_head_weights}")
+        model.load_state_dict(v_head_weights, strict=False)
            
-           print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-           print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-           print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-           print(f"after load model.v_head.weight={model.v_head.weight}")
+        print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+        print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+        print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+        print(f"after load model.v_head.weight={model.v_head.weight}")
     
     print(model)
     print(f"Finished loading model and tokenizer")
