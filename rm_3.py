@@ -287,7 +287,20 @@ def get_state_dict(model: torch.nn.Module, trainable_only: Optional[bool] = True
             filtered_state_dict[k] = state_dict[k].cpu().clone().detach()
 
     return filtered_state_dict
-        
+
+
+def print_trainable_params(model: torch.nn.Module) -> None:
+    trainable_params, all_param = 0, 0
+    for param in model.parameters():
+        num_params = param.numel()
+        # if using DS Zero 3 and the weights are initialized empty
+        if num_params == 0 and hasattr(param, "ds_numel"):
+            num_params = param.ds_numel
+        all_param += num_params
+        if param.requires_grad:
+            trainable_params += num_params
+    print("trainable params: {:d} || all params: {:d} || trainable%: {:.4f}".format(
+                trainable_params, all_param, 100 * trainable_params / all_param))
 ## part of codes are from https://github.com/valkryhx/ChatGLM-LoRA-RLHF-PyTorch/blob/4d3b8df2d6b7908a924b91b339f4468ed357761e/reward_model.py#L54
 
 # 定义奖励模型 原理是在chatglm2模型的基础上加上v_head层 v_head层的shape为(hidden_size, 1) 也就是输出为一个float 值，注意dtype=torch.float32
@@ -1507,7 +1520,7 @@ def train2(global_args):
     # note: Enables the gradients for the input embeddings. This is useful for fine-tuning adapter weights while keeping the model weights fixed. 
     # See https://github.com/huggingface/transformers/blob/ee88ae59940fd4b2c8fc119373143d7a1175c651/src/transformers/modeling_utils.py#L1190
     print("below trainable params include v_head")
-    model.print_trainable_parameters()
+    print_trainable_parameters(model)
     print(f"Finished loading model and tokenizer")
     
     # print hf_train_args to see the manually set paras
