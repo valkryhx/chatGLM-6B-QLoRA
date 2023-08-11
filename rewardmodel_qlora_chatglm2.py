@@ -1302,8 +1302,8 @@ def train2(global_args):
     #                                                      tokenizer=tokenizer, 
     #                                                      max_samples=global_args.num_train_samples,global_args=global_args)
 
-    train_dataset = get_rm_datset(data_path=lobal_args.train_data_path, tokenizer=tokenizer, max_samples=global_args.num_train_samples,max_length=global_args.max_length,global_args=None)
-    eval_dataset  = get_rm_datset(data_path=lobal_args.eval_data_path, tokenizer=tokenizer, max_samples=global_args.num_eval_samples,max_length=global_args.max_length,global_args=None)
+    train_dataset = get_rm_datset(data_path=global_args.train_data_path, tokenizer=tokenizer, max_samples=global_args.num_train_samples,max_length=global_args.max_length,global_args=None)
+    eval_dataset  = get_rm_datset(data_path=global_args.eval_data_path, tokenizer=tokenizer, max_samples=global_args.num_eval_samples,max_length=global_args.max_length,global_args=None)
     """ 
      eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
      eval_data至少要 >= 后面3者的乘积
