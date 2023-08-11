@@ -1471,7 +1471,7 @@ def train2(global_args):
     model = get_peft_model(model, lora_config)
     print("below trainable paramters only contains peft lora params.")
     model.print_trainable_parameters() #  print here becaue only peft model has this function..
-    
+    print("Now model is an AutoModelForCausalLMWithValueHead")
     model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
     print(model)
     #raise ValueError(1234)
