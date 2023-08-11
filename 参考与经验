@@ -647,3 +647,7 @@ attention_mask_rejected
 https://medium.com/@mlblogging.k/reinforcement-learning-for-tuning-language-models-how-chatgpt-is-trained-9ecf23518302
 解释了ppo过程中奖励模型为何不更新 怕过拟合
 While training only the policy is updated and the reward model is not optimised. The reason is that the reward model is only a ‘proxy’ for the human preferences which is trained using a handful of examples and optimising it along with the policy causes overfitting.
+
+https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/core/loader.py#L126
+这里单独为chatglm系列增加了lm_head 才能满足AutoModelForCausalLMWithValueHead的要求 见 https://huggingface.co/docs/trl/models#trl.AutoModelForCausalLMWithValueHead
+这里说必须有（"lm_head", "embed_out"）之一 见lm_head_namings (tuple) — A tuple of strings that are used to identify the language model head of the wrapped model. This is set to ("lm_head", "embed_out") for this class but can be changed for other models in the future
