@@ -1575,7 +1575,9 @@ def train2(global_args):
 
     model.config.use_cache = False
     trainer.train()
-
+    #trainer.save_state()
+    trainer.save_model()
+    
     # 下面的写法会保存全量参数的rewardmodel
     #print("Train done!Saving Model...")
     #model.save_pretrained(output_dir)
@@ -1583,9 +1585,9 @@ def train2(global_args):
     #使用rewardmodel自定义的save_only_lora_and_vhead(self,output_dir) 只保存可训练参数  这样就跟checkpoint-xx目录中保存的一致 也包括v_head
 
     # 最后训练完成 模型保存的路径自选 
-    output_dir = hf_train_args.output_dir  
-    model.save_only_lora_and_vhead(output_dir) 
-    print("Model Saved. Only save lora layers and value_head.")
+    #output_dir = hf_train_args.output_dir  
+    #model.save_only_lora_and_vhead(output_dir) 
+    #print("Model Saved. Only save lora layers and value_head.")
 
 
 
