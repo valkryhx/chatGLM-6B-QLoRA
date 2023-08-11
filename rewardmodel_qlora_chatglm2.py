@@ -1,8 +1,8 @@
 #!python
 # -*- coding: utf-8 -*-
+# time: 2023/8/11 15:03
 # @author: hx
 
-#
 
 from transformers import DataCollatorWithPadding, BatchEncoding
 from trl import AutoModelForCausalLMWithValueHead
