@@ -752,6 +752,10 @@ def compute_accuracy(eval_preds: Sequence[Union[np.ndarray, Tuple[np.ndarray]]])
 
 class RewardTrainer(Trainer):
     # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.can_return_loss = True # override property to return eval_loss
+            
     def compute_loss(self, model, inputs, return_outputs=False):
         # print('inputs["input_ids_j"]: ', inputs["input_ids_j"].shape)
         # print('inputs["attention_mask_j"]: ', inputs["attention_mask_j"].shape)
@@ -766,12 +770,20 @@ class RewardTrainer(Trainer):
         # print("rewards_k: ", type(rewards_k), rewards_k.shape)
 
         ### 上面的写法会导致rewardmodel的forward一会有chosen 一会没chosen
-        res = model.forward(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"])
-        #loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
-        if return_outputs:
-            return res["loss"], {"rewards_j": res["chosen_reward"], "rewards_k": res["reject_reward"]}
-        print({"rewards_j": res["chosen_reward"], "rewards_k": res["reject_reward"]})
-        return res["loss"]
+        # res = model.forward(input_ids=inputs["input_ids"], attention_mask=inputs["attention_mask"])
+        # #loss = -nn.functional.logsigmoid(rewards_j - rewards_k).mean()
+        # if return_outputs:
+        #     return res["loss"], {"rewards_j": res["chosen_reward"], "rewards_k": res["reject_reward"]}
+        # print({"rewards_j": res["chosen_reward"], "rewards_k": res["reject_reward"]})
+        # return res["loss"]
+        
+        batch_size = inputs["input_ids"].size(0) // 2
+        _, _, values = model(**inputs, output_hidden_states=True, return_dict=True)
+        r_accept, r_reject = values[-1].split(batch_size, dim=0)
+        loss = -torch.log(torch.sigmoid(r_accept - r_reject)).mean()
+        return (loss, [loss, r_accept, r_reject]) if return_outputs else loss
+
+        
     
     def _save(self, output_dir: Optional[str] = None, state_dict: Optional[Dict[str, torch.Tensor]] = None) -> None:
         r"""
@@ -791,7 +803,7 @@ class RewardTrainer(Trainer):
         model = unwrap_model(self.model)
         #print(model)
         if hasattr(model, "pretrained_model"): # for models with valuehead (currently using LoRA only)
-            logger.error(" 111  model, pretrained_model")
+            logger.error(" 111  model has pretrained_model")
             backbone_model = getattr(model, "pretrained_model")
             torch.save(get_state_dict(getattr(model, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME))
         else:
@@ -1449,7 +1461,7 @@ def train2(global_args):
     
     model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
     print(model)
-    raise ValueError(1234)
+    #raise ValueError(1234)
     
     #model = RewardModel(model.config, model.transformer, tokenizer)
     #model = RewardModel(model.config, model, tokenizer)  
