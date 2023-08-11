@@ -1422,8 +1422,9 @@ def train2(global_args):
     # .is_parallelizable
     # 这三个都是 transformers 模型的函数/参数(见 transformers/modeling_utils.py 文件)
     #
-    
-    
+
+    # 
+    model.lm_head = model.transformer.output_layer
 
 
     # STEP 4 : 将model先转化为peftModel 再转化为RewardModel补充vhead 
@@ -1445,8 +1446,12 @@ def train2(global_args):
     model = get_peft_model(model, lora_config)
     print("below trainable paramters only contains peft lora params.")
     model.print_trainable_parameters() #  print here becaue only peft model has this function..
-   
-    model = RewardModel(model.config, model.transformer, tokenizer)
+    
+    model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
+    print(model)
+    raise ValueError(1234)
+    
+    #model = RewardModel(model.config, model.transformer, tokenizer)
     #model = RewardModel(model.config, model, tokenizer)  
     # 这里如果直接传model 会在外面包裹好几层 导致 .transformer(XX)调用报错
     #(transformer): PeftModelForCausalLM(
