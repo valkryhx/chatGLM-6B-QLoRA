@@ -778,6 +778,10 @@ class RewardTrainer(Trainer):
 
         Subclass and override to inject custom behavior. It should not be directly used by external scripts.
         """
+        if not self.is_world_process_zero():  
+            logger.info("this process is not main process , so this process does not  save model.[for distributed training scenario]")
+            return
+        
         output_dir = output_dir if output_dir is not None else self.args.output_dir
         os.makedirs(output_dir, exist_ok=True)
         logger.info(f"Saving model checkpoint to {output_dir}")
@@ -1498,7 +1502,7 @@ def train2(global_args):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         compute_metrics=compute_accuracy,
-        data_collator = RewardDataCollatorWithPadding( tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8), 
+        data_collator = RewardDataCollatorWithPadding( tokenizer=tokenizer, max_length=global_args.max_length, pad_to_multiple_of=8), 
         #data_collator=RewardDataCollatorWithPadding_only_input_ids(tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8),
         )
 
