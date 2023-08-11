@@ -41,7 +41,8 @@ from transformers import (
     PreTrainedTokenizerBase,
     Trainer,
     TrainingArguments,
-    BitsAndBytesConfig
+    BitsAndBytesConfig,
+    set_seed
 )
 from transformers.utils import PaddingStrategy
 from transformers import LlamaForSequenceClassification, LlamaConfig, LlamaTokenizer
