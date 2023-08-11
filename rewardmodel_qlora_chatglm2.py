@@ -328,7 +328,7 @@ class RewardModel(PreTrainedModel):
             all_param += num_params
             if param.requires_grad:
                 trainable_params += num_params
-        print(f"transformer_trainable_param = f{trainable_params}")
+        print(f"transformer_trainable_param = {trainable_params}")
         for param in self.v_head.parameters():
             num_params = param.numel()
             # if using DS Zero 3 and the weights are initialized empty
@@ -338,7 +338,7 @@ class RewardModel(PreTrainedModel):
             if param.requires_grad:
                 trainable_params += num_params
         print("add v_head params")            
-        print("trainable params: {:d} || all params: {:d} || trainable%: {:.4f}".format(
+        print("trainable params: {:d} || all params: {:d} || trainable%: {:.6f}".format(
                 trainable_params, all_param, 100 * trainable_params / all_param))
    
     def reward(
