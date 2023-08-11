@@ -398,6 +398,7 @@ class RewardModel(PreTrainedModel):
             return_dict=False,
             output_attentions=False,
             output_hidden_states=False,
+            **kw_args
     ):
         #print(f"input_ids={input_ids}")
         #print(f"attention_mask={attention_mask}")
