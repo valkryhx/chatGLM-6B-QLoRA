@@ -684,7 +684,7 @@ class RewardDataCollatorWithPadding:
             #"attention_mask_j": batch_j["attention_mask"],
             #"input_ids_k": batch_k["input_ids"],
             #"attention_mask_k": batch_k["attention_mask"],
-            "return_loss": True,
+            #"return_loss": True,  #chatglm.forward()没有return_loss参数 所以这里不能写 不过RewardTrainer的__init__设置了可以返回loss 
             "input_ids": torch.cat((batch_j["input_ids"], batch_k["input_ids"]),dim=0)  ,
             "attention_mask": torch.cat((batch_j["attention_mask"] , batch_k["attention_mask"]),dim=0),
         }
