@@ -318,7 +318,7 @@ class RewardModel(PreTrainedModel):
         if isinstance(module, PreTrainedModel):
             module.gradient_checkpointing = value
     
-    def print_trainable_params(model: torch.nn.Module) -> None:
+    def print_trainable_parameters(model: torch.nn.Module) -> None:
         trainable_params, all_param = 0, 0
         for param in model.parameters():
             num_params = param.numel()
