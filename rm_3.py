@@ -5,6 +5,7 @@
 
 import argparse
 import json
+from transformers.trainer import WEIGHTS_NAME, WEIGHTS_INDEX_NAME
 from transformers import DataCollatorWithPadding, BatchEncoding
 from trl import AutoModelForCausalLMWithValueHead
 from transformers.modeling_utils import PreTrainedModel
@@ -763,6 +764,30 @@ def compute_accuracy(eval_preds: Sequence[Union[np.ndarray, Tuple[np.ndarray]]])
     preds, _ = eval_preds
     return {"accuracy": (preds[0] > preds[1]).sum() / len(preds[0])}
 
+def load_trainable_params(model: torch.nn.Module, checkpoint_dir: os.PathLike) -> bool:
+    weights_file = os.path.join(checkpoint_dir, WEIGHTS_NAME)
+    if os.path.exists(weights_file):
+        model_state_dict = torch.load(weights_file, map_location="cpu")
+        model.load_state_dict(model_state_dict, strict=False) # skip missing keys
+    elif os.path.exists(os.path.join(checkpoint_dir, WEIGHTS_INDEX_NAME)):
+        load_sharded_checkpoint(model, checkpoint_dir, strict=False)
+    else:
+        logger.warning("Provided path ({}) does not contain pre-trained weights.".format(checkpoint_dir))
+        return False
+    return True
+
+def load_valuehead_params(model: torch.nn.Module, checkpoint_dir: os.PathLike) -> bool:
+    valuehead_file = os.path.join(checkpoint_dir, VALUE_HEAD_FILE_NAME)
+    if not os.path.exists(valuehead_file):
+        logger.warning("Provided path ({}) does not contain valuehead weights.".format(checkpoint_dir))
+        return False
+    valuehead_state_dict = torch.load(valuehead_file, map_location="cpu")
+    model.register_buffer("reward_head_weight", valuehead_state_dict["summary.weight"])
+    model.register_buffer("reward_head_bias", valuehead_state_dict["summary.bias"])
+    model.register_buffer("default_head_weight", torch.zeros_like(valuehead_state_dict["summary.weight"]))
+    model.register_buffer("default_head_bias", torch.zeros_like(valuehead_state_dict["summary.bias"]))
+    return True
+
 class RewardTrainer(Trainer):
     # Define how to compute the reward loss. We use the InstructGPT pairwise logloss: https://arxiv.org/abs/2203.02155
     def __init__(self, *args, **kwargs):
@@ -846,17 +871,26 @@ class RewardTrainer(Trainer):
         else:
             logger.warning("No model to save.")
             
-    # def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
-    #     """只保存adapter"""
-    #     print("begin to save  !!!")
-    #     if output_dir is None:
-    #         output_dir = self.args.output_dir
-    #     if self.is_world_process_zero():  
-    #         self.model.save_pretrained(output_dir)
-    #         torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
-    #         print("save done !!!")
-    #     else :
-    #         print("this process is not main process , do not save model.[for distributed training scenario]")
+   def _load_best_model(self):
+        r"""
+        Loads trainable parameters from model checkpoint.
+
+        Subclass and override to inject custom behavior. It should not be directly used by external scripts.
+        """
+        logger.info(f"Loading best model from {self.state.best_model_checkpoint} (score: {self.state.best_metric}).")
+
+        model = unwrap_model(self.model)
+        backbone_model = getattr(model, "pretrained_model") if hasattr(model, "pretrained_model") else model
+
+        if isinstance(backbone_model, PeftModel):
+            backbone_model.load_adapter(self.state.best_model_checkpoint, backbone_model.active_adapter)
+            if hasattr(model, "v_head") and load_valuehead_params(model, self.state.best_model_checkpoint):
+                model.v_head.load_state_dict({
+                    "summary.weight": getattr(model, "reward_head_weight"),
+                    "summary.bias": getattr(model, "reward_head_bias")
+                })
+        else: # freeze/full-tuning or p_tuning
+            load_trainable_params(backbone_model, self.state.best_model_checkpoint)
 
 
 
