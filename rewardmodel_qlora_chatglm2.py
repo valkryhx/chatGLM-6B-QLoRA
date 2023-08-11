@@ -317,7 +317,7 @@ class RewardModel(PreTrainedModel):
     def _set_gradient_checkpointing(self, module, value=False):
         if isinstance(module, PreTrainedModel):
             module.gradient_checkpointing = value
-    def model.print_trainable_parameters(self):
+    def print_trainable_parameters(self):
         print(f"[transformer_trainable_parameters]")
         self.transformer.print_trainable_parameters()
         print(f"[v_head_trainable_parameters]")
