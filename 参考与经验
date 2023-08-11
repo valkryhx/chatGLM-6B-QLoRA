@@ -628,3 +628,22 @@ PeftModelForCausalLM(
 #             Will eventually default to :obj:`["labels"]` except if the model used is one of the
 #             :obj:`XxxForQuestionAnswering` in which case it will default to :obj:`["start_positions",
 #             "end_positions"]`.
+
+# TRL trl使用要点 PPOtrainer PPOConfig参数设置  经常性的清理memory   https://huggingface.co/docs/trl/v0.5.0/en/customization#use-the-cuda-cache-optimizer
+ config = PPOConfig(..., optimize_cuda_cache=True)
+ 同样是上面的页面 trl的ppo训练似乎需要AutoModelForCausalLMWithValueHead类型的model才能训练
+ from trl import PPOTrainer, PPOConfig, AutoModelForCausalLMWithValueHead
+# 1. load a pretrained model
+model = AutoModelForCausalLMWithValueHead.from_pretrained('bigscience/bloom-560m')
+
+https://huggingface.co/docs/trl/trainer#trl.RewardTrainer
+提到了奖励模型的选择 推荐是AutoModelForSequenceClassification 
+也提到了RewardDataCollatorWithPadding data collator的输出是至少以下4个字段 难怪很多人都这么写
+input_ids_chosen
+attention_mask_chosen
+input_ids_rejected
+attention_mask_rejected
+
+https://medium.com/@mlblogging.k/reinforcement-learning-for-tuning-language-models-how-chatgpt-is-trained-9ecf23518302
+解释了ppo过程中奖励模型为何不更新 怕过拟合
+While training only the policy is updated and the reward model is not optimised. The reason is that the reward model is only a ‘proxy’ for the human preferences which is trained using a handful of examples and optimising it along with the policy causes overfitting.
