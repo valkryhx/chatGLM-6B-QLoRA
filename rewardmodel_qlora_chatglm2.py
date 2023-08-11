@@ -53,6 +53,50 @@ DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
 
+_compute_dtype_map = {
+    'fp32': torch.float32,
+    'fp16': torch.float16,
+    'bf16': torch.bfloat16
+}
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='ChatGLM-6B QLoRA')
+    parser.add_argument('--train_args_json', type=str, required=True, help='TrainingArguments的json文件')
+    parser.add_argument('--model_name_or_path', type=str, default='THUDM/chatglm-6b', help='模型id或local path')
+    parser.add_argument('--train_data_path', type=str, required=True, help='训练数据路径')
+    parser.add_argument('--eval_data_path', type=str, default=None, help='验证数据路径')
+    parser.add_argument('--seed', type=int, default=42)
+    parser.add_argument('--max_input_length', type=int, default=512, help='多个轮次对话的总文本的最大长度 也就是history对应的多个对话的Q+A的整体长度')
+    parser.add_argument('--lora_rank', type=int, default=4, help='lora rank')
+    parser.add_argument('--lora_alpha', type=int, default=32, help='lora_alpha')
+    parser.add_argument('--lora_dropout', type=float, default=0.05, help='lora dropout')
+    parser.add_argument('--resume_from_checkpoint', type=str, default=None, help='恢复训练的checkpoint路径')
+    parser.add_argument('--prompt_text', type=str, default='', help='统一添加在所有数据前的指令文本')
+    parser.add_argument('--compute_dtype', type=str, default='fp32',
+                        choices=['fp32', 'fp16', 'bf16'], help='计算数据类型')
+    parser.add_argument("--local_rank", type=int, default=0)
+    parser.add_argument("--deepspeed", type=str, default="ds_zero2_config.json")
+    parser.add_argument("--output_dir",type=str,default="output/lora",help="模型训练输出目录")
+    parser.add_argument("--per_device_train_batch_size",type=int,default=1)
+    parser.add_argument("--per_device_eval_batch_size",type=int,default=1)
+    parser.add_argument("--gradient_accumulation_steps",type=int,default=1)
+    parser.add_argument("--learning_rate",type=float,default=2e-5)
+    parser.add_argument("--num_train_epochs",type=float,default=1.0)
+    parser.add_argument("--num_train_samples",type=int,default= -1,help="用于train的样本数量，可选,若为-1则是全部样本。")
+    parser.add_argument("--num_eval_samples",type=int,default= -1,help="用于eval的样本数量，可选，若为-1则是全部样本。")
+    parser.add_argument("--save_total_limit" , type=int ,default=None)
+    parser.add_argument("--load_in_4bit" , type=bool ,default=True)
+    parser.add_argument("--load_best_model_at_end",type=bool,default=True)  # https://huggingface.co/docs/transformers/main_classes/trainer
+    #parser.add_argument("--block_size",type=int,default=256,help="将篇章级别文本分词后的长tokens结果 按照block_size划分成固定大小 想象一下长火车分成多个车厢")
+    parser.add_argument("--max_length",type=int,default=256,help="多个轮次对话的总文本的最大长度 也就是history对应的多个对话的Q+A的整体长度")
+    parser.add_argument("--data_type",type=str,default="history",choices=['history', 'sharegpt'],help="多轮对话的数据格式 目前支持两种 sharegpt和history格式")
+    #"output_dir": "output/qlora_ds_zero",
+    #"per_device_train_batch_size": 8, 
+    #"per_device_eval_batch_size":  2,
+    #"gradient_accumulation_steps": 8,
+    #"learning_rate": 2e-5,
+    #"num_train_epochs": 10.0,  
+    return parser.parse_args()
 
 VALUE_HEAD_FILE_NAME = "value_head.bin"
 TRAIN_TYPE = "lora"
@@ -1191,67 +1235,311 @@ def test_load_best() :
     print(f"after load model.v_head.weight={model.v_head.weight}")
 
 
+
+def train2(global_args):
+
+    ##STEP 0 从命令行获取参数，包括trainingArgs在内的，以及各类附属参数
+    logger.info("loading parameters...")
+    # ADD by hx 20230629
+    # https://huggingface.co/docs/transformers/main_classes/deepspeed 参考 【Constructing Massive Models】一节 
+    # 直接在TrainingArgs中加入deepspeed=ds_config即可
+    # https://lightning.ai/docs/pytorch/stable/advanced/model_parallel.html
+    
+    hf_parser = HfArgumentParser(TrainingArguments)
+    '''读取json中默认配置作为训练参数'''
+    """
+    注意下面代码的 , 很重要 ，根据https://github.com/huggingface/transformers/blob/main/src/transformers/hf_argparser.py#L379C32-L379C32
+     HfArgumentParser.parse_json_file 返回的是一个tuple 【outputs = self.parse_dict(data, allow_extra_keys=allow_extra_keys)
+        return tuple(outputs)】
+        所以如果不加, 那hf_train_args就是一个tuple 而不是一个TrainingArguments对象 下面的类似hf_train_args.seed = global_args.seed 代码就会报错
+        加上，逗号之后 那就把tuple解开了 
+        （即使tuple里面只有一个TrainingArguments对象 也需要解开真操蛋！多个A,B=HfArgumentParser.parse_json_file  可能还看不出来，
+        但是单个A=HfArgumentParser.parse_json_file  不加逗号就是错误的）
+        那就拿到了真正的TrainingArguments对象的hf_train_args 真的操蛋
+        那个源码中其他parse方法都是return tuple 都要注意
+        例如 parse_yaml_file /  parse_dict /parse_args_into_dataclasses
+    """
+    hf_train_args, = hf_parser.parse_json_file(json_file=global_args.train_args_json)
+
+    
+    with open(global_args.deepspeed,'r',encoding='utf-8') as fr:   # 这里就是向TrainingArgs中添加deepseed字段
+        hf_train_args.deepspeed = json.load(fr)  # set trainingArgs中deepspeed=ds_config
+
+    '''读取命令行传入参数 这个优先级高  覆盖对应的默认参数'''
+    set_seed(global_args.seed)
+    hf_train_args.seed = global_args.seed
+    hf_train_args.optim="paged_adamw_8bit"
+
+    hf_train_args.output_dir = global_args.output_dir 
+    hf_train_args.logging_dir = global_args.output_dir 
+    hf_train_args.per_device_train_batch_size = global_args.per_device_train_batch_size
+    hf_train_args.per_device_eval_batch_size = global_args.per_device_eval_batch_size
+    hf_train_args.gradient_accumulation_steps = global_args.gradient_accumulation_steps
+    hf_train_args.learning_rate = global_args.learning_rate
+    hf_train_args.num_train_epochs = global_args.num_train_epochs
+    hf_train_args.save_total_limit = global_args.save_total_limit
+    
+    
+    tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
+
+
+    ###STEP 1 加载train / eval data
+   
+    logger.info("loading dataset...")
+    # train_dataset = get_datset(global_args.train_data_path, tokenizer, 
+    #                            global_args,
+    #                            max_samples=global_args.num_train_samples )
+    
+    # train_dataset = get_multi_turn_conversations(data_path=global_args.train_data_path,
+    #                               tokenizer = tokenizer,
+    #                               block_size = global_args.block_size,
+    #                               global_args_max_length=global_args.max_length,
+    #                               max_samples=global_args.num_train_samples)
+
+    # train_dataset =  get_multi_turn_conversations_datset(data_path=global_args.train_data_path, 
+    #                                                      tokenizer=tokenizer, 
+    #                                                      max_samples=global_args.num_train_samples,global_args=global_args)
+
+    train_dataset = get_rm_datset(data_path=lobal_args.train_data_path, tokenizer=tokenizer, max_samples=global_args.num_train_samples,max_length=global_args.max_length,global_args=None)
+    eval_dataset  = get_rm_datset(data_path=lobal_args.eval_data_path, tokenizer=tokenizer, max_samples=global_args.num_eval_samples,max_length=global_args.max_length,global_args=None)
+    """ 
+     eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
+     eval_data至少要 >= 后面3者的乘积
+     RuntimeError: unscale_() has already been called on this optimizer since the last update().
+     https://github.com/huggingface/transformers/issues/23935#issuecomment-1597170127
+    """
+    eval_dataset = None
+    # if global_args.eval_data_path:
+    #     eval_dataset = get_datset(global_args.eval_data_path, tokenizer, 
+    #                               global_args,
+    #                               max_samples=global_args.num_eval_samples)
+    
+    # eval_dataset = get_dataset_for_pretrain(data_path=global_args.eval_data_path,
+    #                               tokenizer = tokenizer,
+    #                               block_size = global_args.block_size,
+    #                               global_args_max_length=global_args.max_length,
+    #                               max_samples=global_args.num_eval_samples)
+
+    # eval_dataset =  get_multi_turn_conversations_datset(data_path=global_args.eval_data_path, 
+    #                                                      tokenizer=tokenizer, 
+    #                                                      max_samples=global_args.num_eval_samples,global_args=global_args)
+    
+    ### STEP 2 定义 data collator
+    RewardDataCollatorWithPadding_collator = RewardDataCollatorWithPadding( tokenizer=tokenizer, max_length=global_args.max_length, pad_to_multiple_of=8)
+     
+
+
+    ### STEP 3  load model
+    # Quantization
+    q_config = BitsAndBytesConfig(load_in_4bit= True,
+                                  bnb_4bit_quant_type='nf4',
+                                  bnb_4bit_use_double_quant=True,
+                                  bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
+    
+    """
+    if torch.cuda.device_count() > 1:
+        world_size = int(os.environ.get("WORLD_SIZE", 1))
+        ddp = (world_size != 1) # True(distributed training) or False(single gpu )
+        global_args.ddp_find_unused_parameters = False if ddp else None
+        
+        model.hf_device_map['transformer.output_layer'] = model.hf_device_map['transformer.embedding']
+        new_hf_device_map = model.hf_device_map
+        model.cpu()
+        del model
+        torch.cuda.empty_cache()
+        print(f'memory_allocated {torch.cuda.memory_allocated()}')
+        print('loading real model...')
+
+    
+        global_args.ddp_find_unused_parameters = False
+        model = AutoModel.from_pretrained(global_args.model_name_or_path,
+                                          trust_remote_code=True,                           
+                                          load_in_4bit=True,
+                                          torch_dtype=torch.float16,
+                                          quantization_config=q_config,
+                                          device_map=new_hf_device_map)
+        print("[real]",model.hf_device_map)
+        """
+        
+    model = AutoModel.from_pretrained(global_args.model_name_or_path,
+                                          trust_remote_code=True,                           
+                                          load_in_4bit=global_args.load_in_4bit,
+                                          torch_dtype=torch.float16,
+                                          quantization_config=q_config,
+                                           # empty_init这是最关键的参数 如果不设置 那即使用deepspeed也oom
+                                  # 当您使用 AutoModel.from_pretrained() 方法加载预训练模型时，模型权重会被存储在 PyTorch 的 nn.Parameter 对象中。
+                                  # 在没有指定 empty_init=False 参数时，nn.Parameter 对象的值将被初始化为全零的张量。
+                                  # 但是，由于 nn.Parameter 对象不是真正的张量，而是具有元数据的张量包装器，因此无法将这些对象直接复制到 DeepSpeed 使用的元数据张量中。
+                                  # 在指定 empty_init=False 参数后，nn.Parameter 对象将被初始化为包含预训练权重的张量，
+                                  # 这使得 DeepSpeed 能够正常地将权重复制到元数据张量中
+                                  # THUDM/chatglm2 估计modeling_chatglm.py 默认是True  好坑！
+                                  # 果然 一查真的是 https://huggingface.co/THUDM/chatglm2-6b/blob/main/modeling_chatglm.py#L732
+                                          empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
+                                          #device_map=new_hf_device_map,
+                                          # device_map="auto"   # add 20230713
+                                     )
+
+    
+    # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    
+    print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
+    # 
+    # .gradient_checkpointing_enable()
+    # .enable_input_require_grads()
+    # .is_parallelizable
+    # 这三个都是 transformers 模型的函数/参数(见 transformers/modeling_utils.py 文件)
+    #
+    
+    
+
+
+    # STEP 4 : 将model先转化为peftModel 再转化为RewardModel补充vhead 
+    logger.info("prepare_model_for_kbit_training...")
+    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+    
+    # LoRA
+    #target_modules = TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING['chatglm']
+    target_modules = find_all_linear_names(model)
+    lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
+        r=global_args.lora_rank,
+        lora_alpha=global_args.lora_alpha,
+        target_modules=target_modules,
+        lora_dropout=global_args.lora_dropout,
+        bias='none',
+        inference_mode=False,
+        task_type=TaskType.CAUSAL_LM
+    )
+    model = get_peft_model(model, lora_config)
+    #model.print_trainable_parameters() # dont print here becaue we had extra vhead to add by model=RewardModel(),print after this operation later.
+    
+    model = RewardModel(model.config, model.transformer, tokenizer)
+    #model = RewardModel(model.config, model, tokenizer)  
+    # 这里如果直接传model 会在外面包裹好几层 导致 .transformer(XX)调用报错
+    #(transformer): PeftModelForCausalLM(
+    # (base_model): LoraModel(
+    #  (model): ChatGLMForConditionalGeneration(
+    # (transformer): ChatGLMModel(
+    #model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
+
+    # if --resume_from_checkpoint has a path point to a pytorch_model.bin and a value_head.bin
+    if global_args.resume_from_checkpoint :
+        ckpt = (global_args.resume_from_checkpoint).strip()
+        adapters_ckpt = os.path.join( ckpt, 'pytorch_model.bin' )
+        adapters_weights = torch.load(adapters_ckpt)  # 这里能看出adapters_Weigth 其实就是个字典
+        logger.info(f"adapter_weights={adapters_weights}")
+        #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
+        #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
+        #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
+        #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
+        #model = RewardModel(model.config, model.transformer, tokenizer)
+        logger.error(f"before load model.v_head.weight={model.v_head.weight}")
+        print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+        print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+        print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+        print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+        model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
+    
+        v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
+        v_head_weights = torch.load(v_head_ckpt)
+        logger.error(f"v_head_weights={v_head_weights}")
+        model.load_state_dict(v_head_weights, strict=False)
+           
+        print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+        print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+        print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
+        print(f"after load model.v_head.weight={model.v_head.weight}")
+    
+    print(model)
+    model.gradient_checkpointing_enable() 
+    # note: use gradient checkpointing to save memory at the expense of slower backward pass.
+    model.enable_input_require_grads()
+    # note: Enables the gradients for the input embeddings. This is useful for fine-tuning adapter weights while keeping the model weights fixed. 
+    # See https://github.com/huggingface/transformers/blob/ee88ae59940fd4b2c8fc119373143d7a1175c651/src/transformers/modeling_utils.py#L1190
+    model.print_trainable_parameters()
+    print(f"Finished loading model and tokenizer")
+    
+    # print hf_train_args to see the manually set paras
+    print(f"number_train_samples={len(train_dataset)}\nnumber_of_eval_numbers={len(eval_dataset)}")
+    print(hf_train_args)
+    # raise ValueError("TEST")
+    
+    ### STEP  5   train
+    trainer = RewardTrainer(
+        model=model ,
+        args=hf_train_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
+        compute_metrics=compute_accuracy,
+        data_collator = RewardDataCollatorWithPadding( tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8), 
+        #data_collator=RewardDataCollatorWithPadding_only_input_ids(tokenizer=tokenizer, max_length=script_args.max_length, pad_to_multiple_of=8),
+        )
+
+    model.config.use_cache = False
+    trainer.train()
+
+    # 下面的写法会保存全量参数的rewardmodel
+    #print("Train done!Saving Model...")
+    #model.save_pretrained(output_dir)
+
+    #使用rewardmodel自定义的save_only_lora_and_vhead(self,output_dir) 只保存可训练参数  这样就跟checkpoint-xx目录中保存的一致 也包括v_head
+    model.save_only_lora_and_vhead(output_dir) 
+    print("Model Saved.")
+
+
+
+
 if __name__ == "__main__":
-    #args = parse_args()
-    ## test load ckpt
-    # q_config = BitsAndBytesConfig(load_in_4bit= True,
-    #                               bnb_4bit_quant_type='nf4',
-    #                               bnb_4bit_use_double_quant=True,
-    #                               bnb_4bit_compute_dtype=torch.float16)
     
-    # model = AutoModel.from_pretrained(
-    #         "THUDM/chatglm2-6b",#script_args.model_name,
-    #         #num_labels=1,
-    #         # torch_dtype=torch.bfloat16,
-    #         torch_dtype=torch.float16,
-    #         trust_remote_code=True,
-    #         load_in_4bit=True,
-    #         device_map="auto",#device_map,
-    #         quantization_config=q_config,
-    #     )
-    # model = prepare_model_for_kbit_training(model)
+    # 仅用于测试load_best_model_at_end =True 是否生效
+    #test_load_best()
+    #raise ValueError(123)
     
-    # target_modules = find_all_linear_names(model)
-    # lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
-    #     task_type=TaskType.CAUSAL_LM,#TaskType.SEQ_CLS,  #https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/core/adapter.py#L87C27-L87C45
-    #     inference_mode=False,
-    #     target_modules = target_modules ,
-    #     r=64,  # for qlora 64 is ok
-    #     lora_alpha=16,  # 32,
-    #     lora_dropout=0.05,  # 0.1,
-    #     bias="none",
-    # )
-    # model = get_peft_model(model, lora_config)
-    # print(f"peftmodel={model}")
-    # print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-    # print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-    # print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-    # ckpt = "/kaggle/working/chatGLM-6B-QLoRA/reward_model_0809_v1/checkpoint-20"
-    # checkpoint_name = os.path.join( ckpt, 'pytorch_model.bin' )
-    # adapters_weights = torch.load(checkpoint_name)
-    # print(f"adapter_weights={adapters_weights}")  # 这里能看出adapters_weigth实际就是个字典 内容是各个trainable params 只不过是用.bin格式保存
+    # train() 是一种执行方式 可以运行
+    #train()
+    """ train()使用方法
+!git pull --all --force
+!CUDA_VISIBLE_DEVICES=0 python  rm_trl.py \
+--model_name 'THUDM/chatglm2-6b' \
+--resume_from_checkpoint /kaggle/working/chatGLM-6B-QLoRA/reward_model_0809_v1/checkpoint-50 \
+--num_train_epochs 2 \
+--gradient_accumulation_steps 1 \
+--per_device_train_batch_size 4 \
+--per_device_eval_batch_size  4 \
+--max_length 512 \
+--output_dir ./reward_model_0810_v2 \
+--train_subset 80 \
+--eval_subset 20 \
+--local_rank 0  \
+--bf16 False
+    """
 
-    # #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
-    # #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
-    # #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
-
-    
-    # tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
-    # model = RewardModel(model.config, model.transformer, tokenizer)
-    # print(f"before load model.v_head.weight={model.v_head.weight}")
-    # model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
-    
-    # v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
-    # v_head_weights = torch.load(v_head_ckpt)
-    # print(f"v_head_weights={v_head_weights}")
-    # model.load_state_dict(v_head_weights, strict=False)
-    # print(model)
-    # print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-    # print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-    # print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-    # print(f"after load model.v_head.weight={model.v_head.weight}")
-    # raise ValueError(123)
-
-    test_load_best()
-    raise ValueError(123)
-    train()
+    # train2()
+    args = parse_args()
+    train2(args)
+   
+    """ train2 使用方法
+!git pull --all --force 
+#!pip install  -U git+https://github.com/huggingface/peft.git   # 20230717 peft==0.4.0正式发布了 不用调版本了推理完后再训练需要重新升级到0.4.0dev 所以有这句
+!deepspeed --include localhost:0,1  rm_qlora.py  \
+  --train_args_json luzi.json \
+  --model_name_or_path THUDM/chatglm2-6b \
+  --output_dir output-sharegpt-2k-sft-0805-v1 \
+  --num_train_samples -1 \
+  --num_eval_samples 2 \
+  --resume_from_checkpoint ./output-sharegpt-2k-sft-0804-v4/checkpoint-3980 \
+  --train_data_path ./data/sharegpt_data  \
+  --eval_data_path  ./data/sharegpt_data    \
+  --data_type sharegpt  \
+  --max_length 1800 \
+  --lora_rank 64 \
+  --lora_dropout 0.05 \
+  --compute_dtype fp16 \
+  --per_device_train_batch_size 2 \
+  --per_device_eval_batch_size 2  \
+  --gradient_accumulation_steps 1 \
+  --learning_rate  1.8e-5 \
+  --num_train_epochs  40  \
+  --save_total_limit 2 \
+  --load_in_4bit True \
+--deepspeed ds_zero2_config.json
+    """  
