@@ -288,7 +288,7 @@ def get_state_dict(model: torch.nn.Module, trainable_only: Optional[bool] = True
 
     return filtered_state_dict
 
-https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/d22a77eb87c36bb353b1e0e7caf064cb7fdf32ac/src/glmtuner/extras/misc.py#L48
+#https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/d22a77eb87c36bb353b1e0e7caf064cb7fdf32ac/src/glmtuner/extras/misc.py#L48
 def print_trainable_parameters(model: torch.nn.Module) -> None:
     trainable_params, all_param = 0, 0
     for param in model.parameters():
