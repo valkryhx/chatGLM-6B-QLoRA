@@ -318,9 +318,9 @@ class RewardModel(PreTrainedModel):
         if isinstance(module, PreTrainedModel):
             module.gradient_checkpointing = value
     
-    def print_trainable_parameters(model: torch.nn.Module) -> None:
+    def print_trainable_parameters(self: torch.nn.Module) -> None:
         trainable_params, all_param = 0, 0
-        for param in model.parameters():
+        for param in self.transformer.parameters():
             num_params = param.numel()
             # if using DS Zero 3 and the weights are initialized empty
             if num_params == 0 and hasattr(param, "ds_numel"):
@@ -328,6 +328,16 @@ class RewardModel(PreTrainedModel):
             all_param += num_params
             if param.requires_grad:
                 trainable_params += num_params
+        print(f"transformer_trainable_param = f{trainable_params}")
+        for param in self.v_head.parameters():
+            num_params = param.numel()
+            # if using DS Zero 3 and the weights are initialized empty
+            if num_params == 0 and hasattr(param, "ds_numel"):
+                num_params = param.ds_numel
+            all_param += num_params
+            if param.requires_grad:
+                trainable_params += num_params
+        print("add v_head params")            
         print("trainable params: {:d} || all params: {:d} || trainable%: {:.4f}".format(
                 trainable_params, all_param, 100 * trainable_params / all_param))
    
@@ -1317,7 +1327,8 @@ def train2(global_args):
 
     train_dataset = get_rm_datset(data_path=global_args.train_data_path, tokenizer=tokenizer, max_samples=global_args.num_train_samples,max_length=global_args.max_length,global_args=None)
     eval_dataset  = get_rm_datset(data_path=global_args.eval_data_path, tokenizer=tokenizer, max_samples=global_args.num_eval_samples,max_length=global_args.max_length,global_args=None)
-    """ 
+    print(f"number_train_samples={len(train_dataset)}\nnumber_of_eval_numbers={len(eval_dataset)}")
+     """ 
      eval data数据量太少（比如4）会而且 gradiant accumulationc较大时（比如8）和batchsize , num_gpu较大时无法计算和积累梯度
      eval_data至少要 >= 后面3者的乘积
      RuntimeError: unscale_() has already been called on this optimizer since the last update().
@@ -1476,7 +1487,7 @@ def train2(global_args):
     print(f"Finished loading model and tokenizer")
     
     # print hf_train_args to see the manually set paras
-    print(f"number_train_samples={len(train_dataset)}\nnumber_of_eval_numbers={len(eval_dataset)}")
+    
     print(hf_train_args)
     # raise ValueError("TEST")
     
