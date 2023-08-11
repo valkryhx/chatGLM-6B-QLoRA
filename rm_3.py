@@ -1547,7 +1547,7 @@ def train2(global_args):
         print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
         print(f"after load model.v_head.weight={model.v_head.weight}")
     
-    print(model)
+
     model.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     #model.enable_input_require_grads()  # AttributeError: 'AutoModelForCausalLMWithValueHead' object has no attribute 'enable_input_require_grads'
