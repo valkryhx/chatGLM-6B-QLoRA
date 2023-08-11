@@ -310,10 +310,10 @@ class RewardModel(PreTrainedModel):
             self.save_pretrained(output_dir, state_dict=get_state_dict(self))
     def gradient_checkpointing_enable(self):
         self.transformer.gradient_checkpointing_enable()
-
     def gradient_checkpointing_disable(self):
         self.transformer.gradient_checkpointing_disable()
-
+    def enable_input_require_grads(self):
+        self.transformer.enable_input_require_grads()     
     def _set_gradient_checkpointing(self, module, value=False):
         if isinstance(module, PreTrainedModel):
             module.gradient_checkpointing = value
