@@ -306,12 +306,9 @@ class RewardModel(PreTrainedModel):
 
     def save_only_lora_and_vhead(self,output_dir):
             logger.error("in func_save_only_lora_and_vhead")
-            if not self.is_world_process_zero():  
-                logger.info("this process is not main process , so this process does not  save model.[for distributed training scenario]")
-                return
             torch.save(get_state_dict(getattr(self, "v_head")), os.path.join(output_dir, VALUE_HEAD_FILE_NAME)) 
             self.save_pretrained(output_dir, state_dict=get_state_dict(self))
-            logger.info(f"main process saved model.")
+            
             
     def gradient_checkpointing_enable(self):
         self.transformer.gradient_checkpointing_enable()
