@@ -1519,8 +1519,7 @@ if __name__ == "__main__":
    
     """ train2 使用方法
 !git pull --all --force 
-#!pip install  -U git+https://github.com/huggingface/peft.git   # 20230717 peft==0.4.0正式发布了 不用调版本了推理完后再训练需要重新升级到0.4.0dev 所以有这句
-!deepspeed --include localhost:0,1  rm_qlora.py  \
+!deepspeed --include localhost:0,1  rewardmodel_qlora_chatglm2.py  \
   --train_args_json luzi.json \
   --model_name_or_path THUDM/chatglm2-6b \
   --output_dir output-sharegpt-2k-sft-0805-v1 \
