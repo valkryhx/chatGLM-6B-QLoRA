@@ -871,7 +871,7 @@ class RewardTrainer(Trainer):
         else:
             logger.warning("No model to save.")
             
-   def _load_best_model(self):
+    def _load_best_model(self):
         r"""
         Loads trainable parameters from model checkpoint.
 
