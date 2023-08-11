@@ -317,11 +317,20 @@ class RewardModel(PreTrainedModel):
     def _set_gradient_checkpointing(self, module, value=False):
         if isinstance(module, PreTrainedModel):
             module.gradient_checkpointing = value
-    def print_trainable_parameters(self):
-        print(f"[transformer_trainable_parameters]")
-        self.transformer.print_trainable_parameters()
-        print(f"[v_head_trainable_parameters]")
-        self.v_head.model.print_trainable_parameters()
+    
+    def print_trainable_params(model: torch.nn.Module) -> None:
+        trainable_params, all_param = 0, 0
+        for param in model.parameters():
+            num_params = param.numel()
+            # if using DS Zero 3 and the weights are initialized empty
+            if num_params == 0 and hasattr(param, "ds_numel"):
+                num_params = param.ds_numel
+            all_param += num_params
+            if param.requires_grad:
+                trainable_params += num_params
+        print("trainable params: {:d} || all params: {:d} || trainable%: {:.4f}".format(
+                trainable_params, all_param, 100 * trainable_params / all_param))
+   
     def reward(
             self,
             input_ids=None,
@@ -1416,8 +1425,9 @@ def train2(global_args):
         task_type=TaskType.CAUSAL_LM
     )
     model = get_peft_model(model, lora_config)
-    #model.print_trainable_parameters() # dont print here becaue we had extra vhead to add by model=RewardModel(),print after this operation later.
-    
+    print("below trainable paramters only contains peft lora params.")
+    model.print_trainable_parameters() #  print here becaue only peft model has this function..
+   
     model = RewardModel(model.config, model.transformer, tokenizer)
     #model = RewardModel(model.config, model, tokenizer)  
     # 这里如果直接传model 会在外面包裹好几层 导致 .transformer(XX)调用报错
@@ -1461,6 +1471,7 @@ def train2(global_args):
     model.enable_input_require_grads()
     # note: Enables the gradients for the input embeddings. This is useful for fine-tuning adapter weights while keeping the model weights fixed. 
     # See https://github.com/huggingface/transformers/blob/ee88ae59940fd4b2c8fc119373143d7a1175c651/src/transformers/modeling_utils.py#L1190
+    print("below trainable params include v_head")
     model.print_trainable_parameters()
     print(f"Finished loading model and tokenizer")
     
