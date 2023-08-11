@@ -4,6 +4,7 @@
 # @author: hx
 
 import argparse
+import json
 from transformers import DataCollatorWithPadding, BatchEncoding
 from trl import AutoModelForCausalLMWithValueHead
 from transformers.modeling_utils import PreTrainedModel
