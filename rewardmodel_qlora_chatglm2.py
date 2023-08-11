@@ -1308,7 +1308,7 @@ def train2(global_args):
     hf_train_args.learning_rate = global_args.learning_rate
     hf_train_args.num_train_epochs = global_args.num_train_epochs
     hf_train_args.save_total_limit = global_args.save_total_limit
-    
+    hf_train_args.label_names=[]
     
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
