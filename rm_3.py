@@ -680,10 +680,10 @@ class RewardDataCollatorWithPadding:
             return_tensors=self.return_tensors,
         )
         batch = {
-            "input_ids_j": batch_j["input_ids"],
-            "attention_mask_j": batch_j["attention_mask"],
-            "input_ids_k": batch_k["input_ids"],
-            "attention_mask_k": batch_k["attention_mask"],
+            #"input_ids_j": batch_j["input_ids"],
+            #"attention_mask_j": batch_j["attention_mask"],
+            #"input_ids_k": batch_k["input_ids"],
+            #"attention_mask_k": batch_k["attention_mask"],
             "return_loss": True,
             "input_ids": torch.cat((batch_j["input_ids"], batch_k["input_ids"]),dim=0)  ,
             "attention_mask": torch.cat((batch_j["attention_mask"] , batch_k["attention_mask"]),dim=0),
