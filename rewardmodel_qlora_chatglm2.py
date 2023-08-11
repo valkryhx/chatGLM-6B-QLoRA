@@ -725,7 +725,7 @@ class RewardDataCollatorWithPadding_only_input_ids:
             #"attention_mask_j": batch_j["attention_mask"],
             #"input_ids_k": batch_k["input_ids"],
             #"attention_mask_k": batch_k["attention_mask"],
-            #"return_loss": True,
+            "return_loss": True,
             "input_ids": torch.cat((batch_j["input_ids"], batch_k["input_ids"]),dim=0)  ,
             #"attention_mask": torch.cat((batch_j["attention_mask"] , batch_k["attention_mask"]),dim=0),
         }
@@ -1496,7 +1496,7 @@ def train2(global_args):
     print(hf_train_args)
     # raise ValueError("TEST")
     
-    ### STEP  5   train
+    ### STEP  5   train   #注意
     trainer = RewardTrainer(
         model=model ,
         args=hf_train_args,
@@ -1515,8 +1515,11 @@ def train2(global_args):
     #model.save_pretrained(output_dir)
 
     #使用rewardmodel自定义的save_only_lora_and_vhead(self,output_dir) 只保存可训练参数  这样就跟checkpoint-xx目录中保存的一致 也包括v_head
+
+    # 最后训练完成 模型保存的路径自选 
+    output_dir = hf_train_args.output_dir  
     model.save_only_lora_and_vhead(output_dir) 
-    print("Model Saved.")
+    print("Model Saved. Only save lora layers and value_head.")
 
 
 
@@ -1575,3 +1578,18 @@ if __name__ == "__main__":
   --load_in_4bit True \
 --deepspeed ds_zero2_config.json
     """  
+# 注意 如果训练出现 key_error :'eval_loss' 那么说明collator传入的dict中没有labels这个key ，的确我们这个奖励模型的collator确实没有labels（因为后面才计算reward）
+# 此时 参考 原始train()中training_args的定义 对比发现其中有个参数 label_names=[] 而我们的hf_train_args一开始是没有写这个参数的 打印后可以看到默认情况下label_names=None
+# 参考 https://discuss.huggingface.co/t/keyerror-eval-loss-when-using-trainer-with-bertforqa/1920
+# 这个Q-A类型的数据的 dataset 也是非常态化的 而是包含了'start_positions', 'end_positions' ，见  self.encodings.keys() = ['input_ids', 'attention_mask', 'start_positions', 'end_positions']
+# 这种不包含labels但是又有自定义标签的数据（也就是collator输出的） 要在trainingargs中加入label_names = ["start_positions", "end_positions"] 将其作为标签信息
+# 而奖励模型就没有标签信息 因此要显式的写明 label_names=[] 这样后面才能正常的在eval阶段计算eval_loss 不然在eval阶段发现eval结果中很神奇的没有eval_loss
+# 另外参考 https://stackoverflow.com/questions/74239556/keyerror-eval-loss-in-hugginface-trainer
+# 这种非标准化的collator输出（也就是没有labels） 需要在collator输出的dict中明显加上 "return_loss":True .代码中确实加了。
+# 参考 https://huggingface.co/transformers/v4.2.2/_modules/transformers/training_args.html 提到了 label_names
+#  label_names (:obj:`List[str]`, `optional`):
+#              The list of keys in your dictionary of inputs that correspond to the labels.
+
+#             Will eventually default to :obj:`["labels"]` except if the model used is one of the
+#             :obj:`XxxForQuestionAnswering` in which case it will default to :obj:`["start_positions",
+#             "end_positions"]`.
