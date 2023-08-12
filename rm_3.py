@@ -1519,9 +1519,11 @@ def train2(global_args):
     #  (model): ChatGLMForConditionalGeneration(
     # (transformer): ChatGLMModel(
     #model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
-
-    # if --resume_from_checkpoint has a path point to a pytorch_model.bin and a value_head.bin
-    if global_args.resume_from_checkpoint :
+    
+    if not global_args.resume_from_checkpoint:
+        model = AutoModelForCausalLMWithValueHead.from_pretrained(model) 
+      
+    elif global_args.resume_from_checkpoint :
         ckpt = (global_args.resume_from_checkpoint).strip()
         adapters_ckpt = os.path.join( ckpt, 'adapter_model.bin' )
         adapters_weights = torch.load(adapters_ckpt)  # 这里能看出adapters_Weigth 其实就是个字典
@@ -1560,7 +1562,7 @@ def train2(global_args):
         #             "summary.bias": v_head_weights[summary.bias]
         #         })
         
-        print(model)
+        #print(model)
         #raise ValueError(4321)
         print(f"after load model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
         print(f"after load model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
@@ -1569,6 +1571,7 @@ def train2(global_args):
         print(f"after load model.v_head.summary.bias={model.v_head.summary.bias}")
         logger.error(f"reward model with vhead complete")
         #raise ValueError(435)
+        
     model.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     #model.enable_input_require_grads()  # AttributeError: 'AutoModelForCausalLMWithValueHead' object has no attribute 'enable_input_require_grads'
