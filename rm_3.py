@@ -1568,7 +1568,7 @@ def train2(global_args):
         print(f"after load model.v_head.summary.weight={model.v_head.summary.weight}")
         print(f"after load model.v_head.summary.bias={model.v_head.summary.bias}")
         logger.error(f"reward model with vhead complete")
-        raise ValueError(435)
+        #raise ValueError(435)
     model.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     #model.enable_input_require_grads()  # AttributeError: 'AutoModelForCausalLMWithValueHead' object has no attribute 'enable_input_require_grads'
