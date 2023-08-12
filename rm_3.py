@@ -1536,11 +1536,11 @@ def train2(global_args):
         print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
         print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
         print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight}")
-        print(f"adapters_weigth:base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+        print(f"adapters_weigth:base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.weight']}")
         #model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
         
         set_peft_model_state_dict(model, adapters_weights)
-        print(f"After load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+        print(f"After load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.weight}")
         logger.error(f"lora model complete")
 
         
