@@ -877,7 +877,7 @@ class RewardTrainer(Trainer):
 
         Subclass and override to inject custom behavior. It should not be directly used by external scripts.
         """
-        logger.info(f"Loading best model from {self.state.best_model_checkpoint} (score: {self.state.best_metric}).")
+        logger.info(f"Loading best model from {self.state.best_model_checkpoint} (score[here is best eval_loss]: {self.state.best_metric}).")
 
         model = unwrap_model(self.model)
         backbone_model = getattr(model, "pretrained_model") if hasattr(model, "pretrained_model") else model
@@ -1545,7 +1545,9 @@ def train2(global_args):
 
         
         model = AutoModelForCausalLMWithValueHead.from_pretrained(model) 
-        print(f"before load model.v_head={model.v_head}")
+        #print(f"before load model.v_head={model.v_head}")
+        print(f"after load model.v_head.summary.weight={model.v_head.summary.weight}")
+        print(f"after load model.v_head.summary.bias={model.v_head.summary.bias}")
         v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
         v_head_weights = torch.load(v_head_ckpt)
         logger.error(f"v_head_weights={v_head_weights}")
@@ -1556,7 +1558,8 @@ def train2(global_args):
         print(f"after load model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
         print(f"after load model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
         print(f"after laod model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight={model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight}")
-        print(f"after load model.v_head={model.v_head}")
+        print(f"after load model.v_head.summary.weight={model.v_head.summary.weight}")
+        print(f"after load model.v_head.summary.bias={model.v_head.summary.bias}")
         logger.error(f"reward model with vhead complete")
 
     model.gradient_checkpointing_enable() 
