@@ -1533,13 +1533,14 @@ def train2(global_args):
         #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
         #model = RewardModel(model.config, model.transformer, tokenizer)
         #logger.error(f"before load model.v_head.weight={model.v_head.weight}")
-        #print(f"befroe load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-        #print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-        #print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight}")
-        #print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+        print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+        print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+        print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight}")
+        print(f"adapters_weigth:base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
         #model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
         
         set_peft_model_state_dict(model, adapters_weights)
+        print(f"After load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
         logger.error(f"lora model complete")
 
         
@@ -1549,6 +1550,7 @@ def train2(global_args):
         logger.error(f"v_head_weights={v_head_weights}")
         model.load_state_dict(v_head_weights, strict=False)
         logger.error(f"reward model with vhead complete")
+        print(model)
         raise ValueError(4321)
         print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
         print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
