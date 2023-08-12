@@ -1023,7 +1023,7 @@ class ScriptArguments:
     )
     resume_from_checkpoint:Optional[str] = field(
         default=None,
-        metadata={"help" : "continue qlora training from the checkpoint path,the pytorch_model.bin in fact includes the v_head paramters,but we still store the v_head to the v_head.bin file in the path"  }  
+        metadata={"help" : "continue qlora training from the checkpoint path,including the lora adapter_mode.bin and  value_head.bin file in the path"  }  
     )
     
 
@@ -1207,7 +1207,7 @@ def train():
         ckpt = (script_args.resume_from_checkpoint).strip()
         adapters_ckpt = os.path.join( ckpt, 'pytorch_model.bin' )
         adapters_weights = torch.load(adapters_ckpt)  # 这里能看出adapters_Weigth 其实就是个字典
-        logger.info(f"adapter_weights={adapters_weights}")
+        logger.info(f"adapter_weights.keys()={adapters_weights.keys()}")
         #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
         #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
         #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
@@ -1422,7 +1422,7 @@ def train2(global_args):
 
 
     ### STEP 3  load model
-    # Quantization
+    # Quantization config
     q_config = BitsAndBytesConfig(load_in_4bit= True,
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
@@ -1482,15 +1482,15 @@ def train2(global_args):
     # 这三个都是 transformers 模型的函数/参数(见 transformers/modeling_utils.py 文件)
     #
 
-    # 
+    #### STEP 3.1 ADD lm_head because chatglm does not have a lm_head.This is for trl.AutoModelForCausalLMWithValueHead class
     model.lm_head = model.transformer.output_layer
 
 
-    # STEP 4 : 将model先转化为peftModel 再转化为RewardModel补充vhead 
+    # STEP 4 : 将model先转化为peftModel 加载ckpt的adapter_model.bin(如果是resume_from_checkpoint训练的话) 再转化为RewardModel 最后加载value_head.bin参数（如果是resume_from_checkpoint训练的话）
     logger.info("prepare_model_for_kbit_training...")
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
-    # LoRA
+    # STEP 4.1 LoRA config
     #target_modules = TRANSFORMERS_MODELS_TO_LORA_TARGET_MODULES_MAPPING['chatglm']
     target_modules = find_all_linear_names(model)
     lora_config = LoraConfig(   # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
@@ -1505,9 +1505,10 @@ def train2(global_args):
     model = get_peft_model(model, lora_config)
     print("below trainable paramters only contains peft lora params.")
     model.print_trainable_parameters() #  print here becaue only peft model has this function..
-    print("Now model is an AutoModelForCausalLMWithValueHead")
-    model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
-    print(model)
+    
+    #print("Now model is an AutoModelForCausalLMWithValueHead")
+    #model = AutoModelForCausalLMWithValueHead.from_pretrained(model)
+    #print(model)
     #raise ValueError(1234)
     
     #model = RewardModel(model.config, model.transformer, tokenizer)
@@ -1522,26 +1523,33 @@ def train2(global_args):
     # if --resume_from_checkpoint has a path point to a pytorch_model.bin and a value_head.bin
     if global_args.resume_from_checkpoint :
         ckpt = (global_args.resume_from_checkpoint).strip()
-        adapters_ckpt = os.path.join( ckpt, 'pytorch_model.bin' )
+        adapters_ckpt = os.path.join( ckpt, 'adapter_model.bin' )
         adapters_weights = torch.load(adapters_ckpt)  # 这里能看出adapters_Weigth 其实就是个字典
-        logger.info(f"adapter_weights={adapters_weights}")
+        
+        logger.info(f"adapter_weights.keys()={adapters_weights.keys()}")
         #直接写set_peft_model_state_dict(model, adapters_weights) 会发现adapter中保存的layer weights跟model（peft model）的层无法对应 所以加载无效 模型参数还是原先的 这一点可以打印加载前后的模型参数来确认    
         #由于rewardmodel是使用的peftmodel 的 transformer 所以想这样写 set_peft_model_state_dict(model.base_model.model, adapters_weights) 
         #但报错AttributeError: 'ChatGLMForConditionalGeneration' object has no attribute 'peft_config' 说明peftmodel的base模型不能使用peft的set_peft_model_state_dict方法
         #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True ) 
         #model = RewardModel(model.config, model.transformer, tokenizer)
-        logger.error(f"before load model.v_head.weight={model.v_head.weight}")
-        print(f"befroe load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-        print(f"before load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-        print(f"before load model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-        print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
-        model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
-    
+        #logger.error(f"before load model.v_head.weight={model.v_head.weight}")
+        #print(f"befroe load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+        #print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+        #print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight}")
+        #print(f"adapters_weigth:transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight']}")
+        #model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
+        
+        set_peft_model_state_dict(model, adapters_weights)
+        logger.error(f"lora model complete")
+
+        
+        model = AutoModelForCausalLMWithValueHead.from_pretrained(model)    
         v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
         v_head_weights = torch.load(v_head_ckpt)
         logger.error(f"v_head_weights={v_head_weights}")
         model.load_state_dict(v_head_weights, strict=False)
-           
+        logger.error(f"reward model with vhead complete")
+        raise ValueError(4321)
         print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
         print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
         print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
@@ -1555,7 +1563,7 @@ def train2(global_args):
     # See https://github.com/huggingface/transformers/blob/ee88ae59940fd4b2c8fc119373143d7a1175c651/src/transformers/modeling_utils.py#L1190
     print("below trainable params include v_head")
     print_trainable_parameters(model)
-    print(f"Finished loading model and tokenizer")
+    print(f"Finished loading model/lora_adapter/value_head and tokenizer")
     
     # print hf_train_args to see the manually set paras
     
