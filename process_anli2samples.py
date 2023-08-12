@@ -4,6 +4,7 @@
 # In[41]:
 
 
+
 from glob import glob
 def get_all_files(directory, extension):
     """Get all files with a specific extension in a directory and its subdirectories using glob"""
