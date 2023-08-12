@@ -1536,7 +1536,7 @@ def train2(global_args):
         print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
         print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
         print(f"before load model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight={model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight}")
-        print(f"adapters_weigth:base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.default.weight={adapters_weights['base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.weight']}")
+        print(f"adapters_weigth:base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.weight={adapters_weights['base_model.model.transformer.encoder.layers.27.self_attention.query_key_value.lora_A.weight']}")
         #model.load_state_dict(adapters_weights, strict=False)  # 实际这个adapters_weights中包含了v_head层的参数！所以其实下面的model无需再次加载v_head_weights.不过保险起见还是做了一次。
         
         set_peft_model_state_dict(model, adapters_weights)
@@ -1544,19 +1544,20 @@ def train2(global_args):
         logger.error(f"lora model complete")
 
         
-        model = AutoModelForCausalLMWithValueHead.from_pretrained(model)    
+        model = AutoModelForCausalLMWithValueHead.from_pretrained(model) 
+        print(f"before load model.v_head={model.v_head}")
         v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
         v_head_weights = torch.load(v_head_ckpt)
         logger.error(f"v_head_weights={v_head_weights}")
         model.load_state_dict(v_head_weights, strict=False)
-        logger.error(f"reward model with vhead complete")
+        
         print(model)
-        raise ValueError(4321)
-        print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
-        print(f"after load model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
-        print(f"after laod model.transformer.encoder.layers[27].self_attention.dense.weight={model.transformer.encoder.layers[27].self_attention.dense.weight}")
-        print(f"after load model.v_head.weight={model.v_head.weight}")
-    
+        #raise ValueError(4321)
+        print(f"after load model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight={model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.lora_A.default.weight}")
+        print(f"after load model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight={model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight}")
+        print(f"after laod model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight={model.pretrained_model.base_model.model.transformer.encoder.layers[27].self_attention.dense.weight}")
+        print(f"after load model.v_head={model.v_head}")
+        logger.error(f"reward model with vhead complete")
 
     model.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
