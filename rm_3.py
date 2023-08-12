@@ -1546,12 +1546,19 @@ def train2(global_args):
         
         model = AutoModelForCausalLMWithValueHead.from_pretrained(model) 
         #print(f"before load model.v_head={model.v_head}")
-        print(f"after load model.v_head.summary.weight={model.v_head.summary.weight}")
-        print(f"after load model.v_head.summary.bias={model.v_head.summary.bias}")
+        print(f"before load model.v_head.summary.weight={model.v_head.summary.weight}")
+        print(f"before load model.v_head.summary.bias={model.v_head.summary.bias}")
         v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
         v_head_weights = torch.load(v_head_ckpt)
         logger.error(f"v_head_weights={v_head_weights}")
-        model.load_state_dict(v_head_weights, strict=False)
+
+        ## 注意这里是 model.v_head而非model直接loald 此时model已经是AutoModelForCausalLMWithValueHead , model.v_head和model.pretrained_model是平级的
+        model.v_head.load_state_dict(v_head_weights, strict=False) #  
+        # 要按照下面的写法也行
+        # model.v_head.load_state_dict({
+        #             "summary.weight": v_head_weights['summary.weight'],
+        #             "summary.bias": v_head_weights[summary.bias]
+        #         })
         
         print(model)
         #raise ValueError(4321)
