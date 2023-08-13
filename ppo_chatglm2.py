@@ -458,12 +458,14 @@ def get_reward_value(texts):
 @torch.no_grad()  
 def get_rewards(
     queries: List[torch.Tensor],
-    responses: List[torch.Tensor],
+    responses: List[torch.Tensor]
      ) -> List[torch.Tensor]:
     r"""
     Computes scores using given reward model.
     """
-    batch = PPOTrainer.prepare_model_inputs(queries, responses)
+    logger.error(f"queries={queries}")
+    logger.error(f"responses={responses}")
+    batch = ppo_trainer.prepare_model_inputs(queries=queries, responses=responses) 
     _, _, values = reward_model(**batch, output_hidden_states=True, return_dict=True)
     rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
     return rewards
@@ -555,7 +557,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     rewards = [torch.tensor(output[0]["score"] - script_args.reward_baseline) for output in pipe_outputs]
     """
     #scores = get_reward_value(texts)
-    scores = get_rewards(question_tensors  , response_tensors)
+    scores = get_rewards(question_tensors , response_tensors)
     logger.error("we are at line 543")
     rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
     for q, r, s in zip(batch["query"], batch["response"], scores):
