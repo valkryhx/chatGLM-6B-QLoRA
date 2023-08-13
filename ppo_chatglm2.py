@@ -285,7 +285,7 @@ logger.info("prepare_model_for_kbit_training...")
 base_model_for_PPO = prepare_model_for_kbit_training(base_model_for_PPO, use_gradient_checkpointing=True)
 
 # install the lora modules
-target_modules = find_all_linear_names(model)
+target_modules = find_all_linear_names(base_model_for_PPO)
 lora_config = LoraConfig(   
         # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
         r=64,#global_args.lora_rank,
@@ -412,7 +412,7 @@ logger.info("prepare_reward_model_for_kbit_training...")
 reward_model  = prepare_model_for_kbit_training(base_model_for_PPO, use_gradient_checkpointing=True)
 
 # install the lora modules
-target_modules = find_all_linear_names(model)
+target_modules = find_all_linear_names(reward_model )
 lora_config = LoraConfig(   
         # AdaLoraConfig 和 qlora好像有冲突 或者是多卡有冲突
         r=64,#global_args.lora_rank,
