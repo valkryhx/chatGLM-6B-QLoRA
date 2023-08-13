@@ -355,7 +355,6 @@ ppo_trainer = PPOTrainer(
     dataset=dataset,
     data_collator=collator,
     optimizer=optimizer,
-    logging_dir = "./log_dir",
 )
 
 """
