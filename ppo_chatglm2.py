@@ -489,7 +489,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
         break
 
     question_tensors = batch["input_ids"]
-    logger.error(f"len_question_tensors : {question_tensors.shape}")
+    logger.error(f"question_tensors : {question_tensors}")
     
         # """
         # generate这一步经常会报一个奇奇怪怪的bug：
@@ -528,7 +528,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
             # length_sampler=output_length_sampler,  # 这个参数，跟 generation_kwargs 中的 max_new_tokens 只用设置一个
             **generation_kwargs,
         )
-    logger.error(f"len_response_tensors : {response_tensors.shape}")
+    logger.error(f"response_tensors : {response_tensors}")
     # skip_special_tokens=True 就去掉了response中左边的pad_token. 这样下面的q+r连接才不会在中间出现pad_token
     batch["response"] = tokenizer.batch_decode(response_tensors, skip_special_tokens=True)  
        
