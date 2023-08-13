@@ -148,7 +148,8 @@ if getattr(tokenizer, "pad_token", None) is None:
     tokenizer.pad_token = tokenizer.eos_token
 
 # training dataset
-dataset = load_from_disk('./data/rlhf-reward-single-round-trans_chinese')
+#dataset = load_from_disk('./data/rlhf-reward-single-round-trans_chinese')
+dataset = datasets.load_dataset("beyond/rlhf-reward-single-round-trans_chinese", cache_dir="./dataset")
 dataset = dataset['train']
 dataset = dataset.select(range(500))
 original_columns = dataset.column_names
