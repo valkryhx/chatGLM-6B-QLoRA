@@ -556,9 +556,10 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
             ppo_trainer.save_pretrained(script_args.output_dir + f"step_{epoch}")
             
     except Exception as e:
+        logger.error("we are at line 559 :Exception")
         print('---------------------')
-        print(e)
-        print(epoch)
-        print(question_tensors)
+        print(f"Exception={e}")
+        print(f"epoch={epoch}")
+        print(f"question_tensors={question_tensors}")
         print('---------------------')
         break
