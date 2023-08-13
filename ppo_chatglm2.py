@@ -148,10 +148,11 @@ if getattr(tokenizer, "pad_token", None) is None:
     tokenizer.pad_token = tokenizer.eos_token
 
 # training dataset
-dataset = load_from_disk('../data/rlhf-reward-single-round-trans_chinese')
+dataset = load_from_disk('./data/rlhf-reward-single-round-trans_chinese')
 dataset = dataset['train']
+dataset = dataset.select(range(500))
 original_columns = dataset.column_names
-num_proc = 24
+num_proc = 1
 
 def preprocess_function(examples):
     new_examples = {
