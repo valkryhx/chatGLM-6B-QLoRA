@@ -453,7 +453,21 @@ def get_reward_value(texts):
     rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
     logger.error(f"inside get_reward_value ,rewards={rewards}")
     return rewards
-  
+
+#https://github.com/hiyouga/LLaMA-Efficient-Tuning/blob/2f2fd55d8175eb3c6ce94bc821ab4e6331f79d8e/src/llmtuner/tuner/ppo/trainer.py#L172C1-L187C22
+@torch.no_grad()  
+def get_rewards(
+    queries: List[torch.Tensor],
+    responses: List[torch.Tensor],
+     ) -> List[torch.Tensor]:
+    r"""
+    Computes scores using given reward model.
+    """
+    batch = PPOTrainer.prepare_model_inputs(queries, responses)
+    _, _, values = reward_model(**batch, output_hidden_states=True, return_dict=True)
+    rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
+    return rewards
+
 # We then define the arguments to pass to the `generate` function. These arguments
 # are passed to the `generate` function of the PPOTrainer, which is a wrapper around
 # the `generate` function of the trained model.
@@ -540,7 +554,8 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     pipe_outputs = sentiment_pipe(texts, **sent_kwargs)
     rewards = [torch.tensor(output[0]["score"] - script_args.reward_baseline) for output in pipe_outputs]
     """
-    scores = get_reward_value(texts)
+    #scores = get_reward_value(texts)
+    scores = get_rewards(queries , responses)
     logger.error("we are at line 543")
     rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
     for q, r, s in zip(batch["query"], batch["response"], scores):
