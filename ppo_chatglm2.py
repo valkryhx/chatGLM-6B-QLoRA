@@ -441,7 +441,7 @@ v_head_weights = torch.load(v_head_ckpt)
 logger.error(f"v_head_weights={v_head_weights}")
 ## 注意这里是 model.v_head而非model直接loald 此时model已经是AutoModelForCausalLMWithValueHead , model.v_head和model.pretrained_model是平级的
 reward_model.v_head.load_state_dict(v_head_weights, strict=False) # 
-
+logger.error("reward model complete!")
 
 
 # 然后需要一个得到 reward value 的函数
@@ -451,6 +451,7 @@ def get_reward_value(texts):
     #return scores
     _, _, values = reward_model(**tokenizer(texts, return_tensors='pt', padding=True, truncation=True), output_hidden_states=True, return_dict=True)
     rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
+    logger.error(f"inside get_reward_value ,rewards={rewards}")
     return rewards
   
 # We then define the arguments to pass to the `generate` function. These arguments
@@ -539,6 +540,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
         rewards = [torch.tensor(output[0]["score"] - script_args.reward_baseline) for output in pipe_outputs]
         """
         scores = get_reward_value(texts)
+        logger.error("we are at line 543")
         rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
         for q, r, s in zip(batch["query"], batch["response"], scores):
             print(epoch,'query:',q)
@@ -546,6 +548,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
             print('score:',s)
         
         # Run PPO step
+        logger.error("we are at line 551")
         stats = ppo_trainer.step(question_tensors, response_tensors, rewards)
         ppo_trainer.log_stats(stats, batch, rewards)
 
