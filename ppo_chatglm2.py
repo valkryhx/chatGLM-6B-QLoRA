@@ -568,6 +568,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
         
     # Run PPO step
     logger.error("we are at line 551")
+    logger.error(f"rewards={rewards}")
     stats = ppo_trainer.step(question_tensors, response_tensors, rewards)
     ppo_trainer.log_stats(stats, batch, rewards)
 
