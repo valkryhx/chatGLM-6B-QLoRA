@@ -380,17 +380,17 @@ if ppo_trainer.accelerator.num_processes == 1:
     device = 0 if torch.cuda.is_available() else "cpu"  # to avoid a ` pipeline` bug
 
 
-from modeling_baichuan_for_cls import BaichuanForSequenceClassification
-from peft import PeftModel
-print('Loading base model for reward model...')
-base_model_for_RM = BaichuanForSequenceClassification.from_pretrained(
-    script_args.base_model_name, num_labels=1, 
-    trust_remote_code=True, 
-    torch_dtype=torch.bfloat16, 
-    device_map="auto",
-    # device_map={"": current_device},
-)
-reward_model = PeftModel.from_pretrained(base_model_for_RM, script_args.reward_model_lora_path)
+# from modeling_baichuan_for_cls import BaichuanForSequenceClassification
+# from peft import PeftModel
+# print('Loading base model for reward model...')
+# base_model_for_RM = BaichuanForSequenceClassification.from_pretrained(
+#     script_args.base_model_name, num_labels=1, 
+#     trust_remote_code=True, 
+#     torch_dtype=torch.bfloat16, 
+#     device_map="auto",
+#     # device_map={"": current_device},
+# )
+# reward_model = PeftModel.from_pretrained(base_model_for_RM, script_args.reward_model_lora_path)
 
 
 q_config = BitsAndBytesConfig(load_in_4bit= True,
