@@ -489,7 +489,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
         break
 
     question_tensors = batch["input_ids"]
-    logger.error(f"len_question_tensors : {question_tensor.shape}")
+    logger.error(f"len_question_tensors : {question_tensors.shape}")
     
         # """
         # generate这一步经常会报一个奇奇怪怪的bug：
