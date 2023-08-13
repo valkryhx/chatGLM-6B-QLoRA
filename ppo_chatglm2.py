@@ -215,7 +215,7 @@ config = PPOConfig(
     model_name=script_args.base_model_name,        #script_args.merged_sft_model_path, # 没啥用，不会加载对应模型
     learning_rate=script_args.learning_rate,
     log_with=script_args.log_with,
-    logging_dir ="ppo_logs" ,
+    
     batch_size=script_args.batch_size,
     mini_batch_size=script_args.mini_batch_size,
     gradient_accumulation_steps=script_args.gradient_accumulation_steps,
@@ -227,6 +227,7 @@ config = PPOConfig(
     init_kl_coef=script_args.init_kl_coef,
     adap_kl_ctrl=script_args.adap_kl_ctrl,
 )
+config['logging_dir'] ="ppo_logs"  # for log_with = tensorboard
 
 # set seed before initializing value head for deterministic eval
 set_seed(config.seed)
