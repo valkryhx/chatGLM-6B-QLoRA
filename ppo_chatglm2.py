@@ -252,7 +252,7 @@ base_model_for_PPO = AutoModel.from_pretrained(
                                           script_args.base_model_name,
                                           trust_remote_code=True,
                                                                     
-                                          load_in_4bit=global_args.load_in_4bit,
+                                          load_in_4bit=True,#global_args.load_in_4bit,
                                           torch_dtype=torch.float16,
                                           quantization_config=q_config,
                                           empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
