@@ -439,7 +439,7 @@ reward_model = AutoModelForCausalLMWithValueHead.from_pretrained(reward_model )
 v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
 v_head_weights = torch.load(v_head_ckpt)
 logger.error(f"v_head_weights={v_head_weights}")
-## 注意这里是 model.v_head而非model直接loald 此时model已经是AutoModelForCausalLMWithValueHead , model.v_head和model.pretrained_model是平级的
+## 注意这里是 model.v_head而非model直接load 此时model已经是AutoModelForCausalLMWithValueHead , model.v_head和model.pretrained_model是平级的
 reward_model.v_head.load_state_dict(v_head_weights, strict=False) # 
 logger.error("reward model complete!")
 
@@ -489,77 +489,78 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
         break
 
     question_tensors = batch["input_ids"]
+    logger.error(f"len_question_tensors : {question_tensor.shape}")
     
-    try:
-        """
-        generate这一步经常会报一个奇奇怪怪的bug：
-        RuntimeError: probability tensor contains either inf, nan or element < 0
-        主要是在model.generate的时候设置了 do_sample=True 就容易报错，但是报错具有随机性，可能在不同的iteration报
-        关闭 do_sample=True 就不会报错。
-        可能有用的issue：
-        https://github.com/huggingface/transformers/issues/15169
-        https://github.com/huggingface/transformers/issues/23413
-        https://github.com/huggingface/transformers/issues/22914
+        # """
+        # generate这一步经常会报一个奇奇怪怪的bug：
+        # RuntimeError: probability tensor contains either inf, nan or element < 0
+        # 主要是在model.generate的时候设置了 do_sample=True 就容易报错，但是报错具有随机性，可能在不同的iteration报
+        # 关闭 do_sample=True 就不会报错。
+        # 可能有用的issue：
+        # https://github.com/huggingface/transformers/issues/15169
+        # https://github.com/huggingface/transformers/issues/23413
+        # https://github.com/huggingface/transformers/issues/22914
         
-        目前可能的解决办法：
-        1. 不使用随机采用： do_sample=False，这个基本不会报错，但是感觉影响PPO的性能
-        2. do_sample=True 的同时，设置 remove_invalid_values=True 参数...还是会报错...奇了怪，而且是报错之后，模型似乎就崩了，一直输出inf,nan了
+        # 目前可能的解决办法：
+        # 1. 不使用随机采用： do_sample=False，这个基本不会报错，但是感觉影响PPO的性能
+        # 2. do_sample=True 的同时，设置 remove_invalid_values=True 参数...还是会报错...奇了怪，而且是报错之后，模型似乎就崩了，一直输出inf,nan了
         
-        update:
-        发现似乎是由于模型在迭代之后，开始输出空值，而reward却很大，导致模型越学越坏，直接崩了，后面全输出空
+        # update:
+        # 发现似乎是由于模型在迭代之后，开始输出空值，而reward却很大，导致模型越学越坏，直接崩了，后面全输出空
         
-        - 百川-base之前推荐的是设置repetition_penalty=1.1，前面没有设置，导致输出很容易重复，而这种输出居然也可以得高分，
-        因此这里改成一样的配置，目前观察下来有了一些缓解，但后面还是会越学越坏；
+        # - 百川-base之前推荐的是设置repetition_penalty=1.1，前面没有设置，导致输出很容易重复，而这种输出居然也可以得高分，
+        # 因此这里改成一样的配置，目前观察下来有了一些缓解，但后面还是会越学越坏；
         
-        继续观察，发现当某一次回复为空得到很高的reward之后(得来0.8 的高分，其他的都是0.6的水平)，下一次生成的时候就挂了；
+        # 继续观察，发现当某一次回复为空得到很高的reward之后(得来0.8 的高分，其他的都是0.6的水平)，下一次生成的时候就挂了；
         
-        - 尝试降低learning rate，从 1.4e-5 降低到 1e-5。这个似乎有些效果，可以延缓模型崩溃，但渐渐地回复会越来越短，最终输出空值，属于慢性死亡了。。。
+        # - 尝试降低learning rate，从 1.4e-5 降低到 1e-5。这个似乎有些效果，可以延缓模型崩溃，但渐渐地回复会越来越短，最终输出空值，属于慢性死亡了。。。
         
-        - 尝试提高 init_kl_coef，从0.2到0.5，也不管用；
+        # - 尝试提高 init_kl_coef，从0.2到0.5，也不管用；
         
-        - 继续尝试设置 begin_suppress_tokens 参数，禁止在开头的时候生成 eos token... ！！这是目前最有效的办法了 模型基本不崩了。
+        # - 继续尝试设置 begin_suppress_tokens 参数，禁止在开头的时候生成 eos token... ！！这是目前最有效的办法了 模型基本不崩了。
         
-        其实可以发现，主要是reward model太差了，导致对某些不好的输出类型产生了高reward，然后模型就越学越差然后崩了。所以可能问题关键就在于reward model的质量吧。
+        # 其实可以发现，主要是reward model太差了，导致对某些不好的输出类型产生了高reward，然后模型就越学越差然后崩了。所以可能问题关键就在于reward model的质量吧。
         
-        """
-        response_tensors = ppo_trainer.generate(
+        # """
+    response_tensors = ppo_trainer.generate(
             question_tensors,
             return_prompt=False,
             # length_sampler=output_length_sampler,  # 这个参数，跟 generation_kwargs 中的 max_new_tokens 只用设置一个
             **generation_kwargs,
         )
-        # skip_special_tokens=True 就去掉了response中左边的pad_token. 这样下面的q+r连接才不会在中间出现pad_token
-        batch["response"] = tokenizer.batch_decode(response_tensors, skip_special_tokens=True)  
+    logger.error(f"len_response_tensors : {response_tensors.shape}")
+    # skip_special_tokens=True 就去掉了response中左边的pad_token. 这样下面的q+r连接才不会在中间出现pad_token
+    batch["response"] = tokenizer.batch_decode(response_tensors, skip_special_tokens=True)  
+       
+
+    # Compute sentiment score
+    texts = [q + r for q, r in zip(batch["query"], batch["response"])]
+    
+    """下面两行是使用pipeline来做，但我这里不采用这种方式
+    pipe_outputs = sentiment_pipe(texts, **sent_kwargs)
+    rewards = [torch.tensor(output[0]["score"] - script_args.reward_baseline) for output in pipe_outputs]
+    """
+    scores = get_reward_value(texts)
+    logger.error("we are at line 543")
+    rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
+    for q, r, s in zip(batch["query"], batch["response"], scores):
+        print(epoch,'query:',q)
+        print('response:',r)
+        print('score:',s)
         
+    # Run PPO step
+    logger.error("we are at line 551")
+    stats = ppo_trainer.step(question_tensors, response_tensors, rewards)
+    ppo_trainer.log_stats(stats, batch, rewards)
 
-        # Compute sentiment score
-        texts = [q + r for q, r in zip(batch["query"], batch["response"])]
-
-        """下面两行是使用pipeline来做，但我这里不采用这种方式
-        pipe_outputs = sentiment_pipe(texts, **sent_kwargs)
-        rewards = [torch.tensor(output[0]["score"] - script_args.reward_baseline) for output in pipe_outputs]
-        """
-        scores = get_reward_value(texts)
-        logger.error("we are at line 543")
-        rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
-        for q, r, s in zip(batch["query"], batch["response"], scores):
-            print(epoch,'query:',q)
-            print('response:',r)
-            print('score:',s)
-        
-        # Run PPO step
-        logger.error("we are at line 551")
-        stats = ppo_trainer.step(question_tensors, response_tensors, rewards)
-        ppo_trainer.log_stats(stats, batch, rewards)
-
-        if script_args.save_freq and epoch and epoch % script_args.save_freq == 0:
-            ppo_trainer.save_pretrained(script_args.output_dir + f"step_{epoch}")
+    if script_args.save_freq and epoch and epoch % script_args.save_freq == 0:
+        ppo_trainer.save_pretrained(script_args.output_dir + f"step_{epoch}")
             
-    except Exception as e:
-        logger.error("we are at line 559 :Exception")
-        print('---------------------')
-        print(f"Exception={e}")
-        print(f"epoch={epoch}")
-        print(f"question_tensors={question_tensors}")
-        print('---------------------')
-        break
+    # except Exception as e:
+    #     logger.error("we are at line 559 :Exception")
+    #     print('---------------------')
+    #     print(f"Exception={e}")
+    #     print(f"epoch={epoch}")
+    #     print(f"question_tensors={question_tensors}")
+    #     print('---------------------')
+    #     break
