@@ -1136,6 +1136,9 @@ class PPOTrainer(BaseTrainer):
         advantages_reversed = []
         gen_len = rewards.shape[-1]
 
+        print(f"values={values}")
+        print(f"rewards={rewards}")
+        print(f"mask={mask}")
         values = values * mask
         rewards = rewards * mask
 
