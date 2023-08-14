@@ -828,7 +828,7 @@ class RewardTrainer(Trainer):
         batch_texts = tokenizer.batch_decode(inputs["input_ids"],skip_special_tokens=True)
         logger.error("line 820")
         logger.error(batch_texts)
-        logger.error(f"values from lmheadModel ={values}")
+        logger.error(f"values from lmheadModel ={values.shape}")
         logger.error(f"r_accept={r_accept}")
         logger.error(f"r_reject={r_reject}")
         loss = -torch.log(torch.sigmoid(r_accept - r_reject)).mean()
