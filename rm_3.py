@@ -818,10 +818,11 @@ class RewardTrainer(Trainer):
         batch_size = inputs["input_ids"].size(0) // 2
         _, _, values = model(**inputs, output_hidden_states=True, return_dict=True)
         logger.error(f"valuess.shape={values.shape}")
-        r_accept, r_reject = values[:,-1].split(batch_size, dim=0) 
-        #注意values[-1]指的是values[-1,:,:]相当于取相当于取最后一个batch，是错误的
-        #values[:,:,-1]取的是最后一个维度的所有处于最后的元素。即【每个】token的tensor的最后一个，也是错误的
-        #只有values[:,-1](也就是values[:,-1,:])取得是第二个维度，也就是【每个len 也就是句子token list】的最后一个，也就是eos对应的分数
+        r_accept, r_reject = values[-1].split(batch_size, dim=0) 
+        # values.shape=[seq_len,batch_size]=[500,2],相当于说2个生成的句子是竖着的 这和LLAMA好像还真不一样
+        #注意values[-1]指的是values[-1,:,:]相当于取相当于取竖直方向最下面的两个元素，也就是两个句子的末尾eos对应的分。是对的。
+        #values[:,-1]取的是最后一个维度的元素。即【第二个句子】，是错误的！这相当于获取了第二个句子的所有token得分。
+        # 注意  只有chatglm2是这个顺序 其他llama类模型是取values[:,-1]才是每个句子的最后token的得分。
         
         tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True )
         batch_texts = tokenizer.batch_decode(inputs["input_ids"],skip_special_tokens=True)
