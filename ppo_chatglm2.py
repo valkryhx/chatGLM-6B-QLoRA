@@ -565,7 +565,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     scores = get_rewards(question_tensors , response_tensors)
     logger.error("we are at line 543")
     #rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
-    rewards = rewards -  script_args.reward_baseline
+    rewards = scores -  script_args.reward_baseline
     
     logger.error("line 567")
     logger.error(f"scores={scores}")
