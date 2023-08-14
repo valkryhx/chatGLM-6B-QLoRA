@@ -817,7 +817,7 @@ class RewardTrainer(Trainer):
         
         batch_size = inputs["input_ids"].size(0) // 2
         _, _, values = model(**inputs, output_hidden_states=True, return_dict=True)
-        logger.error(f"valuess.shape={values.shape}")
+        #logger.error(f"valuess.shape={values.shape}")
         r_accept, r_reject = values[-1].split(batch_size, dim=0) 
         # values.shape=[seq_len,batch_size]=[500,2],相当于说2个生成的句子是竖着的 这和LLAMA好像还真不一样
         #注意values[-1]指的是values[-1,:,:]相当于取相当于取竖直方向最下面的两个元素，也就是两个句子的末尾eos对应的分。是对的。
@@ -827,7 +827,7 @@ class RewardTrainer(Trainer):
         tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True )
         batch_texts = tokenizer.batch_decode(inputs["input_ids"],skip_special_tokens=True)
         logger.error("line 820")
-        logger.error(batch_texts)
+        #logger.error(batch_texts)
         logger.error(f"values from lmheadModel ={values.shape}")
         logger.error(f"r_accept={r_accept}")
         logger.error(f"r_reject={r_reject}")
