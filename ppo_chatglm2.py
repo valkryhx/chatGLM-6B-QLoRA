@@ -470,8 +470,8 @@ def get_rewards(
     #rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
     ##rewards = values[-1]  # https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/rm_3.py#L820C30-L820C40
     #rewards= values[:,-1].view(-1).tolist()
-    #_rewards = [reward for reward in values[-1].to(torch.float32)] # use float32 type
-    rewards = [values[:, -1]]
+    #_rewards = [reward for reward in values[-1].to(torch.float32)] # use float32 type 这个很有前途
+    rewards = values[:, -1]
     logger.error(f"rewards in get_rewards={rewards}")
     return rewards
 
@@ -565,7 +565,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     scores = get_rewards(question_tensors , response_tensors)
     logger.error("we are at line 543")
     #rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
-    rewards = scores -  script_args.reward_baseline for 
+    rewards = [scores -  script_args.reward_baseline ] 
     
     logger.error("line 567")
     logger.error(f"scores={scores}")
