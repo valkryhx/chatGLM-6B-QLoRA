@@ -467,11 +467,12 @@ def get_rewards(
     logger.error(f"responses={responses}")
     batch = ppo_trainer.prepare_model_inputs(queries=queries, responses=responses) 
     _, _, values = reward_model(**batch, output_hidden_states=True, return_dict=True)
-    #rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
-    ##rewards = values[-1]  # https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/rm_3.py#L820C30-L820C40
+    #rewards = [reward for reward in values[-1].float().detach().cpu()] # use fp32 type
+    rewards = [reward for reward in values[-1].to(torch.float32)] # 也可以这么写
+    #rewards = values[-1]  # https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/rm_3.py#L820C30-L820C40
     #rewards= values[:,-1].view(-1).tolist()
     #_rewards = [reward for reward in values[-1].to(torch.float32)] # use float32 type 这个很有前途
-    rewards = values[:, -1]
+    #rewards = values[-1] # for chatglm2 otherwise like llama may be values[:,-1],not test for llama.
     logger.error(f"rewards in get_rewards={rewards}")
     return rewards
 
@@ -564,8 +565,9 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     #scores = get_reward_value(texts)
     scores = get_rewards(question_tensors , response_tensors)
     logger.error("we are at line 543")
-    #rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
-    rewards = [scores -  script_args.reward_baseline ] 
+    #rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores] 
+    # 上面的写法有warning 换下面的写法 UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
+    rewards = [(score - script_args.reward_baseline.clone().detach() for score in scores]
     
     logger.error("line 567")
     logger.error(f"scores={scores}")
