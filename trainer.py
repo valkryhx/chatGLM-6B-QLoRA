@@ -53,8 +53,9 @@ from trl.core import (
 )
 from trl.import_utils import is_torch_greater_2_0
 from trl.models import SUPPORTED_ARCHITECTURES, PreTrainedModelWrapper, create_reference_model
-from trl.trainer.utils import AdaptiveKLController, BaseTrainer, FixedKLController, PPOConfig, RunningMoments
-
+from trl.trainer.utils import AdaptiveKLController,  FixedKLController,  RunningMoments
+from trl.trainer.base import BaseTrainer
+from trl.trainer.ppo_config import PPOConfig
 
 MODEL_CARD_TEMPLATE = """---
 license: apache-2.0
