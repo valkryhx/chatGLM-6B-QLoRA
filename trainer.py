@@ -647,6 +647,7 @@ class PPOTrainer(BaseTrainer):
         bs = self.config.batch_size
 
         queries, responses, scores = self._step_safety_checker(bs, queries, responses, scores)
+        print(f"scores={scores},type={type(scores)}")
         scores = torch.tensor(scores)
         if self.config.use_score_scaling:
             # Score scaling
