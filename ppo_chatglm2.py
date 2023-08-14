@@ -34,7 +34,8 @@ import argparse
 import json
 from transformers.trainer import WEIGHTS_NAME, WEIGHTS_INDEX_NAME
 from transformers import DataCollatorWithPadding, BatchEncoding
-from trl import AutoModelForCausalLMWithValueHead , PPOConfig, PPOTrainer, set_seed, PreTrainedModelWrapper
+from trl import AutoModelForCausalLMWithValueHead , PPOConfig, set_seed, PreTrainedModelWrapper
+from trainer import PPOTrainer
 from transformers.modeling_utils import PreTrainedModel
 from transformers.configuration_utils import PretrainedConfig
 from transformers.tokenization_utils import PreTrainedTokenizer
