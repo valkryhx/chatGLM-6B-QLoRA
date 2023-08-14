@@ -650,13 +650,13 @@ class PPOTrainer(BaseTrainer):
         print(f"scores={scores},type={type(scores)}")
         scores=[t.cpu() .numpy() for t in scores]
         scores = torch.tensor(scores).to(self.current_device)
-        # if self.config.use_score_scaling:
-        #     # Score scaling
-        #     scores_mean, scores_std = self.running.update(scores)
-        #     if self.config.use_score_norm:
-        #         scores = (scores - self.running.mean) / self.running.std
-        #     else:
-        #         scores /= self.running.std
+        if self.config.use_score_scaling:
+            # Score scaling
+            scores_mean, scores_std = self.running.update(scores)
+            if self.config.use_score_norm:
+                scores = (scores - self.running.mean) / self.running.std
+            else:
+                scores /= self.running.std
 
         if self.config.score_clip is not None:
             # Score clipping
