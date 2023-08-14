@@ -567,7 +567,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     logger.error("we are at line 543")
     #rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores] 
     # 上面的写法有warning 换下面的写法 UserWarning: To copy construct from a tensor, it is recommended to use sourceTensor.clone().detach() or sourceTensor.clone().detach().requires_grad_(True), rather than torch.tensor(sourceTensor).
-    rewards = [(score - script_args.reward_baseline.clone().detach() for score in scores]
+    rewards = [(score - script_args.reward_baseline).clone().detach() for score in scores]
     
     logger.error("line 567")
     logger.error(f"scores={scores}")
