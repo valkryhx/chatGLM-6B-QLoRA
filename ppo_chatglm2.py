@@ -589,6 +589,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     ppo_trainer.log_stats(stats, batch, rewards)
 
     if script_args.save_freq and epoch and epoch % script_args.save_freq == 0:
+        logger.error(f"epoch={epoch}, save to {script_args.output_dir}step_{epoch}")
         ppo_trainer.save_pretrained(script_args.output_dir + f"step_{epoch}")
             
     # except Exception as e:
