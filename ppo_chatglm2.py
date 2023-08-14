@@ -569,7 +569,10 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
         print("epoch: ",epoch,'\nquery:',q)
         print('response:',r)
         print('score:',s)
-        
+    logger.error(scores) 
+    rewards = [torch.tensor(scores)]
+    logger.error(f"scores={scores}")
+    logger.error(f"rewards = [torch.tensor(scores)] = {rewards}")
     # Run PPO step
     logger.error("we are at line 551")
     logger.error(f"rewards={rewards}")
