@@ -648,7 +648,8 @@ class PPOTrainer(BaseTrainer):
 
         queries, responses, scores = self._step_safety_checker(bs, queries, responses, scores)
         print(f"scores={scores},type={type(scores)}")
-        
+
+        ##### ADD by hx
         scores=[t.cpu() .numpy() for t in scores]
         scores = torch.tensor(scores).to(self.current_device)
         
@@ -1334,6 +1335,10 @@ class PPOTrainer(BaseTrainer):
 
             # Log stats
             if not isinstance(rewards, torch.Tensor):
+                
+                #rewards = torch.tensor(rewards).to(self.current_device)
+                ##### add by hx
+                rewards=[t.cpu() .numpy() for t in rewards]
                 rewards = torch.tensor(rewards).to(self.current_device)
 
             if "query" not in batch.keys() and "response" not in batch.keys():
