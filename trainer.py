@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# 注意修改过的位置 尤其是values=values.permute(1,0) 这是适应chatglm系列专有的操作
 import inspect
 import math
 import os
