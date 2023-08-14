@@ -471,7 +471,7 @@ def get_rewards(
     #rewards = values[-1]  # https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/rm_3.py#L820C30-L820C40
     #_rewards= values[-1].view(-1).tolist()
     #_rewards = [reward for reward in values[-1].to(torch.float32)] # use float32 type
-    logger.error(f"_rewards in get_rewards={_rewards}")
+    logger.error(f"rewards in get_rewards={rewards}")
     return rewards
 
 # We then define the arguments to pass to the `generate` function. These arguments
