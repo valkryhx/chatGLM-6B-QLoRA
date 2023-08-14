@@ -469,8 +469,9 @@ def get_rewards(
     _, _, values = reward_model(**batch, output_hidden_states=True, return_dict=True)
     #rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
     ##rewards = values[-1]  # https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/rm_3.py#L820C30-L820C40
-    rewards= values[:,-1].view(-1).tolist()
+    #rewards= values[:,-1].view(-1).tolist()
     #_rewards = [reward for reward in values[-1].to(torch.float32)] # use float32 type
+    rewards = values[:, -1]
     logger.error(f"rewards in get_rewards={rewards}")
     return rewards
 
