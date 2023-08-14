@@ -648,8 +648,9 @@ class PPOTrainer(BaseTrainer):
 
         queries, responses, scores = self._step_safety_checker(bs, queries, responses, scores)
         print(f"scores={scores},type={type(scores)}")
-        scores=[t.cpu() .numpy() for t in scores]
-        scores = torch.tensor(scores).to(self.current_device)
+        # scores=[t.cpu() .numpy() for t in scores]
+        # scores = torch.tensor(scores).to(self.current_device)
+        scores = torch.tensor(scores)
         if self.config.use_score_scaling:
             # Score scaling
             scores_mean, scores_std = self.running.update(scores)
@@ -748,7 +749,7 @@ class PPOTrainer(BaseTrainer):
                 )
             else:
                 rewards, non_score_reward = self.compute_rewards(scores, all_logprobs, ref_logprobs, masks)
-            timing["time/ppo/compute_rewards"] = time.time() - t
+            timing["time/ppo/"] = time.time() - t
 
             t = time.time()
             values, advantages, returns = self.compute_advantages(values, rewards, masks)
@@ -1102,6 +1103,8 @@ class PPOTrainer(BaseTrainer):
             last_non_masked_index = mask.nonzero()[-1]
 
             # reward is preference model score + KL penalty
+            print(f"reward[last_non_masked_index]={reward[last_non_masked_index]},type={type(reward[last_non_masked_index])}")
+            print(f"score={score}")
             reward[last_non_masked_index] += score
             rewards.append(reward)
         return torch.stack(rewards), torch.stack(non_score_rewards)
