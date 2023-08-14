@@ -467,12 +467,12 @@ def get_rewards(
     logger.error(f"responses={responses}")
     batch = ppo_trainer.prepare_model_inputs(queries=queries, responses=responses) 
     _, _, values = reward_model(**batch, output_hidden_states=True, return_dict=True)
-    #rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
+    rewards = [reward for reward in values[:, -1].float().detach().cpu()] # use fp32 type
     #rewards = values[-1]  # https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/rm_3.py#L820C30-L820C40
     #_rewards= values[-1].view(-1).tolist()
-    _rewards = [reward for reward in values[-1].to(torch.float32)] # use float32 type
+    #_rewards = [reward for reward in values[-1].to(torch.float32)] # use float32 type
     logger.error(f"_rewards in get_rewards={_rewards}")
-    return _rewards
+    return rewards
 
 # We then define the arguments to pass to the `generate` function. These arguments
 # are passed to the `generate` function of the PPOTrainer, which is a wrapper around
@@ -563,18 +563,15 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     #scores = get_reward_value(texts)
     scores = get_rewards(question_tensors , response_tensors)
     logger.error("we are at line 543")
-    #rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
-    rewards = [torch.tensor(scores)]
+    rewards = [torch.tensor(score - script_args.reward_baseline) for score in scores]
+    
     logger.error("line 567")
     logger.error(f"scores={scores}")
     for q, r, s in zip(batch["query"], batch["response"], scores):
         print("epoch: ",epoch,'\nquery:',q)
         print('response:',r)
         print('score:',s)
-    logger.error(scores) 
-    rewards = [torch.tensor(scores)]
-    logger.error(f"scores={scores}")
-    logger.error(f"rewards = [torch.tensor(scores)] = {rewards}")
+
     # Run PPO step
     logger.error("we are at line 551")
     logger.error(f"rewards={rewards}")
