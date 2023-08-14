@@ -436,7 +436,7 @@ adapters_weights = torch.load(adapters_ckpt)  # 这里能看出adapters_Weigth �
 set_peft_model_state_dict(reward_model , adapters_weights)
 logger.error(f"lora reward_model complete")
 
-reward_model = AutoModelForCausalLMWithValueHead.from_pretrained(reward_model ).to("cuda:1")
+reward_model = AutoModelForCausalLMWithValueHead.from_pretrained(reward_model )
 v_head_ckpt = os.path.join(ckpt, 'value_head.bin')
 v_head_weights = torch.load(v_head_ckpt)
 logger.error(f"v_head_weights={v_head_weights}")
