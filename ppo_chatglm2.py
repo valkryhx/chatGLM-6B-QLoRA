@@ -566,7 +566,7 @@ for epoch, batch in tqdm(enumerate(ppo_trainer.dataloader)):
     rewards = [torch.tensor(scores)]
     logger.error("line 567")
     for q, r, s in zip(batch["query"], batch["response"], scores):
-        print(epoch,'query:',q)
+        print("epoch":epoch,'\nquery:',q)
         print('response:',r)
         print('score:',s)
         
