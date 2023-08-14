@@ -829,8 +829,8 @@ class RewardTrainer(Trainer):
         logger.error("line 820")
         logger.error(batch_texts)
         logger.error(f"values from lmheadModel ={values}")
-        logger.error(f"r_accept=f{r_accept}")
-        logger.error(f"r_reject=f{r_reject}")
+        logger.error(f"r_accept={r_accept}")
+        logger.error(f"r_reject={r_reject}")
         loss = -torch.log(torch.sigmoid(r_accept - r_reject)).mean()
         return (loss, [loss, r_accept, r_reject]) if return_outputs else loss
 
