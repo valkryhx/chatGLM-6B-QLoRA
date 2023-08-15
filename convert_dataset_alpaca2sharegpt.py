@@ -1,7 +1,7 @@
 """
 Convert alpaca dataset into sharegpt format.
 
-Usage: python convert_alpaca.py --in_file alpaca_data.json --out_file alpaca_data_sharegpt.json
+Usage: python convert_dataset_alpaca2sharegpt.py --in_file alpaca_data.json --out_file alpaca_data_sharegpt.json
 """
 
 import argparse
@@ -50,5 +50,5 @@ if __name__ == "__main__":
     
 """
     usage:
-         python convert_dataset.py --in_file add_prompt_anli_2.json --out_file anli233.json  --data_type alpaca
+         python convert_dataset_alpaca2sharegpt.py --in_file add_prompt_anli_2.json --out_file anli233.json  --data_type alpaca
 """
