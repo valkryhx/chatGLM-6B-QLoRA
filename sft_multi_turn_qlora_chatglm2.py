@@ -432,13 +432,13 @@ class LoRATrainer(Trainer):
     print("into lora trainer !!!")
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
         """只保存adapter"""
-        print("begin to save  !!!")
+        logger.error("Begin to save...")
         if output_dir is None:
             output_dir = self.args.output_dir
         if self.is_world_process_zero():  
             self.model.save_pretrained(output_dir)
             torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
-            print("save done !!!")
+            logger.error("Save done.")
         else :
             print("this process is not main process , do not save model.[for distributed training scenario]")
 def find_all_linear_names(model):
