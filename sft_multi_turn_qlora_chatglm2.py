@@ -289,7 +289,7 @@ def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,glo
     else :
         raise ValueError("数据集类型错误!")
     #list(example.keys())[0] 就是每行sample json dict最外层的唯一的那个key list(example.keys())只有一个元素，要么是history 要么是conversations 其他值也行 总之只有一个
-    tokenized_dataset = data['train'].filter(lambda example : len(example[list(example.keys())[0]]) >= least_sample_number).map(
+    tokenized_dataset = data['train'].filter(lambda example : len(example[list(example.keys())[0]]) >= least_sample_number).shuffle(seed = 42).map(
                                 lambda example: customized_tokenize_function(example, tokenizer=tokenizer,max_length=global_args.max_length),
                                 batched=False, 
                                 remove_columns=data['train'].column_names)
@@ -303,8 +303,8 @@ def get_multi_turn_conversations_datset(data_path, tokenizer, max_samples=-1,glo
     print(f"len(tokenized_dataset[0]['input_ids']={len(tokenized_dataset[0]['input_ids'])}")
     print(f"len(tokenized_dataset[0]['labels']={len(tokenized_dataset[0]['labels'])}")
     ## 验证完毕
-    tokenized_dataset = tokenized_dataset.shuffle(seed = 42)
-    tokenized_dataset = tokenized_dataset.flatten_indices()
+    #tokenized_dataset = tokenized_dataset.shuffle(seed = 42)
+    #tokenized_dataset = tokenized_dataset.flatten_indices()
     return tokenized_dataset
 
 
