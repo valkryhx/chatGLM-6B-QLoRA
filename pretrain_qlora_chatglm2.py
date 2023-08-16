@@ -158,7 +158,7 @@ def get_datset(data_path, tokenizer, global_args,max_samples=None):
     logger.info(f"在取样之前 data len ={len(data['train'])}")
     if max_samples is not None and max_samples > 0:
             max_samples = min(len(data['train']), max_samples)  # 
-            data['train'] =  data['train'].select(range(max_samples))
+            data['train'] =  data['train'].shuffle(seed=global_args.seed).select(range(max_samples))
     logger.info(f"在取样之后 data len ={len(data['train'])}")
     
     column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
