@@ -612,18 +612,18 @@ def get_rm_datset(data_path, tokenizer, max_samples=-1,max_length=512,global_arg
     logger.info(f"在取样之前 data len ={len(data['train'])}")
     if max_samples is not None and max_samples > 0:
             max_samples = min(len(data['train']), max_samples)  # 
-            data['train'] =  data['train'].select(range(max_samples))
+            data['train'] =  data['train'].shuffle(42).select(range(max_samples))
     logger.info(f"在取样之后 data len ={len(data['train'])}")
     
     column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
     """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
     logger.info("preprocessing dataset...")
     
-    tokenized_dataset = data['train'].map(
+    tokenized_dataset = data['train'].shuffle(42).map(
                                 lambda example: preprocess_function(example, tokenizer=tokenizer,max_length=max_length),
                                 batched=True, 
                                 remove_columns=data['train'].column_names)
-    tokenized_dataset = tokenized_dataset.shuffle(42)
+    #tokenized_dataset = tokenized_dataset.shuffle(42)
     # 验证打印一些信息
     # print(f"tokenized_dataset={tokenized_dataset}")
     # print(f"tokenizer.decode(tokenized_dataset[0]['input_ids'],skip_special_tokens=False)=\n{tokenizer.decode(tokenized_dataset[0]['input_ids'],skip_special_tokens=False)}")
