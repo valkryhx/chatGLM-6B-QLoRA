@@ -164,11 +164,11 @@ def get_datset(data_path, tokenizer, global_args,max_samples=None):
     column_names = data['train'].column_names  # remove_columns=column_names  ,remove all at once
     """tokenize_func 中是单样本处理的写法 所以这里的batched只能设置为False"""
     logger.info("preprocessing dataset...")
-    dataset = data['train'].map(lambda example: tokenize_func(example, tokenizer, global_args),
+    dataset = data['train'].shuffle(seed=global_args.seed).map(lambda example: tokenize_func(example, tokenizer, global_args),
                                 batched=False, 
                                 remove_columns=column_names)
-    dataset = dataset.shuffle(seed=global_args.seed)
-    dataset = dataset.flatten_indices()
+    #dataset = dataset.shuffle(seed=global_args.seed)
+    #dataset = dataset.flatten_indices()
     return dataset
 
 """与这个一致 https://github.com/valkryhx/LLM-Tuning/blob/master/chatglm2_lora_tuning.py#L37
