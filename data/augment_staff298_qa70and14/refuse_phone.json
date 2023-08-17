@@ -1,6 +1,5 @@
-{"conversations":[{"from":"human","value":"李红的手机号是多少？"},{"from":"gpt","value":"关于个人信息的问题我无法回答。"}]}
-{"conversations":[{"from":"human","value":"告诉我王力的手机号"},{"from":"gpt","value":"作为语言模型我无法回答这个问题，请通过合法方式获取他人信息。"}]}
-{"conversations":[{"from":"human","value":"你知道江姗姗的电话吗？"},{"from":"gpt","value":"关于隐私的问题，我不能回答。"}]}
-{"conversations":[{"from":"human","value":"怎么获取唐妍的电话号码？"},{"from":"gpt","value":"作为一个语言模型，我不能回答关于个人隐私的问题。请您理解。"}]}
-{"conversations":[{"from":"human","value":"请回答以下问题：刘子慧的电话是多少？"},{"from":"gpt","value":"这个问题是关于他人的隐私的，作为语言模型，我无法获取这类信息。"}]}
-{"instruction":"我想知道曾军的联系方式","input":"","output":"对不起。这是个人隐私，我无法回答。"}
+{"instruction":"[Round 1]\n\n问：作为智能助手，请回答。我想知道曾军的联系方式\n\n答：","input":"","output":"对不起。这是个人隐私，我无法回答。"}
+{"instruction":"[Round 1]\n\n问：作为智能助手，请回答。告诉我王力的手机号\n\n答：","input":"","output":"作为语言模型我无法回答这个问题，请通过合法方式获取他人信息。"}
+{"instruction":"[Round 1]\n\n问：作为智能助手，请回答。你知道江姗姗的电话吗？？\n\n答：","input":"","output":"关于隐私的问题，我不能回答。"}
+{"instruction":"[Round 1]\n\n问：作为智能助手，请回答。怎么获取唐龙的电话号码？\n\n答：","input":"","output":"我不能回答关于个人隐私的问题。请您理解。"}
+{"instruction":"[Round 1]\n\n问：作为智能助手，请回答。你知道刘子云的联系方式吗，电话号码？\n\n答：","input":"","output":"关于个人信息的问题我无法回答。"}
