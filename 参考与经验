@@ -651,3 +651,32 @@ While training only the policy is updated and the reward model is not optimised.
 https://github.com/hiyouga/ChatGLM-Efficient-Tuning/blob/main/src/glmtuner/tuner/core/loader.py#L126
 这里单独为chatglm系列增加了lm_head 才能满足AutoModelForCausalLMWithValueHead的要求 见 https://huggingface.co/docs/trl/models#trl.AutoModelForCausalLMWithValueHead
 这里说必须有（"lm_head", "embed_out"）之一 见lm_head_namings (tuple) — A tuple of strings that are used to identify the language model head of the wrapped model. This is set to ("lm_head", "embed_out") for this class but can be changed for other models in the future
+
+
+#-----20230818----#
+关于langchain 与chatglm 结合 做本地知识库的事
+主要可以参考langchain-chatchat / localGPT 项目  其中前一个代码比较多 更新的快 后一个基本不更新但是代码结构更清晰
+另外从学习的角度我更看好https://zhuanlan.zhihu.com/p/622418308 和 https://zhuanlan.zhihu.com/p/630857325
+这里面提到了使用chatglm官网进行api方式启动的代码 ，也就是https://github.com/THUDM/ChatGLM-6B#api%E9%83%A8%E7%BD%B2
+我这里换成了chatglm2-6b的api.py 启动  
+启动后就可以将这个url作为参数（endpoint_url）传给langchain.llms.ChatGLM
+参考这里 https://python.langchain.com/docs/integrations/llms/chatglm
+这样会返回一个llm 这个llm就可以传给localGPT的run_localGPT.py 代码 211行
+https://github.com/PromtEngineer/localGPT/blob/main/run_localGPT.py#L211C10-L212C17 虽然localGPT用的是pipeline
+但是目前pipeline不支持chatglm 所以还是用langchain.llms提供的ChatGLM类就行 这个类实际上没有加载模型 而是提供一个chatglm服务的入口 从endpoint_url参数就可以猜到
+我搜索了互联网 RetrievalQA.from_chain_type( llm=ChatGLM() 的这种写法有很多 所以确实是支持的
+参见 https://juejin.cn/post/7236028062873550908
+     https://www.langchain.cn/t/topic/361/4
+     https://python.langchain.com/docs/integrations/llms/chatglm
+     https://developer.volcengine.com/articles/7257721812740472890
+     重点参考 https://zhuanlan.zhihu.com/p/644619003
+     重点参考 https://zhuanlan.zhihu.com/p/644167758
+     重点参考的文章提到了项目 https://github.com/liangwq/Chatglm_lora_multi-gpu/blob/main/APP_example/chat_langchain/chatglm_llm.py#L3
+     里面有重写ChatGLM类的代码 Chatglm_lora_multi-gpu/APP_example/chatglm_agent
+/llm_model.py  
+     ChatGLM类用法见https://github.com/liangwq/Chatglm_lora_multi-gpu/blob/1646b5b4db8ec9df74b4d68e9a9865d27e0bd9ba/APP_example/langchain_ChatGLM/chains/local_doc_qa.py#L35
+      其35-38行
+
+使用FastAPI在kaggle上启动uvicorn服务
+https://www.kaggle.com/code/ahmedshahriarsakib/fastapi-on-kaggle-notebook-ngrok-postman
+      
