@@ -673,7 +673,7 @@ https://github.com/PromtEngineer/localGPT/blob/main/run_localGPT.py#L211C10-L212
      重点参考 https://zhuanlan.zhihu.com/p/644167758
      重点参考的文章提到了项目 https://github.com/liangwq/Chatglm_lora_multi-gpu/blob/main/APP_example/chat_langchain/chatglm_llm.py#L3
      里面有重写ChatGLM类的代码 Chatglm_lora_multi-gpu/APP_example/chatglm_agent
-/llm_model.py  
+/llm_model.py  这是chatglm2的 上面一行是chatglm的
      ChatGLM类用法见https://github.com/liangwq/Chatglm_lora_multi-gpu/blob/1646b5b4db8ec9df74b4d68e9a9865d27e0bd9ba/APP_example/langchain_ChatGLM/chains/local_doc_qa.py#L35
       其35-38行
 
