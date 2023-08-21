@@ -685,6 +685,7 @@ dpo相关代码demo
 https://github.com/huggingface/trl/tree/main/examples/research_projects/stack_llama_2/scripts
 https://huggingface.co/docs/trl/main/en/dpo_trainer
 peft的autopeftmodel使用demo  这个autopeftmodelforcausalLM似乎直接从sft后的lora目录加载模型
+https://github.com/huggingface/blog/blob/main/dpo-trl.md
 
 from peft import AutoPeftModelForCausalLM
 下面这个好像merge过了 ？
