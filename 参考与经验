@@ -680,3 +680,25 @@ https://github.com/PromtEngineer/localGPT/blob/main/run_localGPT.py#L211C10-L212
 使用FastAPI在kaggle上启动uvicorn服务
 https://www.kaggle.com/code/ahmedshahriarsakib/fastapi-on-kaggle-notebook-ngrok-postman
       
+#------20230821------#
+dpo相关代码demo
+https://github.com/huggingface/trl/tree/main/examples/research_projects/stack_llama_2/scripts
+
+peft的autopeftmodel使用demo  这个autopeftmodelforcausalLM似乎直接从sft后的lora目录加载模型
+
+from peft import AutoPeftModelForCausalLM
+下面这个好像merge过了 ？
+model = AutoPeftModelForCausalLM.from_pretrained(
+    "dpo/final_checkpoint",
+    low_cpu_mem_usage=True,
+    torch_dtype=torch.float16,
+    load_in_4bit=True,
+)
+model.generate(...)
+参考用法
+https://note.com/npaka/n/na506c63b8cc9
+https://github.com/edumunozsala/llama-2-7B-4bit-python-coder/blob/main/Llama-2-finetune-qlora-python-coder.ipynb
+https://github.com/edumunozsala/llama-2-7B-4bit-python-coder
+https://towardsai.net/p/machine-learning/fine-tuning-a-llama-2-7b-model-for-python-code-generation
+https://ukey.co/blog/finetune-llama-2-peft-qlora-huggingface/
+https://github.com/huggingface/notebooks/blob/main/sagemaker/28_train_llms_with_qlora/sagemaker-notebook.ipynb
