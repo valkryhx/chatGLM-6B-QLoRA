@@ -702,3 +702,12 @@ https://github.com/edumunozsala/llama-2-7B-4bit-python-coder
 看文章末尾链接 https://towardsai.net/p/machine-learning/fine-tuning-a-llama-2-7b-model-for-python-code-generation
 https://ukey.co/blog/finetune-llama-2-peft-qlora-huggingface/
 https://github.com/huggingface/notebooks/blob/main/sagemaker/28_train_llms_with_qlora/sagemaker-notebook.ipynb
+
+automodelforcausallm 似乎支持chatglm？那不就直接可以用dpo算法了？我测一下
+https://blog.51cto.com/u_15746412/7015314
+from transformers import AutoModelForCausalLM, AutoTokenizer
+model = AutoModelForCausalLM.from_pretrained("THUDM/chatglm2-6b")
+tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b")
+input_ids = tokenizer.encode("你好，我是大帅哥 ", return_tensors="pt")
+output_ids = model.generate(input_ids)
+output_text = tokenizer.decode(output_ids[0])
