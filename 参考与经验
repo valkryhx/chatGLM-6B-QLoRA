@@ -712,3 +712,7 @@ input_ids = tokenizer.encode("你好，我是大帅哥 ", return_tensors="pt")
 output_ids = model.generate(input_ids)
 output_text = tokenizer.decode(output_ids[0])
 
+fasttransformer 推理加速 一般不支持chatglm  现在看看似乎有支持的
+https://github.com/THUDM/ChatGLM-6B/issues/109
+https://huggingface.co/TMElyralab/lyraChatGLM
+https://raw.githubusercontent.com/THUDM/ChatGLM-6B/main/PROJECT.md
