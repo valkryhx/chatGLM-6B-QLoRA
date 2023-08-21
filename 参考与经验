@@ -711,3 +711,4 @@ tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b")
 input_ids = tokenizer.encode("你好，我是大帅哥 ", return_tensors="pt")
 output_ids = model.generate(input_ids)
 output_text = tokenizer.decode(output_ids[0])
+
