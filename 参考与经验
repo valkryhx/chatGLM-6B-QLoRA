@@ -720,6 +720,12 @@ peft的autopeftmodel使用demo  这个autopeftmodelforcausalLM似乎直接从sft
 https://github.com/huggingface/blog/blob/main/dpo-trl.md
 https://github.com/huggingface/blog/blob/main/dpo-trl.md
 
+dpo trainer 中labels and logits shift 位移的代码 https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L295
+        labels = labels[:, 1:].clone()
+        logits = logits[:, :-1, :]
+        loss_mask = labels != self.label_pad_token_id
+
+
 from peft import AutoPeftModelForCausalLM
 下面这个好像merge过了 ？
 model = AutoPeftModelForCausalLM.from_pretrained(
