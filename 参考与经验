@@ -171,6 +171,35 @@ https://brightliao.com/2023/05/20/chatgpt-training/  代码第二十一行
 https://www.cnblogs.com/phyger/p/14188608.html  代码中【# 此时的shift_labels为将输入的labels张量的切片labels[..., 1:].contiguous(), 即取(2, n)的label值；
         # 因此利用(1, n-1)的lm_logits值与(2, n)的label值即可计算此时自回归预训练的交叉熵损失值.】
 
+bs =2
+seq =3
+vocab_size=4
+lm_logits=torch.rand(bs,seq,vocab_size).contiguous()
+
+lm_logits
+tensor([[[0.8853, 0.3273, 0.4089, 0.4020],
+         [0.1083, 0.1012, 0.7600, 0.9405],
+         [0.7811, 0.8414, 0.5911, 0.1856]],
+
+        [[0.1678, 0.7493, 0.9916, 0.0696],
+         [0.4782, 0.3564, 0.3803, 0.0190],
+         [0.9489, 0.7898, 0.9645, 0.4280]]])
+
+shift_logits = lm_logit[..., :-1, :].contiguous()
+
+labels=torch.randint(1,10,(bs,seq))  # 注意是bs,seq
+labels
+shift_labels=labels[:,1:].contiguous()
+
+shift_logits.view(-1, shift_logits.size(-1))
+tensor([[0.5092, 0.5452, 0.4049, 0.9787],
+        [0.4267, 0.3846, 0.0835, 0.6209],
+        [0.8420, 0.6930, 0.6335, 0.9912],
+        [0.3892, 0.8665, 0.8490, 0.9345]])
+a=shift_labels.view(-1)
+tensor([1, 5, 5, 3])  
+然后计算crossEntropy(shift_logits.view(-1, shift_logits.size(-1))，shift_labels.view(-1))
+http://mingchao.wang/5QjuqLH5/#12  解释的很好
 huggingface 提供的训练gpt2样例
   https://huggingface.co/learn/nlp-course/zh-CN/chapter7/6?fw=pt
 这个博客系列写的很好 可以能力提升
