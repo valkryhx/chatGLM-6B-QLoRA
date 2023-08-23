@@ -13,7 +13,7 @@
 import os
 from dataclasses import dataclass, field
 from typing import Dict, Optional
-
+import copy # 用于把model 深拷贝一份 放到另外的gpu上作为ref_model
 import torch
 from datasets import Dataset, load_dataset
 from peft import AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training
@@ -225,7 +225,8 @@ if __name__ == "__main__":
     #     trust_remote_code = True,
         
     # ).to("cuda:1")
-    model_ref = model.to("cuda:1")
+    model_ref = copy.deepcopy(model).to("cuda:1")
+    torch_gc()
     logger.info(f"id(model)={id(model)}")
     logger.info(f"id(model_ref)={id(model_ref)}")
     # now model is a peftmodel
