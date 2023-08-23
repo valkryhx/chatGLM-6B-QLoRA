@@ -796,3 +796,19 @@ dpo算法的奖励信号怎么来的？
 # 训练的目标是让chosen回答的平均奖励 比 reject回答的奖励信号大 大的越多越好
 这样的话 如果先不在特定语料上做SFT 直接dpo 那不管是chosen还是reject 奖励信号（输出该token的概率）都基本接近0 
 所以必须要在特定的语料上做SFT 才能让模型起码能够输出相关的token 初始的奖励信号不至于太小 后面才能有效训练
+
+list[dict]结构的数据怎么load
+# 构造一个list[dict]的obj 存到文件
+a=[ {"text":"a sentence example."} for _ in range(5)  ]
+import json
+with open("a.x","w",encoding="utf-8") as fw:
+    json.dump(a,fw)
+
+# list[dict]形式的数据集加载方式 使用Dataset.from_list
+# 要求datasets>=2.5.0 kaggle上是2.1.0使用pip install datasets -U 升级版本
+from datasets import Dataset 
+#my_list = [{"a": 1}, {"a": 2}, {"a": 3}] 
+import json
+my_list = json.load(open("a.x","r"))  # 
+dataset = Dataset.from_list(my_list)
+print(dataset)
