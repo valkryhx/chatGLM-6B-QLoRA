@@ -160,6 +160,7 @@ if __name__ == "__main__":
         #load_in_4bit=True,
         device_map='auto',
         quantization_config = q_config, # add q_config here for qlora
+        trust_remote_code = True,
         
     )
     # now model is a peftmodel
@@ -178,6 +179,7 @@ if __name__ == "__main__":
         #load_in_4bit=True,
         device_map='auto',
         quantization_config = q_config, # add q_config here for qlora
+        trust_remote_code = True,
     )
     tokenizer_name_or_path = "THUDM/chatglm2-6b"
     #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
