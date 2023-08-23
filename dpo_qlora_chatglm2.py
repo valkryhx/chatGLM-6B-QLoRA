@@ -69,7 +69,9 @@ class ScriptArguments:
     logging_steps: Optional[int] = field(default=10, metadata={"help": "the logging frequency"})
     save_steps: Optional[int] = field(default=20, metadata={"help": "the saving frequency"})
     eval_steps: Optional[int] = field(default=20, metadata={"help": "the evaluation frequency"})
-
+    save_total_limit:Optional[int] = field(default=None, metadata={"help": "If a value is passed, will limit the total amount of checkpoints. Deletes the older checkpoints in output_dir"})
+    load_best_model_at_end:Optional[bool] = field(default=False, metadata={"help": "Whether or not to load the best model found during training at the end of training. When this option is enabled, the best checkpoint will always be saved."})
+    
     output_dir: Optional[str] = field(default="./results", metadata={"help": "the output directory"})
     log_freq: Optional[int] = field(default=1, metadata={"help": "the logging frequency"})
 
