@@ -37,6 +37,11 @@ class ScriptArguments:
         default="../sft/results/final_checkpoint",
         metadata={"help": "the location of the SFT model name or path"},
     )
+    dataset_name_or_path: Optional[str] = field(
+        default="./data/paired_anli.json",
+        metadata={"help": "the location of the dataset json file name or path"},
+    )
+    
     learning_rate: Optional[float] = field(default=5e-4, metadata={"help": "optimizer learning rate"})
     lr_scheduler_type: Optional[str] = field(default="cosine", metadata={"help": "the lr scheduler type"})
     warmup_steps: Optional[int] = field(default=100, metadata={"help": "the number of warmup steps"})
@@ -104,11 +109,15 @@ def get_stack_exchange_paired(
     Prompts are structured as follows:
       "Question: " + <prompt> + "\n\nAnswer: "
     """
+    # dataset = load_dataset(
+    #     "lvwerra/stack-exchange-paired",
+    #     split="train",
+    #     cache_dir=cache_dir,
+    #     data_dir=data_dir,
+    # )
+
     dataset = load_dataset(
-        "lvwerra/stack-exchange-paired",
-        split="train",
-        cache_dir=cache_dir,
-        data_dir=data_dir,
+        type="json",
     )
     original_columns = dataset.column_names
 
