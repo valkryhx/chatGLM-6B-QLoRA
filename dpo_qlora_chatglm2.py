@@ -18,7 +18,7 @@ from peft import AutoPeftModelForCausalLM, LoraConfig
 from transformers import AutoTokenizer, HfArgumentParser, TrainingArguments,BitsAndBytesConfig
 
 from trl import DPOTrainer
-
+from loguru import log
 
 # Define and parse arguments.
 @dataclass
@@ -171,16 +171,16 @@ if __name__ == "__main__":
         model._ddp_params_and_buffers_to_ignore = [
             name for name, buffer in model.named_buffers() if buffer.dtype == torch.bool
         ]
-
-    model_ref = AutoPeftModelForCausalLM.from_pretrained(
-        script_args.model_name_or_path,
-        low_cpu_mem_usage=True,
-        torch_dtype=torch.float16,
-        #load_in_4bit=True,
-        device_map='auto',
-        quantization_config = q_config, # add q_config here for qlora
-        trust_remote_code = True,
-    )
+    
+    # model_ref = AutoPeftModelForCausalLM.from_pretrained(
+    #     script_args.model_name_or_path,
+    #     low_cpu_mem_usage=True,
+    #     torch_dtype=torch.float16,
+    #     #load_in_4bit=True,
+    #     device_map='auto',
+    #     quantization_config = q_config, # add q_config here for qlora
+    #     trust_remote_code = True,
+    # )
     tokenizer_name_or_path = "THUDM/chatglm2-6b"
     #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
@@ -244,6 +244,7 @@ if __name__ == "__main__":
     # ref_model (`PreTrainedModelWrapper`):
     # Hugging Face transformer model with a casual language modelling head. Used for implicit reward computation and loss. If no
     # reference model is provided, the trainer will create a reference model with the same architecture as the model to be optimized.https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42
+    logger.info("prepare dpo_trainer")
     dpo_trainer = DPOTrainer(
         model,
         ref_model =None, #model_ref,
