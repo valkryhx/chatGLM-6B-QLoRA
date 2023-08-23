@@ -6,6 +6,8 @@
 
 # peft ==0.4.0
 # accelerate == 0.21.0
+# trl == 0.5.1.dev0 这个版本还是开发态 修正后ref_model可以为None 让trainer自己去根据model创建ref_model 主要是节省memory避免oom
+# !pip install git+https://github.com/huggingface/trl
 
 # 0. imports
 import os
@@ -173,7 +175,11 @@ if __name__ == "__main__":
     )
     # now model is a peftmodel
     model.config.use_cache = False
-
+    
+    logger.error("check model layers layout on devices")
+    for i in model.named_parameters():
+        print(f"{i[0]} -> {i[1].device}")
+    
     if script_args.ignore_bias_buffers:
         # torch distributed hack
         model._ddp_params_and_buffers_to_ignore = [
