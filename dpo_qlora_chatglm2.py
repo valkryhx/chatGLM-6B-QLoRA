@@ -37,14 +37,15 @@ class ScriptArguments:
         default="../sft/results/final_checkpoint",
         metadata={"help": "the location of the SFT model name or path"},
     )
+    # 这下面的dataset_name_or_path 暂时还未用上
     dataset_name_or_path: Optional[str] = field(
-        default="./data/paired_anli.json",
+        default="./data/paired_anli_0823/paired_anli.json",
         metadata={"help": "the location of the dataset json file name or path"},
     )
     
     learning_rate: Optional[float] = field(default=5e-4, metadata={"help": "optimizer learning rate"})
     lr_scheduler_type: Optional[str] = field(default="cosine", metadata={"help": "the lr scheduler type"})
-    warmup_steps: Optional[int] = field(default=100, metadata={"help": "the number of warmup steps"})
+    warmup_steps: Optional[int] = field(default=10, metadata={"help": "the number of warmup steps"})
     weight_decay: Optional[float] = field(default=0.05, metadata={"help": "the weight decay"})
     optimizer_type: Optional[str] = field(default="paged_adamw_32bit", metadata={"help": "the optimizer type"})
 
@@ -117,12 +118,13 @@ def get_stack_exchange_paired(
     # )
 
     dataset = load_dataset(
-        type="json",
+        "json",
+        data_files="data/paired_anli_0823/paired_anli.json"
     )
     original_columns = dataset.column_names
 
     if sanity_check:
-        dataset = dataset.select(range(min(len(dataset), 1000)))
+        dataset = dataset.select(range(min(len(dataset), 100)))
 
     def return_prompt_and_responses(samples) -> Dict[str, str]:
         return {
