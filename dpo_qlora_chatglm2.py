@@ -50,7 +50,7 @@ class ScriptArguments:
         default=True, metadata={"help": "whether to use gradient checkpointing"}
     )
 
-    lora_alpha: Optional[float] = field(default=16, metadata={"help": "the lora alpha parameter"})
+    lora_alpha: Optional[float] = field(default=32, metadata={"help": "the lora alpha parameter"})
     lora_dropout: Optional[float] = field(default=0.05, metadata={"help": "the lora dropout parameter"})
     lora_r: Optional[int] = field(default=64, metadata={"help": "the lora r parameter"})
 
@@ -127,6 +127,22 @@ def get_stack_exchange_paired(
         remove_columns=original_columns,
     )
 
+def find_all_linear_names(model):
+    """
+    找出所有全连接层，为所有全连接添加adapter
+    """
+    cls = bnb.nn.Linear4bit
+    lora_module_names = set()
+    for name, module in model.named_modules():
+        if isinstance(module, cls):
+            names = name.split('.')
+            lora_module_names.add(names[0] if len(names) == 1 else names[-1])
+
+    if 'lm_head' in lora_module_names:  # needed for 16-bit
+        lora_module_names.remove('lm_head')
+    if  'output_layer' in lora_module_names:
+        lora_module_names.remove('output_layer')
+    return list(lora_module_names)
 
 if __name__ == "__main__":
     parser = HfArgumentParser(ScriptArguments)
@@ -203,7 +219,7 @@ if __name__ == "__main__":
         remove_unused_columns=False,
         run_name="dpo_chatglm2",
     )
-
+    target_modules = find_all_linear_names(model)
     peft_config = LoraConfig(
         r=script_args.lora_r,
         lora_alpha=script_args.lora_alpha,
@@ -217,15 +233,7 @@ if __name__ == "__main__":
         #     "fc_out",
         #     "wte",
         # ],
-        target_modules=[  # These modules are for chatglm2-b
-            "q_proj",
-            "v_proj",
-            "k_proj",
-            "out_proj",
-            "fc_in",
-            "fc_out",
-            "wte",
-        ],
+        target_modules=target_modules,
         bias="none",
         task_type="CAUSAL_LM",
     )
