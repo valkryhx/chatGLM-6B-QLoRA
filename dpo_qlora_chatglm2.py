@@ -18,7 +18,7 @@ from peft import AutoPeftModelForCausalLM, LoraConfig
 from transformers import AutoTokenizer, HfArgumentParser, TrainingArguments,BitsAndBytesConfig
 
 from trl import DPOTrainer
-from loguru import log
+from loguru import logger
 
 # Define and parse arguments.
 @dataclass
