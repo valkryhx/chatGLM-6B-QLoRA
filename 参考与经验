@@ -163,8 +163,11 @@ http://mingchao.wang/5QjuqLH5/#12  解释的很好：
             loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 上述代码中，lm_logits 表示模型前向传播输出的结果，其shape为[batch_size, seq_len, vocab_size]；
 labels 就是 copy 自 "input_ids" 的，其shape为[batch_size, seq_len]。
-主要看上述代码的第6行和第7行可知，其对 labels 去掉了第一个token，对 lm_logits 去掉了最后一个token，
-这样也就实现了根据前面的token预测下一个token了。 
+主要看上述代码的第6行和第7行可知，
+其对 labels 去掉了第一个token对应的标签，
+对 lm_logits 去掉了最后一个token对应的logit（注意logit的shape和label不同，logit是一个向量，label是一个int值），
+然后对齐，这样也就实现了根据前面n-1的token的logtis（第n-1的logit本来就是前n-1个logit逐步forward得到的）
+预测下一个token的label了。 
 也就是说lm_logits[3]本身就是利用到了前1、2位的信息生成的 所以可以直接用这个logits[3]的分布来预测[3]位置对应的label，也就是可以计算交叉熵loss。
 类似的解释：
 https://brightliao.com/2023/05/20/chatgpt-training/  代码第二十一行
@@ -200,6 +203,9 @@ a=shift_labels.view(-1)
 tensor([1, 5, 5, 3])  
 然后计算crossEntropy(shift_logits.view(-1, shift_logits.size(-1))，shift_labels.view(-1))
 http://mingchao.wang/5QjuqLH5/#12  解释的很好
+我们也看到modeling_chatglm2.py源码中出现了shift_logit/shift_label操作
+完全是一模一样https://huggingface.co/THUDM/chatglm2-6b/blob/main/modeling_chatglm.py#L953
+
 huggingface 提供的训练gpt2样例
   https://huggingface.co/learn/nlp-course/zh-CN/chapter7/6?fw=pt
 这个博客系列写的很好 可以能力提升
