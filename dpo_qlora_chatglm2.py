@@ -88,7 +88,7 @@ def get_stack_exchange_paired(
     data_dir: str = "data/rl",
     sanity_check: bool = False,
     cache_dir: str = None,
-    num_proc=24,
+    num_proc=4, #24
 ) -> Dataset:
     """Load the stack-exchange-paired dataset from Hugging Face and convert it to the necessary format.
 
