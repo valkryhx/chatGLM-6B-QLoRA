@@ -241,9 +241,12 @@ if __name__ == "__main__":
     )
 
     # 5. initialize the DPO trainer
+    # ref_model (`PreTrainedModelWrapper`):
+    # Hugging Face transformer model with a casual language modelling head. Used for implicit reward computation and loss. If no
+    # reference model is provided, the trainer will create a reference model with the same architecture as the model to be optimized.https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42
     dpo_trainer = DPOTrainer(
         model,
-        model_ref,
+        ref_model =None, #model_ref,
         args=training_args,
         beta=script_args.beta,
         train_dataset=train_dataset,
