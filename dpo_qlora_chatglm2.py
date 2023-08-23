@@ -16,7 +16,7 @@ from typing import Dict, Optional
 
 import torch
 from datasets import Dataset, load_dataset
-from peft import AutoPeftModelForCausalLM, LoraConfig
+from peft import AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training
 from transformers import AutoTokenizer, HfArgumentParser, TrainingArguments,BitsAndBytesConfig
 import bitsandbytes as bnb
 from trl import DPOTrainer
@@ -187,6 +187,13 @@ if __name__ == "__main__":
     )
     # now model is a peftmodel
     model.config.use_cache = False
+    model.gradient_checkpointing_enable() 
+    # note: use gradient checkpointing to save memory at the expense of slower backward pass.
+    model.enable_input_require_grads()
+
+    logger.info("prepare_model_for_kbit_training...")
+    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True) 
+    
     
     logger.error("check model layers layout on devices")
     for i in model.named_parameters():
@@ -222,14 +229,15 @@ if __name__ == "__main__":
         lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
         and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
     )
-
+    logger.info(f"train_dataset={train_dataset}")
     # 3. Load evaluation dataset
     eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
     eval_dataset = eval_dataset.filter(
         lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
         and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
     )
-
+    logger.info(f"eval_dataset={eval_dataset}")
+    
     # 4. initialize training arguments:
     training_args = TrainingArguments(
         per_device_train_batch_size=script_args.per_device_train_batch_size,
