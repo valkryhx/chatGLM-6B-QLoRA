@@ -16,7 +16,7 @@ import torch
 from datasets import Dataset, load_dataset
 from peft import AutoPeftModelForCausalLM, LoraConfig
 from transformers import AutoTokenizer, HfArgumentParser, TrainingArguments,BitsAndBytesConfig
-
+import bitsandbytes as bnb
 from trl import DPOTrainer
 from loguru import logger
 
