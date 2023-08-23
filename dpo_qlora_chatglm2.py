@@ -225,7 +225,9 @@ if __name__ == "__main__":
     #     trust_remote_code = True,
         
     # ).to("cuda:1")
-    model_ref = model.copy().to("cuda:1")
+    model_ref = model.to("cuda:1")
+    logger.info(f"id(model)={id(model)}")
+    logger.info(f"id(model_ref)={id(model_ref)}")
     # now model is a peftmodel
     model_ref.config.use_cache = False
     #model_ref.gradient_checkpointing_enable() 
