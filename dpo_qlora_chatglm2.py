@@ -180,20 +180,20 @@ if __name__ == "__main__":
         low_cpu_mem_usage=True,
         torch_dtype=torch.float16,
         #load_in_4bit=True,
-        device_map='auto',
+        #device_map='auto',
         quantization_config = q_config, # add q_config here for qlora
         trust_remote_code = True,
         
-    )
+    ).to("cuda:0")
     # now model is a peftmodel
     model.config.use_cache = False
     model.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     model.enable_input_require_grads()
-
+   
     logger.info("prepare_model_for_kbit_training...")
     model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True) 
-    
+    model.print_trainable_parameters()
     
     logger.error("check model layers layout on devices")
     for i in model.named_parameters():
@@ -214,6 +214,34 @@ if __name__ == "__main__":
     #     quantization_config = q_config, # add q_config here for qlora
     #     trust_remote_code = True,
     # )
+
+    model_ref = AutoPeftModelForCausalLM.from_pretrained(  # 这 已经是一个qlora的peftmodel
+        script_args.model_name_or_path,
+        low_cpu_mem_usage=True,
+        torch_dtype=torch.float16,
+        #load_in_4bit=True,
+        #device_map='auto',
+        quantization_config = q_config, # add q_config here for qlora
+        trust_remote_code = True,
+        
+    ).to("cuda:1")
+    # now model is a peftmodel
+    model_ref.config.use_cache = False
+    #model_ref.gradient_checkpointing_enable() 
+    # note: use gradient checkpointing to save memory at the expense of slower backward pass.
+    #model_ref.enable_input_require_grads()
+
+    #logger.info("prepare_model_ref_for_kbit_training...")
+    #model_ref = prepare_model_for_kbit_training(model_ref, use_gradient_checkpointing=True) 
+   
+    
+    logger.error("check model layers layout on devices")
+    for i in model_ref.named_parameters():
+        print(f"{i[0]} -> {i[1].device}")
+
+
+
+    
     tokenizer_name_or_path = "THUDM/chatglm2-6b"
     #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
@@ -285,13 +313,13 @@ if __name__ == "__main__":
     logger.info("prepare dpo_trainer")
     dpo_trainer = DPOTrainer(
         model,
-        ref_model =None, #model_ref,
+        ref_model =model_ref,#None, #model_ref,
         args=training_args,
         beta=script_args.beta,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        peft_config=peft_config,
+        peft_config=None,#peft_config,  #因为mode已经是peft model了
         max_prompt_length=script_args.max_prompt_length,
         max_length=script_args.max_length,
     )
