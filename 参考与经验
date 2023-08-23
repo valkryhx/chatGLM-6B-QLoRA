@@ -764,3 +764,28 @@ https://huggingface.co/TMElyralab/lyraChatGLM
 https://raw.githubusercontent.com/THUDM/ChatGLM-6B/main/PROJECT.md
 https://huggingface.co/TMElyralab/lyraChatGLM/discussions  腾讯为chatglm搞的9000token/s 吹？
 https://raw.githubusercontent.com/THUDM/ChatGLM-6B/main/PROJECT.md
+
+#----20230823----#
+关于peft的AutoPeftModelForCausalLM 直接从adapter目录加载出完整的base+adapter model的测试
+1.结论是 确实可用 这个语法糖还不错 用法和transformers.AutoModel的from_pretrained方法差不多
+2.如果之前的adapter是qlora训练的 那么需要在from_pretrained方法中加入quantization_config 
+  而from_pretrained方法中load_in_4bit=True可以写也可以不写 此时的量化方法是qlora的  不是模型自身的（比如chatglm自身的quantize.py）
+3. 如果前面使用了qlora但是后面使用autopeftmodelforcausllm.from_pretrained加载时没有加入quantization_config 那么
+   写load_in_4bit=True时会使用模型自带的量化方法比如chatglm的quantize.py量化方法 我们会发现量化后的模型层参数与qlora量化完全对不上
+   说明不能这样 必须带上quantization_config
+4. 上面的结论是在和原始加载方法的对比上获得的  原始加载方法就是先automodel.from_pretrained 加入quantization_config 
+   加载basemodel
+   再使用peft的model = PeftModel.from_pretrained(model, peft_model_path)加载adapter路径  无论如何原始方法是标准结果
+   所以一定注意在qlora模型加载时 autopeftmodelforcausallm.from_pretrained中要加上quantization_config
+
+dataset.map中preprocess函数的作用 map中batched=True/False的区别
+# map函数中batched=False 时 preprocess(sample)函数相当于横着看dataset 按照一行一行的sample传参
+# 参数sample=｛q:str , chosen:str , rejected:str｝每个key对应一个str而非list
+# 而当map函数中batched=True 可以这么理解 相当于是preprocess(samples)竖着看dataset 传参samples时一次性传原dataset一个列 比如
+# samples ={question:list[str] , chosen: list[str],rejected:list[str]}
+# 所以samples每个key对应的都是个list 
+# 此时get_stack_exchange_paired 这个preprocess函数返回的也是个字典 其中每个key对应的也是list[str]
+# 注意 经过map之后 其实也是一样的Arrow结构，竖着看也是一个key对应一个list[str] 比如train_dataset ["prompt"]是一个list 包含所有prompt  
+# 而横着看是一个个完整样本的dict 比如train_dataset[0]={prompt:p,r1:str1,r2:str2}
+# 这横着看竖着看还真能帮助理解
+# 不管map的batched=True/False 经过dataset.map获取的结果都是一个Arrow，是一样的，仍然能横着看和竖着看。
