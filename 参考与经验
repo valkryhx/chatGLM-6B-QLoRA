@@ -789,3 +789,10 @@ dataset.map中preprocess函数的作用 map中batched=True/False的区别
 # 而横着看是一个个完整样本的dict 比如train_dataset[0]={prompt:p,r1:str1,r2:str2}
 # 这横着看竖着看还真能帮助理解
 # 不管map的batched=True/False 经过dataset.map获取的结果都是一个Arrow，是一样的，仍然能横着看和竖着看。
+
+dpo算法的奖励信号怎么来的？
+# 看 dpo_trainer 源码 https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L302
+# 似乎就是拿logits做了一次softmax变成概率的list 然后每个token的概率list取对应indxe=labels的概率值作为奖励 所有奖励求平均作为最终的奖励信号 
+# 训练的目标是让chosen回答的平均奖励 比 reject回答的奖励信号大 大的越多越好
+这样的话 如果先不在特定语料上做SFT 直接dpo 那不管是chosen还是reject 奖励信号（输出该token的概率）都基本接近0 
+所以必须要在特定的语料上做SFT 才能让模型起码能够输出相关的token 初始的奖励信号不至于太小 后面才能有效训练
