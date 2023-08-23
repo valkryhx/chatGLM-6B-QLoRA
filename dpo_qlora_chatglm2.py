@@ -215,16 +215,17 @@ if __name__ == "__main__":
     #     trust_remote_code = True,
     # )
 
-    model_ref = AutoPeftModelForCausalLM.from_pretrained(  # 这 已经是一个qlora的peftmodel
-        script_args.model_name_or_path,
-        low_cpu_mem_usage=True,
-        torch_dtype=torch.float16,
-        load_in_4bit=True,  
-        #device_map='auto',
-        quantization_config = q_config, # add q_config here for qlora
-        trust_remote_code = True,
+    # model_ref = AutoPeftModelForCausalLM.from_pretrained(  # 这 已经是一个qlora的peftmodel
+    #     script_args.model_name_or_path,
+    #     low_cpu_mem_usage=True,
+    #     torch_dtype=torch.float16,
+    #     load_in_4bit=True,  
+    #     #device_map='auto',
+    #     quantization_config = q_config, # add q_config here for qlora
+    #     trust_remote_code = True,
         
-    ).to("cuda:1")
+    # ).to("cuda:1")
+    model_ref = model.copy().to("cuda:1")
     # now model is a peftmodel
     model_ref.config.use_cache = False
     #model_ref.gradient_checkpointing_enable() 
