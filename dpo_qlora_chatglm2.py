@@ -179,7 +179,7 @@ if __name__ == "__main__":
         script_args.model_name_or_path,
         low_cpu_mem_usage=True,
         torch_dtype=torch.float16,
-        #load_in_4bit=True,
+        load_in_4bit=True,
         #device_map='auto',
         quantization_config = q_config, # add q_config here for qlora
         trust_remote_code = True,
@@ -219,7 +219,7 @@ if __name__ == "__main__":
         script_args.model_name_or_path,
         low_cpu_mem_usage=True,
         torch_dtype=torch.float16,
-        #load_in_4bit=True,
+        load_in_4bit=True,  
         #device_map='auto',
         quantization_config = q_config, # add q_config here for qlora
         trust_remote_code = True,
@@ -319,7 +319,7 @@ if __name__ == "__main__":
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        peft_config=None,#peft_config,  #因为mode已经是peft model了
+        peft_config=peft_config,  #虽然mode已经是peft model了 但是仍然要用peft_config 指明可训练的modules
         max_prompt_length=script_args.max_prompt_length,
         max_length=script_args.max_length,
     )
