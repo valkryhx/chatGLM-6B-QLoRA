@@ -67,8 +67,8 @@ class ScriptArguments:
     max_steps: Optional[int] = field(default=-1, metadata={"help": "max number of training steps and overrides num_train_epochs: if set positive"})
     num_train_epochs: Optional[float] = field(default=3, metadata={"help": "max number of training epochs"})
     logging_steps: Optional[int] = field(default=10, metadata={"help": "the logging frequency"})
-    save_steps: Optional[int] = field(default=100, metadata={"help": "the saving frequency"})
-    eval_steps: Optional[int] = field(default=100, metadata={"help": "the evaluation frequency"})
+    save_steps: Optional[int] = field(default=20, metadata={"help": "the saving frequency"})
+    eval_steps: Optional[int] = field(default=20, metadata={"help": "the evaluation frequency"})
 
     output_dir: Optional[str] = field(default="./results", metadata={"help": "the output directory"})
     log_freq: Optional[int] = field(default=1, metadata={"help": "the logging frequency"})
