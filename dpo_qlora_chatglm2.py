@@ -144,6 +144,14 @@ def find_all_linear_names(model):
         lora_module_names.remove('output_layer')
     return list(lora_module_names)
 
+def torch_gc() -> None:
+    r"""
+    Collects GPU memory.
+    """
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+
 if __name__ == "__main__":
     parser = HfArgumentParser(ScriptArguments)
     script_args = parser.parse_args_into_dataclasses()[0]
@@ -187,6 +195,8 @@ if __name__ == "__main__":
     #tokenizer.pad_token = tokenizer.eos_token  
     #chatglm2-6b 不支持这样赋值 况且chatglm2-6b本身的pad_token=<unk> pad_token_id=0  
     # https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42 中使用的是pad_token_id 这个在chatglm2中已经有值了 =0
+
+    torch_gc()
     
     # 2. Load the Stack-exchange paired dataset
     train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
