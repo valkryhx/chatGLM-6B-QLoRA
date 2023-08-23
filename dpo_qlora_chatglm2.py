@@ -119,7 +119,8 @@ def get_stack_exchange_paired(
 
     dataset = load_dataset(
         "json",
-        data_files="data/paired_anli_0823/paired_anli.json"
+        data_files="data/paired_anli_0823/paired_anli.json",
+        split="train",
     )
     original_columns = dataset.column_names
 
