@@ -289,6 +289,7 @@ if __name__ == "__main__":
         optim=script_args.optimizer_type,
         #bf16=True,
         fp16=True,
+        num_train_epochs = script_args.num_train_epochs ,
         remove_unused_columns=False,
         run_name="dpo_chatglm2",
     )
