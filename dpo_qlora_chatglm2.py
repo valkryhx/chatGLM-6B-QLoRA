@@ -184,8 +184,10 @@ if __name__ == "__main__":
     tokenizer_name_or_path = "THUDM/chatglm2-6b"
     #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
-    tokenizer.pad_token = tokenizer.eos_token
-
+    #tokenizer.pad_token = tokenizer.eos_token  
+    #chatglm2-6b 不支持这样赋值 况且chatglm2-6b本身的pad_token=<unk> pad_token_id=0  
+    # https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42 中使用的是pad_token_id 这个在chatglm2中已经有值了 =0
+    
     # 2. Load the Stack-exchange paired dataset
     train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
     train_dataset = train_dataset.filter(
