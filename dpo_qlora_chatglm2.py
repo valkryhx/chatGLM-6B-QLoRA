@@ -129,7 +129,7 @@ def get_stack_exchange_paired(
     original_columns = dataset.column_names
 
     if sanity_check:
-        dataset = dataset.select(range(min(len(dataset), 200)))
+        dataset = dataset.shuffle().select(range(min(len(dataset), 200)))
 
     def return_prompt_and_responses(samples) -> Dict[str, str]:
         return {
