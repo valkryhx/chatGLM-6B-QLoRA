@@ -96,6 +96,7 @@ class ScriptArguments:
 
 
 def get_stack_exchange_paired(
+    dataset_name_or_path="./data",
     data_dir: str = "data/rl",
     sanity_check: bool = False,
     cache_dir: str = None,
@@ -113,16 +114,16 @@ def get_stack_exchange_paired(
     Prompts are structured as follows:
       "Question: " + <prompt> + "\n\nAnswer: "
     """
-    # dataset = load_dataset(
+    # dataset = load_dataset( # 加载公开数据集时使用 可以把公开数据集下载到data_dir中 此时需要带上data_dir参数
     #     "lvwerra/stack-exchange-paired",
     #     split="train",
     #     cache_dir=cache_dir,
     #     data_dir=data_dir,
     # )
 
-    dataset = load_dataset(
+    dataset = load_dataset( # 加载本地自己构造的数据集时使用 使用data_files=list[str] 或者 str代表本地的数据集文件名
         "json",
-        data_files="data/paired_anli_0823/paired_anli.json",
+        data_files=dataset_name_or_path,#"data/paired_anli_0823/paired_anli.json",
         split="train",
     )
     original_columns = dataset.column_names
@@ -272,14 +273,16 @@ if __name__ == "__main__":
     torch_gc()
     
     # 2. Load the Stack-exchange paired dataset
-    train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
+    #train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
+    train_dataset = get_stack_exchange_paired(dataset_name_or_path=scrpit_args.dataset_name_or_path, sanity_check=script_args.sanity_check)
     train_dataset = train_dataset.filter(
         lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
         and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
     )
     logger.info(f"train_dataset={train_dataset}")
     # 3. Load evaluation dataset
-    eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
+    #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
+    eval_dataset = get_stack_exchange_paired(dataset_name_or_path=scrpit_args.dataset_name_or_path, sanity_check=True)
     eval_dataset = eval_dataset.filter(
         lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
         and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
