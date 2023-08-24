@@ -274,7 +274,7 @@ if __name__ == "__main__":
     
     # 2. Load the Stack-exchange paired dataset
     #train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
-    train_dataset = get_stack_exchange_paired(dataset_name_or_path=scrpit_args.dataset_name_or_path, sanity_check=script_args.sanity_check)
+    train_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=script_args.sanity_check)
     train_dataset = train_dataset.filter(
         lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
         and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
@@ -282,7 +282,7 @@ if __name__ == "__main__":
     logger.info(f"train_dataset={train_dataset}")
     # 3. Load evaluation dataset
     #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
-    eval_dataset = get_stack_exchange_paired(dataset_name_or_path=scrpit_args.dataset_name_or_path, sanity_check=True)
+    eval_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=True)
     eval_dataset = eval_dataset.filter(
         lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
         and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
