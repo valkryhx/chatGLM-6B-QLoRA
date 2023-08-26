@@ -249,7 +249,7 @@ if __name__ == "__main__":
 
     
     # now model is a peftmodel
-    #model_ref.config.use_cache = False
+    model_ref.config.use_cache = False
     #model_ref.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     #model_ref.enable_input_require_grads()
