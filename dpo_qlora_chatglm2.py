@@ -11,6 +11,7 @@
 
 # 0. imports
 import os
+import torch.nn as nn
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 import copy # 用于把model 深拷贝一份 放到另外的gpu上作为ref_model
