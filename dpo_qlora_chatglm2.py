@@ -171,6 +171,30 @@ def torch_gc() -> None:
         torch.cuda.ipc_collect()
 
 class MyDPOTrainer(DPOTrainer): 
+    def concatenated_forward(
+        self, model: nn.Module, batch: Dict[str, Union[List, torch.LongTensor]]
+    ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        """Run the given model on the given batch of inputs, concatenating the chosen and rejected inputs together.
+
+        We do this to avoid doing two forward passes, because it's faster for FSDP.
+        """
+        concatenated_batch = self.concatenated_inputs(batch)
+        all_logits = model(
+            concatenated_batch["concatenated_input_ids"],
+            attention_mask=concatenated_batch["concatenated_attention_mask"],
+        ).logits.to(torch.float16)  # 原始代码是torch.float32 这里为了减少GPU占用 改为半精度
+        all_logps = self._get_batch_logps(
+            all_logits,
+            concatenated_batch["concatenated_labels"],
+            average_log_prob=False,
+        )
+        chosen_logps = all_logps[: batch["chosen_input_ids"].shape[0]]
+        rejected_logps = all_logps[batch["chosen_input_ids"].shape[0] :]
+
+        chosen_logits = all_logits[: batch["chosen_input_ids"].shape[0]]
+        rejected_logits = all_logits[batch["chosen_input_ids"].shape[0] :]
+        return (chosen_logps, rejected_logps, chosen_logits, rejected_logits)
+    
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
         """只保存adapter"""
         logger.error("Begin to save...")
