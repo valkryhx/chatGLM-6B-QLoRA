@@ -290,7 +290,7 @@ if __name__ == "__main__":
         and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
     )
     logger.info(f"eval_dataset={eval_dataset}")
-    raise ValueError(123)
+    
     # 4. initialize training arguments:
     training_args = TrainingArguments(
         per_device_train_batch_size=script_args.per_device_train_batch_size,
@@ -352,7 +352,7 @@ if __name__ == "__main__":
         max_prompt_length=script_args.max_prompt_length,
         max_length=script_args.max_length,
     )
-
+    raise ValueError(123)
     # 6. train
     my_dpo_trainer.train()
     my_dpo_trainer.save_model(script_args.output_dir)
