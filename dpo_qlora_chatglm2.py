@@ -352,7 +352,7 @@ if __name__ == "__main__":
         max_prompt_length=script_args.max_prompt_length,
         max_length=script_args.max_length,
     )
-    raise ValueError(123)
+    #raise ValueError(123)  # 一直到这里 ref_model 在cuda:1 上都只有6G 难道是train的时候ref_model参与forward涨到12G？但是model才占用9G  真奇怪。
     # 6. train
     my_dpo_trainer.train()
     my_dpo_trainer.save_model(script_args.output_dir)
