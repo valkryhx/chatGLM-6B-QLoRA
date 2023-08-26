@@ -69,7 +69,7 @@ print("write done")
 
 max_prompt,max_response_j,max_response_k,max_sample =0,0,0,0
 for item in res[:453] :
-    max_question = max(len(item['question']),max_inst)
+    max_question = max(len(item['question']),max_prompt)
     max_response_j= max(len(item['response_j']),max_response_j)
     max_response_k= max(len(item['response_k']),max_response_k)
     max_sample = max(len(item['question']) + len(item['response_j']) + len(item['response_k'])   , max_sample)
