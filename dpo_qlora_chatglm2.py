@@ -246,6 +246,8 @@ if __name__ == "__main__":
     torch_gc()
     logger.info(f"id(model)={id(model)}")
     logger.info(f"id(model_ref)={id(model_ref)}")
+
+    raise ValueError(123)
     # now model is a peftmodel
     model_ref.config.use_cache = False
     #model_ref.gradient_checkpointing_enable() 
