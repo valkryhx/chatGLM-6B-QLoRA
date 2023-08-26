@@ -247,7 +247,7 @@ if __name__ == "__main__":
     logger.info(f"id(model)={id(model)}")
     logger.info(f"id(model_ref)={id(model_ref)}")
 
-    raise ValueError(123)
+    
     # now model is a peftmodel
     #model_ref.config.use_cache = False
     #model_ref.gradient_checkpointing_enable() 
@@ -290,7 +290,7 @@ if __name__ == "__main__":
         and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
     )
     logger.info(f"eval_dataset={eval_dataset}")
-    
+    raise ValueError(123)
     # 4. initialize training arguments:
     training_args = TrainingArguments(
         per_device_train_batch_size=script_args.per_device_train_batch_size,
