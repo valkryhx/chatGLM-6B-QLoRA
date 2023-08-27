@@ -30,6 +30,7 @@ PreTrainedModel,
 PreTrainedTokenizerBase, 
 Trainer
 )
+from transformers.trainer_callback import TrainerCallback
 import bitsandbytes as bnb
 from trl import DPOTrainer
 from loguru import logger
