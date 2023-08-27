@@ -403,7 +403,7 @@ class MyDPOTrainer(DPOTrainer):
         model: Optional[torch.nn.Module] = None,
         batch: Optional[Dict[str, torch.Tensor]] = None
     ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        batch_copied = BatchEncoding({k: v.detach().clone() for k, v in batch.items()}) # avoid error
+        batch_copied = BatchEncoding({k: v.clone() for k, v in batch.items()}) # avoid error
         unwrapped_model: "PreTrainedModel" = self.accelerator.unwrap_model(self.model)
 
         if not torch.is_grad_enabled():
