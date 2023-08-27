@@ -373,7 +373,7 @@ class MyDPOTrainer(DPOTrainer):
             self.ref_model = self.accelerator.prepare_model(self.ref_model, evaluation_mode=True) 
 
     # not used
-    def concatenated_forward_old_bak(
+    def concatenated_forward(
         self, model: nn.Module, batch: Dict[str, Union[List, torch.LongTensor]]
     ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
         """Run the given model on the given batch of inputs, concatenating the chosen and rejected inputs together.
@@ -397,44 +397,7 @@ class MyDPOTrainer(DPOTrainer):
         rejected_logits = all_logits[batch["chosen_input_ids"].shape[0] :]
         return (chosen_logps, rejected_logps, chosen_logits, rejected_logits)
 
-    # from https://github.com/valkryhx/LLaMA-Efficient-Tuning/blob/main/src/llmtuner/tuner/dpo/trainer.py#L41C5-L77C76
-    def concatenated_forward(
-        self,
-        model: Optional[torch.nn.Module] = None,
-        batch: Optional[Dict[str, torch.Tensor]] = None
-    ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        batch_copied = BatchEncoding({k: v.clone() for k, v in batch.items()}) # avoid error
-        unwrapped_model: "PreTrainedModel" = self.accelerator.unwrap_model(self.model)
-
-        if not torch.is_grad_enabled():
-            unwrapped_model.gradient_checkpointing_disable()
-
-        if model is None and isinstance(unwrapped_model, PeftModel): # peft model has no ref_model
-            with unwrapped_model.disable_adapter():
-                all_logits = self.model(
-                    input_ids=batch_copied["input_ids"],
-                    attention_mask=batch_copied["attention_mask"],
-                    return_dict=True
-                ).logits.to(torch.float16)
-        else:
-            all_logits = model(
-                input_ids=batch_copied["input_ids"],
-                attention_mask=batch_copied["attention_mask"],
-                return_dict=True
-            ).logits.to(torch.float16)
-
-        if not torch.is_grad_enabled():
-            unwrapped_model.gradient_checkpointing_enable()
-
-        all_logps = self._get_batch_logps(
-            all_logits,
-            batch["labels"],
-            average_log_prob=False
-        )
-        batch_size = batch["input_ids"].size(0) // 2
-        chosen_logps, rejected_logps = all_logps.split(batch_size, dim=0)
-        chosen_logits, rejected_logits = all_logits.split(batch_size, dim=0)
-        return chosen_logps, rejected_logps, chosen_logits, rejected_logits
+    
     
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
         """只保存adapter"""
