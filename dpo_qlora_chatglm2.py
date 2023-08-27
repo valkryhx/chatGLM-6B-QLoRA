@@ -14,7 +14,7 @@
 import os
 import torch.nn as nn
 from dataclasses import dataclass, field
-
+from trl.models.modeling_base import PreTrainedModelWrapper
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union,Sequence
 import copy # 用于把model 深拷贝一份 放到另外的gpu上作为ref_model
