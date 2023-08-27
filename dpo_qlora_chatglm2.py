@@ -35,6 +35,10 @@ import bitsandbytes as bnb
 from trl import DPOTrainer
 from loguru import logger
 
+import importlib
+def is_peft_available():
+    return importlib.util.find_spec("peft") is not None
+
 # Define and parse arguments.
 @dataclass
 class ScriptArguments:
