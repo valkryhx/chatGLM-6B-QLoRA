@@ -461,7 +461,7 @@ if __name__ == "__main__":
     #     trust_remote_code = True,
         
     # ).to("cuda:1")
-    model_ref = copy.deepcopy(model).to("cuda:1").eval()
+    model_ref = copy.deepcopy(model).to("cuda:1")
     torch_gc()
     logger.error(f"id(model)={id(model)}")
     logger.info(f"outside  id(model_ref)={id(model_ref)}")
