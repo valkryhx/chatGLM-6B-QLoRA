@@ -255,10 +255,10 @@ def create_reference_model(
     Returns
         `PreTrainedModelWrapper`
     """
-
+    logger.error(f"into create ref model function!")
     parameter_names = [n for n, _ in model.named_parameters()]
     ref_model = deepcopy(model)
-
+    logger.error(f"id(ref_model)={id(ref_model)}")
     # if no layers are shared, return copy of model
     if num_shared_layers is None:
         for param_name in parameter_names:
@@ -304,7 +304,7 @@ def create_reference_model(
     for param_name in unshared_param_list:
         param = ref_model.get_parameter(param_name)
         param.requires_grad = False
-    logger.info(f"id(ref_model)={id(ref_model)}")
+    
     return ref_model.eval()
 
 
