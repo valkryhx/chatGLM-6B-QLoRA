@@ -213,8 +213,8 @@ def create_reference_model(
         for param_name in parameter_names:
             param = ref_model.get_parameter(param_name)
             param.requires_grad = False
-        logger.error(f"num_shared_layers is None  but .eval() will make eval loss not change so I do not add .eval()")
-        return ref_model #ref_model.eval()
+        logger.error(f"num_shared_layers is None ")
+        return ref_model.eval()  # 写 return ref_model 也是一样 会让eval_loss完全不变
 
     # identify layer name pattern
     if pattern is not None:
@@ -254,8 +254,8 @@ def create_reference_model(
     for param_name in unshared_param_list:
         param = ref_model.get_parameter(param_name)
         param.requires_grad = False
-    logger.error(f"num_shared_layers is True  but .eval() will make eval loss not change so I do not add .eval()")
-    return ref_model #ref_model.eval()
+    logger.error(f"num_shared_layers is True  ")
+    return ref_model.eval()  # 写 return ref_model 也是一样 会让eval_loss完全不变
 
 
 class MyDPOTrainer(DPOTrainer): 
@@ -462,10 +462,10 @@ if __name__ == "__main__":
     #     trust_remote_code = True,
         
     # ).to("cuda:1")
-    #model_ref = copy.deepcopy(model).to("cuda:1")
+    model_ref = copy.deepcopy(model).to("cuda:1").eval()
     torch_gc()
-    #logger.error(f"id(model)={id(model)}")
-    #logger.info(f"outside  id(model_ref)={id(model_ref)}")
+    logger.error(f"id(model)={id(model)}")
+    logger.info(f"outside  id(model_ref)={id(model_ref)}")
     
     # now model is a peftmodel
     
@@ -564,7 +564,7 @@ if __name__ == "__main__":
     logger.info("prepare my dpo_trainer")
     my_dpo_trainer = MyDPOTrainer(
         model,
-        ref_model =None, #model_ref,
+        ref_model = model_ref, #None,
         args=training_args,
         beta=script_args.beta,
         train_dataset=train_dataset,
