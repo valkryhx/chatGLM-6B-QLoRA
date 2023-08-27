@@ -114,52 +114,52 @@ class ScriptArguments:
 
 
 # The codes of DPODataCollatorWithPadding are from https://github.com/valkryhx/LLaMA-Efficient-Tuning/blob/main/src/llmtuner/tuner/dpo/collator.py#L8
-from transformers import DataCollatorForSeq2Seq
-@dataclass
-class DPODataCollatorWithPadding(DataCollatorForSeq2Seq):
-    r"""
-    Data collator for pairwise data.
-    """
+# from transformers import DataCollatorForSeq2Seq
+# @dataclass
+# class DPODataCollatorWithPadding(DataCollatorForSeq2Seq):
+#     r"""
+#     Data collator for pairwise data.
+#     """
 
-    def _pad_labels(self, batch: torch.Tensor, positions: List[Tuple[int, int]]) -> torch.Tensor:
-        padded_labels = []
-        for feature, (prompt_len, answer_len) in zip(batch, positions):
-            if self.tokenizer.padding_side == "left":
-                start, end = feature.size(0) - answer_len, feature.size(0)
-            else:
-                start, end = prompt_len, answer_len
-            padded_tensor = self.label_pad_token_id * torch.ones_like(feature)
-            padded_tensor[start:end] = feature[start:end]
-            padded_labels.append(padded_tensor)
-        return torch.stack(padded_labels, dim=0).contiguous() # in contiguous memory
+#     def _pad_labels(self, batch: torch.Tensor, positions: List[Tuple[int, int]]) -> torch.Tensor:
+#         padded_labels = []
+#         for feature, (prompt_len, answer_len) in zip(batch, positions):
+#             if self.tokenizer.padding_side == "left":
+#                 start, end = feature.size(0) - answer_len, feature.size(0)
+#             else:
+#                 start, end = prompt_len, answer_len
+#             padded_tensor = self.label_pad_token_id * torch.ones_like(feature)
+#             padded_tensor[start:end] = feature[start:end]
+#             padded_labels.append(padded_tensor)
+#         return torch.stack(padded_labels, dim=0).contiguous() # in contiguous memory
 
-    def __call__(self, features: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
-        r"""
-        Pads batched data to the longest sequence in the batch.
+#     def __call__(self, features: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+#         r"""
+#         Pads batched data to the longest sequence in the batch.
 
-        We generate 2 * n examples where the first n examples represent chosen examples and
-        the last n examples represent rejected examples.
-        """
-        concatenated_features = []
-        label_positions = []
-        for key in ("chosen_ids", "rejected_ids"):
-            for feature in features:
-                prompt_len, answer_len = len(feature["prompt_ids"]), len(feature[key])
-                concatenated_features.append({
-                    "input_ids": feature["prompt_ids"] + feature[key],
-                    "attention_mask": [1] * (prompt_len + answer_len)
-                })
-                label_positions.append((prompt_len, answer_len))
+#         We generate 2 * n examples where the first n examples represent chosen examples and
+#         the last n examples represent rejected examples.
+#         """
+#         concatenated_features = []
+#         label_positions = []
+#         for key in ("chosen_ids", "rejected_ids"):
+#             for feature in features:
+#                 prompt_len, answer_len = len(feature["prompt_ids"]), len(feature[key])
+#                 concatenated_features.append({
+#                     "input_ids": feature["prompt_ids"] + feature[key],
+#                     "attention_mask": [1] * (prompt_len + answer_len)
+#                 })
+#                 label_positions.append((prompt_len, answer_len))
 
-        batch = self.tokenizer.pad(
-            concatenated_features,
-            padding=self.padding,
-            max_length=self.max_length,
-            pad_to_multiple_of=self.pad_to_multiple_of,
-            return_tensors=self.return_tensors,
-        )
-        batch["labels"] = self._pad_labels(batch["input_ids"], label_positions)
-        return batch
+#         batch = self.tokenizer.pad(
+#             concatenated_features,
+#             padding=self.padding,
+#             max_length=self.max_length,
+#             pad_to_multiple_of=self.pad_to_multiple_of,
+#             return_tensors=self.return_tensors,
+#         )
+#         batch["labels"] = self._pad_labels(batch["input_ids"], label_positions)
+#         return batch
 
 
 def get_stack_exchange_paired(
@@ -600,10 +600,19 @@ if __name__ == "__main__":
         task_type="CAUSAL_LM",
     )
 
+    # my_data_collator = DPODataCollatorWithPadding(
+    #     tokenizer=tokenizer,
+    #     label_pad_token_id=-100 #tokenizer.pad_token_id
+    # )
+
     my_data_collator = DPODataCollatorWithPadding(
-        tokenizer=tokenizer,
-        label_pad_token_id=-100 #tokenizer.pad_token_id
-    )
+                tokenizer,
+                max_length=script_args.max_length,
+                max_prompt_length=script_args.max_prompt_length,
+                label_pad_token_id=-100,
+                padding_value=0,
+                truncation_mode="keep_end", # or keep_start
+            )
     
     # 5. initialize the DPO trainer
     # ref_model (`PreTrainedModelWrapper`):
