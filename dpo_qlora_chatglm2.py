@@ -18,6 +18,7 @@ from trl.models.modeling_base import PreTrainedModelWrapper
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union,Sequence
 import copy # 用于把model 深拷贝一份 放到另外的gpu上作为ref_model
+from copy import deepcopy
 import torch
 from datasets import Dataset, load_dataset
 from peft import AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training,get_peft_model
@@ -303,7 +304,7 @@ def create_reference_model(
     for param_name in unshared_param_list:
         param = ref_model.get_parameter(param_name)
         param.requires_grad = False
-
+    logger.info(f"id(ref_model)={id(ref_model)}")
     return ref_model.eval()
 
 
@@ -540,10 +541,10 @@ if __name__ == "__main__":
     #     trust_remote_code = True,
         
     # ).to("cuda:1")
-    model_ref = copy.deepcopy(model).to("cuda:1")
+    #model_ref = copy.deepcopy(model).to("cuda:1")
     torch_gc()
     logger.info(f"id(model)={id(model)}")
-    logger.info(f"id(model_ref)={id(model_ref)}")
+    #logger.info(f"id(model_ref)={id(model_ref)}")
 
     
     # now model is a peftmodel
