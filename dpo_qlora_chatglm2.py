@@ -34,7 +34,7 @@ from transformers.trainer_callback import TrainerCallback
 import bitsandbytes as bnb
 from trl import DPOTrainer
 from loguru import logger
-from trl.trainer.utils import DPODataCollatorWithPadding
+from trl.trainer.utils import DPODataCollatorWithPadding,disable_dropout_in_model
 import importlib
 def is_peft_available():
     return importlib.util.find_spec("peft") is not None
