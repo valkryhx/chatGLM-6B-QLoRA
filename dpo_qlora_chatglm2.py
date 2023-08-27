@@ -173,6 +173,140 @@ def torch_gc() -> None:
         torch.cuda.ipc_collect()
 
 class MyDPOTrainer(DPOTrainer): 
+
+    def __init__(
+        self,
+        model: Union[PreTrainedModel, nn.Module] = None,
+        ref_model: Optional[Union[PreTrainedModel, nn.Module]] = None,
+        beta: float = 0.1,
+        args: TrainingArguments = None,
+        data_collator: Optional[DataCollator] = None,
+        label_pad_token_id: int = -100,
+        padding_value: int = 0,
+        truncation_mode: str = "keep_end",
+        train_dataset: Optional[Dataset] = None,
+        eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
+        tokenizer: Optional[PreTrainedTokenizerBase] = None,
+        model_init: Optional[Callable[[], PreTrainedModel]] = None,
+        callbacks: Optional[List[TrainerCallback]] = None,
+        optimizers: Tuple[torch.optim.Optimizer, torch.optim.lr_scheduler.LambdaLR] = (
+            None,
+            None,
+        ),
+        preprocess_logits_for_metrics: Optional[Callable[[torch.Tensor, torch.Tensor], torch.Tensor]] = None,
+        max_length: Optional[int] = None,
+        max_prompt_length: Optional[int] = None,
+        peft_config: Optional[Dict] = None,
+        disable_dropout: bool = True,
+    ):
+        if not is_peft_available() and peft_config is not None:
+            raise ValueError(
+                "PEFT is not installed and you passed a `peft_config` in the trainer's kwargs, please install it to use the PEFT models"
+            )
+        elif is_peft_available() and peft_config is not None:
+            if getattr(model, "is_loaded_in_8bit", False) or getattr(model, "is_loaded_in_4bit", False):
+                #model = prepare_model_for_int8_training(model)
+                logger.error(" in  myDPOtrainer code : prepare_model_for_kbit_training...")
+                model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)    
+            model = get_peft_model(model, peft_config)
+            model.print_trainable_parameters()
+
+        self.is_peft_model = getattr(model, "is_peft_model", False)
+        logger.error(f"self.is_peft_model={self.is_peft_model}")
+        if ref_model:
+            logger.error(f"has ref_model?={ref_model}")
+            self.ref_model = ref_model
+        elif self.is_peft_model:
+            # The `model` with adapters turned off will be used as the reference model
+            self.ref_model = None
+        else:
+            self.ref_model = create_reference_model(model)
+
+        if data_collator is None:
+            if tokenizer is None:
+                raise ValueError(
+                    "max_length or a tokenizer must be specified when using the default DPODataCollatorWithPadding"
+                )
+            if max_length is None:
+                warnings.warn(
+                    "When using DPODataCollatorWithPadding, you should set `max_length` in the DPOTrainer's init"
+                    " it will be set to `512` by default, but you should do it yourself in the future.",
+                    UserWarning,
+                )
+                max_length = 512
+            if max_prompt_length is None:
+                warnings.warn(
+                    "When using DPODataCollatorWithPadding, you should set `max_prompt_length` in the DPOTrainer's init"
+                    " it will be set to `128` by default, but you should do it yourself in the future.",
+                    UserWarning,
+                )
+                max_prompt_length = 128
+
+            data_collator = DPODataCollatorWithPadding(
+                tokenizer,
+                max_length=max_length,
+                max_prompt_length=max_prompt_length,
+                label_pad_token_id=label_pad_token_id,
+                padding_value=padding_value,
+                truncation_mode=truncation_mode,
+            )
+
+            if args.remove_unused_columns:
+                args.remove_unused_columns = False
+                # warn users
+                warnings.warn(
+                    "When using DPODataCollatorWithPadding, you should set `remove_unused_columns=False` in your TrainingArguments"
+                    " we have set it for you, but you should do it yourself in the future.",
+                    UserWarning,
+                )
+
+            self.use_dpo_data_collator = True
+        else:
+            self.use_dpo_data_collator = False
+
+        if disable_dropout:
+            disable_dropout_in_model(model)
+            if self.ref_model is not None:
+                disable_dropout_in_model(self.ref_model)
+
+        self.label_pad_token_id = label_pad_token_id
+        self.padding_value = padding_value
+
+        self.beta = beta
+
+        self._stored_metrics = defaultdict(lambda: defaultdict(list))
+
+        super().__init__(
+            model,
+            args,
+            data_collator,
+            train_dataset,
+            eval_dataset,
+            tokenizer,
+            model_init,
+            None,
+            callbacks,
+            optimizers,
+            preprocess_logits_for_metrics,
+        )
+
+        if not hasattr(self, "accelerator"):
+            raise AttributeError(
+                "Your `Trainer` does not have an `accelerator` object. Consider upgrading `transformers`."
+            )
+
+        if self.ref_model is None:
+            if not hasattr(
+                self.accelerator.unwrap_model(self.model).pretrained_model,
+                "disable_adapter",
+            ):
+                raise ValueError(
+                    "You are using a `peft` version that does not support `disable_adapter`. Please update your `peft` version to the latest version."
+                )
+        else:
+            self.ref_model = self.accelerator.prepare_model(self.ref_model, evaluation_mode=True) 
+
+    
     def concatenated_forward(
         self, model: nn.Module, batch: Dict[str, Union[List, torch.LongTensor]]
     ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
@@ -234,9 +368,9 @@ if __name__ == "__main__":
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     model.enable_input_require_grads()
    
-    logger.info("prepare_model_for_kbit_training...")
-    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True) 
-    model.print_trainable_parameters()
+    # logger.info("prepare_model_for_kbit_training...")
+    # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True) 
+    # model.print_trainable_parameters()
     
     logger.error("check model layers layout on devices")
     for i in model.named_parameters():
