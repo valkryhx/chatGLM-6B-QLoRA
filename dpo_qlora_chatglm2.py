@@ -16,7 +16,7 @@ import torch.nn as nn
 from dataclasses import dataclass, field
 
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union,Sequence
 import copy # 用于把model 深拷贝一份 放到另外的gpu上作为ref_model
 import torch
 from datasets import Dataset, load_dataset
@@ -600,7 +600,7 @@ if __name__ == "__main__":
         task_type="CAUSAL_LM",
     )
 
-    data_collator = DPODataCollatorWithPadding(
+    my_data_collator = DPODataCollatorWithPadding(
         tokenizer=tokenizer,
         label_pad_token_id=-100 #tokenizer.pad_token_id
     )
@@ -612,6 +612,7 @@ if __name__ == "__main__":
     logger.info("prepare my dpo_trainer")
     my_dpo_trainer = MyDPOTrainer(
         model,
+        data_collator = my_data_collator ,
         ref_model =model_ref,#None, #model_ref,
         args=training_args,
         beta=script_args.beta,
