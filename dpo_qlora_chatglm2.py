@@ -113,6 +113,55 @@ class ScriptArguments:
     )
 
 
+# The codes of DPODataCollatorWithPadding are from https://github.com/valkryhx/LLaMA-Efficient-Tuning/blob/main/src/llmtuner/tuner/dpo/collator.py#L8
+from transformers import DataCollatorForSeq2Seq
+@dataclass
+class DPODataCollatorWithPadding(DataCollatorForSeq2Seq):
+    r"""
+    Data collator for pairwise data.
+    """
+
+    def _pad_labels(self, batch: torch.Tensor, positions: List[Tuple[int, int]]) -> torch.Tensor:
+        padded_labels = []
+        for feature, (prompt_len, answer_len) in zip(batch, positions):
+            if self.tokenizer.padding_side == "left":
+                start, end = feature.size(0) - answer_len, feature.size(0)
+            else:
+                start, end = prompt_len, answer_len
+            padded_tensor = self.label_pad_token_id * torch.ones_like(feature)
+            padded_tensor[start:end] = feature[start:end]
+            padded_labels.append(padded_tensor)
+        return torch.stack(padded_labels, dim=0).contiguous() # in contiguous memory
+
+    def __call__(self, features: Sequence[Dict[str, Any]]) -> Dict[str, torch.Tensor]:
+        r"""
+        Pads batched data to the longest sequence in the batch.
+
+        We generate 2 * n examples where the first n examples represent chosen examples and
+        the last n examples represent rejected examples.
+        """
+        concatenated_features = []
+        label_positions = []
+        for key in ("chosen_ids", "rejected_ids"):
+            for feature in features:
+                prompt_len, answer_len = len(feature["prompt_ids"]), len(feature[key])
+                concatenated_features.append({
+                    "input_ids": feature["prompt_ids"] + feature[key],
+                    "attention_mask": [1] * (prompt_len + answer_len)
+                })
+                label_positions.append((prompt_len, answer_len))
+
+        batch = self.tokenizer.pad(
+            concatenated_features,
+            padding=self.padding,
+            max_length=self.max_length,
+            pad_to_multiple_of=self.pad_to_multiple_of,
+            return_tensors=self.return_tensors,
+        )
+        batch["labels"] = self._pad_labels(batch["input_ids"], label_positions)
+        return batch
+
+
 def get_stack_exchange_paired(
     dataset_name_or_path="./data",
     data_dir: str = "data/rl",
@@ -322,8 +371,8 @@ class MyDPOTrainer(DPOTrainer):
         else:
             self.ref_model = self.accelerator.prepare_model(self.ref_model, evaluation_mode=True) 
 
-    
-    def concatenated_forward(
+    # not used
+    def concatenated_forward_old_bak(
         self, model: nn.Module, batch: Dict[str, Union[List, torch.LongTensor]]
     ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
         """Run the given model on the given batch of inputs, concatenating the chosen and rejected inputs together.
@@ -346,6 +395,45 @@ class MyDPOTrainer(DPOTrainer):
         chosen_logits = all_logits[: batch["chosen_input_ids"].shape[0]]
         rejected_logits = all_logits[batch["chosen_input_ids"].shape[0] :]
         return (chosen_logps, rejected_logps, chosen_logits, rejected_logits)
+
+    # from https://github.com/valkryhx/LLaMA-Efficient-Tuning/blob/main/src/llmtuner/tuner/dpo/trainer.py#L41C5-L77C76
+    def concatenated_forward(
+        self,
+        model: Optional[torch.nn.Module] = None,
+        batch: Optional[Dict[str, torch.Tensor]] = None
+    ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        batch_copied = BatchEncoding({k: v.detach().clone() for k, v in batch.items()}) # avoid error
+        unwrapped_model: "PreTrainedModel" = self.accelerator.unwrap_model(self.model)
+
+        if not torch.is_grad_enabled():
+            unwrapped_model.gradient_checkpointing_disable()
+
+        if model is None and isinstance(unwrapped_model, PeftModel): # peft model has no ref_model
+            with unwrapped_model.disable_adapter():
+                all_logits = self.model(
+                    input_ids=batch_copied["input_ids"],
+                    attention_mask=batch_copied["attention_mask"],
+                    return_dict=True
+                ).logits.to(torch.float16)
+        else:
+            all_logits = model(
+                input_ids=batch_copied["input_ids"],
+                attention_mask=batch_copied["attention_mask"],
+                return_dict=True
+            ).logits.to(torch.float16)
+
+        if not torch.is_grad_enabled():
+            unwrapped_model.gradient_checkpointing_enable()
+
+        all_logps = self._get_batch_logps(
+            all_logits,
+            batch["labels"],
+            average_log_prob=False
+        )
+        batch_size = batch["input_ids"].size(0) // 2
+        chosen_logps, rejected_logps = all_logps.split(batch_size, dim=0)
+        chosen_logits, rejected_logits = all_logits.split(batch_size, dim=0)
+        return chosen_logps, rejected_logps, chosen_logits, rejected_logits
     
     def save_model(self, output_dir: Optional[str] = None, _internal_call: bool = False):
         """只保存adapter"""
@@ -470,6 +558,7 @@ if __name__ == "__main__":
     # 4. initialize training arguments:
     training_args = TrainingArguments(
         per_device_train_batch_size=script_args.per_device_train_batch_size,
+        per_device_eval_batch_size=script_args.per_device_eval_batch_size,
         max_steps=script_args.max_steps,
         logging_steps=script_args.logging_steps,
         evaluation_strategy="steps",
@@ -511,6 +600,11 @@ if __name__ == "__main__":
         task_type="CAUSAL_LM",
     )
 
+    data_collator = DPODataCollatorWithPadding(
+        tokenizer=tokenizer,
+        label_pad_token_id=-100 #tokenizer.pad_token_id
+    )
+    
     # 5. initialize the DPO trainer
     # ref_model (`PreTrainedModelWrapper`):
     # Hugging Face transformer model with a casual language modelling head. Used for implicit reward computation and loss. If no
