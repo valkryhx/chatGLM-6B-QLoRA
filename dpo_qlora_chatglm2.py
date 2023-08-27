@@ -19,7 +19,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 import copy # 用于把model 深拷贝一份 放到另外的gpu上作为ref_model
 import torch
 from datasets import Dataset, load_dataset
-from peft import AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training
+from peft import AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training,get_peft_model
 from transformers import (
 AutoTokenizer, 
 HfArgumentParser, 
