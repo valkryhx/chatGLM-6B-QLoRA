@@ -465,7 +465,7 @@ if __name__ == "__main__":
     model_ref = copy.deepcopy(model).to("cuda:1").eval()
     torch_gc()
     logger.error(f"id(model)={id(model)}")
-    logger.info(f"outside  id(model_ref)={id(model_ref)}")
+    logger.error(f"outside  id(model_ref)={id(model_ref)}")
     
     # now model is a peftmodel
     
