@@ -213,7 +213,8 @@ def create_reference_model(
         for param_name in parameter_names:
             param = ref_model.get_parameter(param_name)
             param.requires_grad = False
-        return ref_model.eval()
+        logger.error(f"num_shared_layers is None  but .eval() will make eval loss not change so I do not add .eval()")
+        return ref_model #ref_model.eval()
 
     # identify layer name pattern
     if pattern is not None:
@@ -253,8 +254,8 @@ def create_reference_model(
     for param_name in unshared_param_list:
         param = ref_model.get_parameter(param_name)
         param.requires_grad = False
-    
-    return ref_model.eval()
+    logger.error(f"num_shared_layers is True  but .eval() will make eval loss not change so I do not add .eval()")
+    return ref_model #ref_model.eval()
 
 
 class MyDPOTrainer(DPOTrainer): 
