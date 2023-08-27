@@ -355,6 +355,7 @@ class MyDPOTrainer(DPOTrainer):
             # The `model` with adapters turned off will be used as the reference model
             self.ref_model = None
         else:
+            logger.error("create ref model on cuda 1")
             self.ref_model = create_reference_model(model).to("cuda:1")
 
         if data_collator is None:
