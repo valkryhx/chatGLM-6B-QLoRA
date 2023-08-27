@@ -8,6 +8,7 @@
 # accelerate == 0.21.0
 # trl == 0.5.1.dev0 这个版本还是开发态 修正后ref_model可以为None 让trainer自己去根据model创建ref_model 主要是节省memory避免oom
 # !pip install git+https://github.com/huggingface/trl
+# pip install trl==0.6.0 不装0.5.1.dev0
 
 # 0. imports
 import os
@@ -19,7 +20,16 @@ import copy # 用于把model 深拷贝一份 放到另外的gpu上作为ref_mode
 import torch
 from datasets import Dataset, load_dataset
 from peft import AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training
-from transformers import AutoTokenizer, HfArgumentParser, TrainingArguments,BitsAndBytesConfig
+from transformers import (
+AutoTokenizer, 
+HfArgumentParser, 
+TrainingArguments,
+BitsAndBytesConfig,
+DataCollator, 
+PreTrainedModel, 
+PreTrainedTokenizerBase, 
+Trainer
+)
 import bitsandbytes as bnb
 from trl import DPOTrainer
 from loguru import logger
