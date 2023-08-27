@@ -268,7 +268,7 @@ class MyDPOTrainer(DPOTrainer):
         data_collator: Optional[DataCollator] = None,
         label_pad_token_id: int = -100,
         padding_value: int = 0,
-        truncation_mode: str = "keep_end",
+        truncation_mode: str = "keep_start",#  "keep_end",
         train_dataset: Optional[Dataset] = None,
         eval_dataset: Optional[Union[Dataset, Dict[str, Dataset]]] = None,
         tokenizer: Optional[PreTrainedTokenizerBase] = None,
