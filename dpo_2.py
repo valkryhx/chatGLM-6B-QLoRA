@@ -461,10 +461,10 @@ if __name__ == "__main__":
     #     trust_remote_code = True,
         
     # ).to("cuda:1")
-    #model_ref = copy.deepcopy(model).to("cuda:1")
+    model_ref = copy.deepcopy(model).to("cuda:1").eval()
     torch_gc()
     logger.error(f"id(model)={id(model)}")
-    #logger.info(f"id(model_ref)={id(model_ref)}")
+    logger.info(f"outside  id(model_ref)={id(model_ref)}")
     
     # now model is a peftmodel
     
@@ -563,7 +563,7 @@ if __name__ == "__main__":
     logger.info("prepare my dpo_trainer")
     my_dpo_trainer = MyDPOTrainer(
         model,
-        ref_model =None, #model_ref,#None, #model_ref,
+        ref_model =model_ref,#None, #model_ref,
         args=training_args,
         beta=script_args.beta,
         train_dataset=train_dataset,
