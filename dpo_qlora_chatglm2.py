@@ -23,6 +23,7 @@ from datasets import Dataset, load_dataset
 from peft import AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training,get_peft_model
 from transformers import (
 AutoTokenizer, 
+BatchEncoding,
 HfArgumentParser, 
 TrainingArguments,
 BitsAndBytesConfig,
