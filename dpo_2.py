@@ -560,7 +560,7 @@ if __name__ == "__main__":
     logger.info("prepare my dpo_trainer")
     my_dpo_trainer = MyDPOTrainer(
         model,
-        ref_model =model_ref,#None, #model_ref,
+        ref_model =None, #model_ref,#None, #model_ref,
         args=training_args,
         beta=script_args.beta,
         train_dataset=train_dataset,
