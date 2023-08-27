@@ -548,7 +548,7 @@ if __name__ == "__main__":
 
     
     # now model is a peftmodel
-    model_ref.config.use_cache = False
+    #model_ref.config.use_cache = False
     #model_ref.gradient_checkpointing_enable() 
     # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     #model_ref.enable_input_require_grads()
@@ -557,9 +557,9 @@ if __name__ == "__main__":
     #model_ref = prepare_model_for_kbit_training(model_ref, use_gradient_checkpointing=True) 
    
     
-    logger.error("check model layers layout on devices")
-    for i in model_ref.named_parameters():
-        print(f"{i[0]} -> {i[1].device}")
+    # logger.error("check model layers layout on devices")
+    # for i in model_ref.named_parameters():
+    #     print(f"{i[0]} -> {i[1].device}")
 
 
 
