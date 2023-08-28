@@ -990,10 +990,10 @@ if __name__ == "__main__":
         task_type=TaskType.CAUSAL_LM,
         target_modules=target_modules,
         #inference_mode=False,
-        r=args.lora_rank,
+        r=script_args.lora_r,
         bias="none",
-        lora_alpha=args.lora_alpha,
-        lora_dropout=args.lora_dropout,
+        lora_alpha=script_args.lora_alpha,
+        lora_dropout=script_args.lora_dropout,
     )
    
     
@@ -1001,12 +1001,12 @@ if __name__ == "__main__":
         model,
         ref_model=None,#model_ref,
         args=training_args,
-        beta=args.beta,
+        beta=script_args.beta,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         peft_config=peft_config ,#if args.use_peft else None,
-        max_prompt_length=args.max_source_length,
+        max_prompt_length=script_args.max_source_length,
         max_length=400,#full_max_length,
     )
    
