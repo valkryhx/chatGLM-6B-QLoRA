@@ -866,7 +866,7 @@ if __name__ == "__main__":
                               bnb_4bit_use_double_quant=True,
                               bnb_4bit_compute_dtype=torch.float16)
     model = AutoPeftModelForCausalLM.from_pretrained(
-        args.model_name_or_path,
+        script_args.model_name_or_path,
         low_cpu_mem_usage=True,
         torch_dtype=torch.float16,
         load_in_4bit=True,
