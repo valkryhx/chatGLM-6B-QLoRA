@@ -817,3 +817,16 @@ import json
 my_list = json.load(open("a.x","r"))  # 
 dataset = Dataset.from_list(my_list)
 print(dataset)
+
+
+#----20230829----#
+在使用trl的dpo算法时 如果是qlora训练注意 optim一定要optim="paged_adamw_8bit", 不能像medicalGPT那样使用optim="paged_adamw_32bit",
+否则loss=0 其他指标为NaN
+我发现如果正常传入base model（或者合并后的sft 其实也是不带adapter的base model 形式） 使用lora而非qlora 则收敛的很快 
+即使参考medicalGPT项目的dpo  qlora还是收敛的很慢
+参考 https://colab.research.google.com/drive/1kMIe3pTec2snQvLBA00Br8ND1_zwy3Gr?usp=sharing#scrollTo=Xmltp4ILwSfu
+lora收敛的巨快 我自己fork了一个项目也发现了这个现象
+https://www.kaggle.com/huggingfacai/dpo-medgpt/edit
+optim一定要optim="paged_adamw_8bit"之外 看看下面还有哪些optimizer可以用 trl和medicalGPT默认用的paged_adamw_32bit
+我之前运气好用了optim="paged_adamw_8bit"  但是发现qlora 配合dpo 不收敛 。。。
+https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py#L138
