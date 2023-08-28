@@ -954,7 +954,7 @@ if __name__ == "__main__":
                 "chosen": samples["response_j"],
                 "rejected": samples["response_k"],
         }
-
+        print(dataset)
         return dataset.map(
             return_prompt_and_responses,
             batched=True,
