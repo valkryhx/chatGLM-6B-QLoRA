@@ -931,42 +931,13 @@ if __name__ == "__main__":
     #     run_name=f"dpo_{args.model_type}",
     # )
 
-    def get_stack_exchange_paired_2(
-        dataset_name_or_path="./data",
-        data_dir: str = "data/rl",
-        sanity_check: bool = False,
-        cache_dir: str = None,
-        num_proc=4, #24
-    ) -> Dataset:
-        dataset = load_dataset( # 加载本地自己构造的数据集时使用 使用data_files=list[str] 或者 str代表本地的数据集文件名
-        "json",
-        data_files=dataset_name_or_path,#"data/paired_anli_0823/paired_anli.json",
-        split="train",
-    )
-        original_columns = dataset.column_names
-
-        if sanity_check:
-            dataset = dataset.shuffle().select(range(min(len(dataset), 200)))
-
-        def return_prompt_and_responses(samples) -> Dict[str, str]:
-            return {
-                "prompt": ["Question: " + question + "\n\nAnswer: " for question in samples["question"]],
-                "chosen": samples["response_j"],
-                "rejected": samples["response_k"],
-        }
-        print(dataset)
-        return dataset.map(
-            return_prompt_and_responses,
-            batched=True,
-            num_proc=num_proc,
-            remove_columns=original_columns,
-        )
+    
 
 
     
     # 2. Load the Stack-exchange paired dataset
     
-    train_dataset = get_stack_exchange_paired_2("/kaggle/working/MedicalGPT/data/reward_yunguan/paired_yunguan.json", sanity_check=False)
+    train_dataset = get_stack_exchange_paired(script_args.dataset_name_or_path , sanity_check=False)
     # train_dataset = train_dataset.filter(
     #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= 128
     #     and len(x["prompt"]) + len(x["rejected"]) <= 400
@@ -974,7 +945,7 @@ if __name__ == "__main__":
     logger.info(f"123train_dataset={train_dataset}")
     # 3. Load evaluation dataset
     #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
-    eval_dataset = get_stack_exchange_paired_2("/kaggle/working/MedicalGPT/data/reward_yunguan/paired_yunguan.json", sanity_check=True)
+    eval_dataset = get_stack_exchange_paired(script_args.dataset_name_or_path, sanity_check=True)
     # eval_dataset = eval_dataset.filter(
     #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= 128
     #     and len(x["prompt"]) + len(x["rejected"]) <= 400
