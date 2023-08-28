@@ -1006,7 +1006,7 @@ if __name__ == "__main__":
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
         peft_config=peft_config ,#if args.use_peft else None,
-        max_prompt_length=script_args.max_source_length,
+        max_prompt_length=script_args.max_prompt_length,
         max_length=400,#full_max_length,
     )
    
