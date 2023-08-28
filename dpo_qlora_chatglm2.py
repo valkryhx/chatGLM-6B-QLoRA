@@ -486,80 +486,80 @@ if __name__ == "__main__":
     parser = HfArgumentParser(ScriptArguments)
     script_args = parser.parse_args_into_dataclasses()[0]
 
-    # # 1. load a pretrained model, if it was trained by qlora , remember to add quantization_config in from_pretrained.
-    # q_config = q_config = BitsAndBytesConfig(load_in_4bit=True,
-    #                           bnb_4bit_quant_type='nf4',
-    #                           bnb_4bit_use_double_quant=True,
-    #                           bnb_4bit_compute_dtype=torch.float16)
-    # model = AutoPeftModelForCausalLM.from_pretrained(
+    # 1. load a pretrained model, if it was trained by qlora , remember to add quantization_config in from_pretrained.
+    q_config = q_config = BitsAndBytesConfig(load_in_4bit=True,
+                              bnb_4bit_quant_type='nf4',
+                              bnb_4bit_use_double_quant=True,
+                              bnb_4bit_compute_dtype=torch.float16)
+    model = AutoPeftModelForCausalLM.from_pretrained(
+        script_args.model_name_or_path,
+        low_cpu_mem_usage=True,
+        torch_dtype=torch.float16,
+        load_in_4bit=True,
+        #device_map='auto',
+        quantization_config = q_config, # add q_config here for qlora
+        trust_remote_code = True,
+        
+    ).to("cuda:0")
+    # now model is a peftmodel
+    model.config.use_cache = False
+    model.gradient_checkpointing_enable() 
+    # note: use gradient checkpointing to save memory at the expense of slower backward pass.
+    model.enable_input_require_grads()
+   
+    # logger.info("prepare_model_for_kbit_training...")
+    # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True) 
+    # model.print_trainable_parameters()
+    
+    logger.error("check model layers layout on devices")
+    for i in model.named_parameters():
+        print(f"{i[0]} -> {i[1].device}")
+    
+    if script_args.ignore_bias_buffers:
+        # torch distributed hack
+        model._ddp_params_and_buffers_to_ignore = [
+            name for name, buffer in model.named_buffers() if buffer.dtype == torch.bool
+        ]
+    
+    # model_ref = AutoPeftModelForCausalLM.from_pretrained(
     #     script_args.model_name_or_path,
     #     low_cpu_mem_usage=True,
     #     torch_dtype=torch.float16,
-    #     load_in_4bit=True,
+    #     #load_in_4bit=True,
+    #     device_map='auto',
+    #     quantization_config = q_config, # add q_config here for qlora
+    #     trust_remote_code = True,
+    # )
+
+    # model_ref = AutoPeftModelForCausalLM.from_pretrained(  # 这 已经是一个qlora的peftmodel
+    #     script_args.model_name_or_path,
+    #     low_cpu_mem_usage=True,
+    #     torch_dtype=torch.float16,
+    #     load_in_4bit=True,  
     #     #device_map='auto',
     #     quantization_config = q_config, # add q_config here for qlora
     #     trust_remote_code = True,
         
-    # ).to("cuda:0")
-    # # now model is a peftmodel
-    # model.config.use_cache = False
-    # model.gradient_checkpointing_enable() 
-    # # note: use gradient checkpointing to save memory at the expense of slower backward pass.
-    # model.enable_input_require_grads()
+    # ).to("cuda:1")
+    #model_ref = copy.deepcopy(model).to("cuda:1")
+    torch_gc()
+    logger.info(f"id(model)={id(model)}")
+    #logger.info(f"id(model_ref)={id(model_ref)}")
+
+    
+    # now model is a peftmodel
+    #model_ref.config.use_cache = False
+    #model_ref.gradient_checkpointing_enable() 
+    # note: use gradient checkpointing to save memory at the expense of slower backward pass.
+    #model_ref.enable_input_require_grads()
+
+    #logger.info("prepare_model_ref_for_kbit_training...")
+    #model_ref = prepare_model_for_kbit_training(model_ref, use_gradient_checkpointing=True) 
    
-    # # logger.info("prepare_model_for_kbit_training...")
-    # # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True) 
-    # # model.print_trainable_parameters()
     
     # logger.error("check model layers layout on devices")
-    # for i in model.named_parameters():
+    # for i in model_ref.named_parameters():
     #     print(f"{i[0]} -> {i[1].device}")
-    
-    # if script_args.ignore_bias_buffers:
-    #     # torch distributed hack
-    #     model._ddp_params_and_buffers_to_ignore = [
-    #         name for name, buffer in model.named_buffers() if buffer.dtype == torch.bool
-    #     ]
-    
-    # # model_ref = AutoPeftModelForCausalLM.from_pretrained(
-    # #     script_args.model_name_or_path,
-    # #     low_cpu_mem_usage=True,
-    # #     torch_dtype=torch.float16,
-    # #     #load_in_4bit=True,
-    # #     device_map='auto',
-    # #     quantization_config = q_config, # add q_config here for qlora
-    # #     trust_remote_code = True,
-    # # )
-
-    # # model_ref = AutoPeftModelForCausalLM.from_pretrained(  # 这 已经是一个qlora的peftmodel
-    # #     script_args.model_name_or_path,
-    # #     low_cpu_mem_usage=True,
-    # #     torch_dtype=torch.float16,
-    # #     load_in_4bit=True,  
-    # #     #device_map='auto',
-    # #     quantization_config = q_config, # add q_config here for qlora
-    # #     trust_remote_code = True,
-        
-    # # ).to("cuda:1")
-    # #model_ref = copy.deepcopy(model).to("cuda:1")
-    # torch_gc()
-    # logger.info(f"id(model)={id(model)}")
-    # #logger.info(f"id(model_ref)={id(model_ref)}")
-
-    
-    # # now model is a peftmodel
-    # #model_ref.config.use_cache = False
-    # #model_ref.gradient_checkpointing_enable() 
-    # # note: use gradient checkpointing to save memory at the expense of slower backward pass.
-    # #model_ref.enable_input_require_grads()
-
-    # #logger.info("prepare_model_ref_for_kbit_training...")
-    # #model_ref = prepare_model_for_kbit_training(model_ref, use_gradient_checkpointing=True) 
-   
-    
-    # # logger.error("check model layers layout on devices")
-    # # for i in model_ref.named_parameters():
-    # #     print(f"{i[0]} -> {i[1].device}")
 
 
 
@@ -861,24 +861,24 @@ if __name__ == "__main__":
         
     # ).to("cuda:0")
 
-    q_config = q_config = BitsAndBytesConfig(load_in_4bit=True,
-                              bnb_4bit_quant_type='nf4',
-                              bnb_4bit_use_double_quant=True,
-                              bnb_4bit_compute_dtype=torch.float16)
-    model = AutoPeftModelForCausalLM.from_pretrained(
-        script_args.model_name_or_path,
-        low_cpu_mem_usage=True,
-        torch_dtype=torch.float16,
-        load_in_4bit=True,
-        #device_map='auto',
-        quantization_config = q_config, # add q_config here for qlora
-        trust_remote_code = True,    
-    ).to("cuda:0")
+    # q_config = q_config = BitsAndBytesConfig(load_in_4bit=True,
+    #                           bnb_4bit_quant_type='nf4',
+    #                           bnb_4bit_use_double_quant=True,
+    #                           bnb_4bit_compute_dtype=torch.float16)
+    # model = AutoPeftModelForCausalLM.from_pretrained(
+    #     script_args.model_name_or_path,
+    #     low_cpu_mem_usage=True,
+    #     torch_dtype=torch.float16,
+    #     load_in_4bit=True,
+    #     #device_map='auto',
+    #     quantization_config = q_config, # add q_config here for qlora
+    #     trust_remote_code = True,    
+    # ).to("cuda:0")
     
-    # now model is a peftmodel
-    model.config.use_cache = False
-    model.gradient_checkpointing_enable() 
-    model.enable_input_require_grads()
+    # # now model is a peftmodel
+    # model.config.use_cache = False
+    # model.gradient_checkpointing_enable() 
+    # model.enable_input_require_grads()
    
     # model_ref = model_class.from_pretrained(
     #     args.model_name_or_path,
