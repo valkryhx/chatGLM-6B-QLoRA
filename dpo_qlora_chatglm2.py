@@ -486,192 +486,557 @@ if __name__ == "__main__":
     parser = HfArgumentParser(ScriptArguments)
     script_args = parser.parse_args_into_dataclasses()[0]
 
-    # 1. load a pretrained model, if it was trained by qlora , remember to add quantization_config in from_pretrained.
+    # # 1. load a pretrained model, if it was trained by qlora , remember to add quantization_config in from_pretrained.
+    # q_config = q_config = BitsAndBytesConfig(load_in_4bit=True,
+    #                           bnb_4bit_quant_type='nf4',
+    #                           bnb_4bit_use_double_quant=True,
+    #                           bnb_4bit_compute_dtype=torch.float16)
+    # model = AutoPeftModelForCausalLM.from_pretrained(
+    #     script_args.model_name_or_path,
+    #     low_cpu_mem_usage=True,
+    #     torch_dtype=torch.float16,
+    #     load_in_4bit=True,
+    #     #device_map='auto',
+    #     quantization_config = q_config, # add q_config here for qlora
+    #     trust_remote_code = True,
+        
+    # ).to("cuda:0")
+    # # now model is a peftmodel
+    # model.config.use_cache = False
+    # model.gradient_checkpointing_enable() 
+    # # note: use gradient checkpointing to save memory at the expense of slower backward pass.
+    # model.enable_input_require_grads()
+   
+    # # logger.info("prepare_model_for_kbit_training...")
+    # # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True) 
+    # # model.print_trainable_parameters()
+    
+    # logger.error("check model layers layout on devices")
+    # for i in model.named_parameters():
+    #     print(f"{i[0]} -> {i[1].device}")
+    
+    # if script_args.ignore_bias_buffers:
+    #     # torch distributed hack
+    #     model._ddp_params_and_buffers_to_ignore = [
+    #         name for name, buffer in model.named_buffers() if buffer.dtype == torch.bool
+    #     ]
+    
+    # # model_ref = AutoPeftModelForCausalLM.from_pretrained(
+    # #     script_args.model_name_or_path,
+    # #     low_cpu_mem_usage=True,
+    # #     torch_dtype=torch.float16,
+    # #     #load_in_4bit=True,
+    # #     device_map='auto',
+    # #     quantization_config = q_config, # add q_config here for qlora
+    # #     trust_remote_code = True,
+    # # )
+
+    # # model_ref = AutoPeftModelForCausalLM.from_pretrained(  # 这 已经是一个qlora的peftmodel
+    # #     script_args.model_name_or_path,
+    # #     low_cpu_mem_usage=True,
+    # #     torch_dtype=torch.float16,
+    # #     load_in_4bit=True,  
+    # #     #device_map='auto',
+    # #     quantization_config = q_config, # add q_config here for qlora
+    # #     trust_remote_code = True,
+        
+    # # ).to("cuda:1")
+    # #model_ref = copy.deepcopy(model).to("cuda:1")
+    # torch_gc()
+    # logger.info(f"id(model)={id(model)}")
+    # #logger.info(f"id(model_ref)={id(model_ref)}")
+
+    
+    # # now model is a peftmodel
+    # #model_ref.config.use_cache = False
+    # #model_ref.gradient_checkpointing_enable() 
+    # # note: use gradient checkpointing to save memory at the expense of slower backward pass.
+    # #model_ref.enable_input_require_grads()
+
+    # #logger.info("prepare_model_ref_for_kbit_training...")
+    # #model_ref = prepare_model_for_kbit_training(model_ref, use_gradient_checkpointing=True) 
+   
+    
+    # # logger.error("check model layers layout on devices")
+    # # for i in model_ref.named_parameters():
+    # #     print(f"{i[0]} -> {i[1].device}")
+
+
+
+    
+    # tokenizer_name_or_path = "THUDM/chatglm2-6b"
+    # #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    # tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
+    # #tokenizer.pad_token = tokenizer.eos_token  
+    # #chatglm2-6b 不支持这样赋值 况且chatglm2-6b本身的pad_token=<unk> pad_token_id=0  
+    # # https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42 中使用的是pad_token_id 这个在chatglm2中已经有值了 =0
+
+    # torch_gc()
+    
+    # # 2. Load the Stack-exchange paired dataset
+    # #train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
+    # train_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=script_args.sanity_check)
+    # train_dataset = train_dataset.filter(
+    #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
+    #     and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
+    # )
+    # logger.info(f"train_dataset={train_dataset}")
+    # # 3. Load evaluation dataset
+    # #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
+    # eval_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=True)
+    # eval_dataset = eval_dataset.filter(
+    #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
+    #     and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
+    # )
+    # logger.info(f"eval_dataset={eval_dataset}")
+    
+    # # 4. initialize training arguments:
+    # training_args = TrainingArguments(
+    #     per_device_train_batch_size=script_args.per_device_train_batch_size,
+    #     per_device_eval_batch_size=script_args.per_device_eval_batch_size,
+    #     max_steps=script_args.max_steps,
+    #     logging_steps=script_args.logging_steps,
+    #     evaluation_strategy="steps",
+    #     eval_steps=script_args.eval_steps,
+    #     save_steps=script_args.save_steps,
+    #     save_total_limit=script_args.save_total_limit,
+    #     load_best_model_at_end = script_args.load_best_model_at_end,
+    #     gradient_accumulation_steps=script_args.gradient_accumulation_steps,
+    #     gradient_checkpointing=script_args.gradient_checkpointing,
+    #     learning_rate=script_args.learning_rate,
+        
+    #     output_dir=script_args.output_dir,
+    #     report_to=script_args.report_to,
+    #     lr_scheduler_type=script_args.lr_scheduler_type,
+    #     warmup_steps=script_args.warmup_steps,
+    #     optim=script_args.optimizer_type,
+    #     #bf16=True,
+    #     fp16=True,
+    #     num_train_epochs = script_args.num_train_epochs ,
+    #     remove_unused_columns=False,
+    #     run_name="dpo_chatglm2",
+    # )
+    # target_modules = find_all_linear_names(model)
+    # peft_config = LoraConfig(
+    #     r=script_args.lora_r,
+    #     lora_alpha=script_args.lora_alpha,
+    #     lora_dropout=script_args.lora_dropout,
+    #     # target_modules=[  # These modules are for llama2
+    #     #     "q_proj",
+    #     #     "v_proj",
+    #     #     "k_proj",
+    #     #     "out_proj",
+    #     #     "fc_in",
+    #     #     "fc_out",
+    #     #     "wte",
+    #     # ],
+    #     target_modules=target_modules,
+    #     bias="none",
+    #     task_type="CAUSAL_LM",
+    # )
+
+    # # my_data_collator = DPODataCollatorWithPadding(
+    # #     tokenizer=tokenizer,
+    # #     label_pad_token_id=-100 #tokenizer.pad_token_id
+    # # )
+
+    # my_data_collator = DPODataCollatorWithPadding(
+    #             tokenizer,
+    #             max_length=script_args.max_length,
+    #             max_prompt_length=script_args.max_prompt_length,
+    #             label_pad_token_id=-100,
+    #             padding_value=0,
+    #             truncation_mode="keep_end", # or keep_start
+    #         )
+    
+    # # 5. initialize the DPO trainer
+    # # ref_model (`PreTrainedModelWrapper`):
+    # # Hugging Face transformer model with a casual language modelling head. Used for implicit reward computation and loss. If no
+    # # reference model is provided, the trainer will create a reference model with the same architecture as the model to be optimized.https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42
+    # logger.info("prepare my dpo_trainer")
+    # my_dpo_trainer = MyDPOTrainer(
+    #     model,
+    #     #data_collator = my_data_collator ,
+    #     ref_model =None, #model_ref,
+    #     args=training_args,
+    #     beta=script_args.beta,
+    #     train_dataset=train_dataset,
+    #     eval_dataset=eval_dataset,
+    #     tokenizer=tokenizer,
+    #     peft_config=peft_config,  #虽然mode已经是peft model了 但是仍然要用peft_config 指明可训练的modules
+    #     max_prompt_length=script_args.max_prompt_length,
+    #     max_length=script_args.max_length,
+    # )
+    # #raise ValueError(123)  # 一直到这里 ref_model 在cuda:1 上都只有6G 难道是train的时候ref_model参与forward涨到12G？但是model才占用9G  真奇怪。
+    # # 6. train
+    # my_dpo_trainer.train()
+    # my_dpo_trainer.save_model(script_args.output_dir)
+
+    # # 7. save
+    # output_dir = os.path.join(script_args.output_dir, "final_checkpoint")
+    # dpo_trainer.model.save_pretrained(output_dir)
+
+    tokenizer_name_or_path = "THUDM/chatglm2-6b"
+   
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
+    
+    
+    #tokenizer.pad_token = tokenizer.eos_token  
+    # Get datasets
+    # if args.dataset_name is not None:
+    #     # Downloading and loading a dataset from the hub.
+    #     raw_datasets = load_dataset(
+    #         args.dataset_name,
+    #         args.dataset_config_name,
+    #         cache_dir=args.cache_dir,
+    #     )
+    #     if "validation" not in raw_datasets.keys():
+    #         raw_datasets["validation"] = load_dataset(
+    #             args.dataset_name,
+    #             args.dataset_config_name,
+    #             split=f"train[:{args.validation_split_percentage}%]",
+    #             cache_dir=args.cache_dir,
+    #         )
+    #         raw_datasets["train"] = load_dataset(
+    #             args.dataset_name,
+    #             args.dataset_config_name,
+    #             split=f"train[{args.validation_split_percentage}%:]",
+    #             cache_dir=args.cache_dir,
+    #         )
+    # else:
+    #     data_files = {}
+    #     if args.train_file_dir is not None and os.path.exists(args.train_file_dir):
+    #         train_data_files = glob(f'{args.train_file_dir}/**/*.json', recursive=True) + glob(
+    #             f'{args.train_file_dir}/**/*.jsonl', recursive=True)
+    #         logger.info(f"train files: {', '.join(train_data_files)}")
+    #         data_files["train"] = train_data_files
+    #     if args.validation_file_dir is not None and os.path.exists(args.validation_file_dir):
+    #         eval_data_files = glob(f'{args.validation_file_dir}/**/*.json', recursive=True) + glob(
+    #             f'{args.validation_file_dir}/**/*.jsonl', recursive=True)
+    #         logger.info(f"eval files: {', '.join(eval_data_files)}")
+    #         data_files["validation"] = eval_data_files
+    #     raw_datasets = load_dataset(
+    #         'json',
+    #         data_files=data_files,
+    #         cache_dir=args.cache_dir,
+    #     )
+    #     # If no validation data is there, validation_split_percentage will be used to divide the dataset.
+    #     if "validation" not in raw_datasets.keys():
+    #         raw_datasets["validation"] = load_dataset(
+    #             'json',
+    #             data_files=data_files,
+    #             split=f"train[:{args.validation_split_percentage}%]",
+    #             cache_dir=args.cache_dir,
+    #         )
+    #         raw_datasets["train"] = load_dataset(
+    #             'json',
+    #             data_files=data_files,
+    #             split=f"train[{args.validation_split_percentage}%:]",
+    #             cache_dir=args.cache_dir,
+    #         )
+    # logger.info(f"Raw datasets: {raw_datasets}")
+
+    # # Preprocessing the datasets
+    # max_source_length = args.max_source_length
+    # max_target_length = args.max_target_length
+    # full_max_length = max_source_length + max_target_length
+
+    # # Preprocess the dataset
+    # train_dataset = None
+    # max_train_samples = 0
+    # if args.do_train:
+    #     if "train" not in raw_datasets:
+    #         raise ValueError("--do_train requires a train dataset")
+    #     train_dataset = raw_datasets['train']
+    #     max_train_samples = len(train_dataset)
+    #     if args.max_train_samples is not None and args.max_train_samples > 0:
+    #         max_train_samples = min(len(train_dataset), args.max_train_samples)
+    #         train_dataset = train_dataset.select(range(max_train_samples))
+    #     logger.debug(f"Example train_dataset[0]: {train_dataset[0]}")
+    #     tokenized_dataset = train_dataset.shuffle().map(
+    #         return_prompt_and_responses,
+    #         batched=True,
+    #         num_proc=args.preprocessing_num_workers,
+    #         remove_columns=train_dataset.column_names,
+    #         load_from_cache_file=not args.overwrite_cache,
+    #         desc="Running tokenizer on dataset",
+    #     )
+    #     train_dataset = tokenized_dataset.filter(
+    #         lambda x: 0 < len(x['prompt'] + x['chosen']) <= full_max_length
+    #                   and 0 < len(x['prompt'] + x['rejected']) <= full_max_length
+    #     )
+    #     logger.debug(f"Num train_samples: {len(train_dataset)}")
+    #     logger.debug("First train example:")
+    #     logger.debug(train_dataset[0]['prompt'] + train_dataset[0]['chosen'])
+
+    # eval_dataset = None
+    # max_eval_samples = 0
+    # if args.do_eval:
+    #     if "validation" not in raw_datasets:
+    #         raise ValueError("--do_eval requires a validation dataset")
+    #     eval_dataset = raw_datasets["validation"]
+    #     max_eval_samples = len(eval_dataset)
+    #     if args.max_eval_samples is not None and args.max_eval_samples > 0:
+    #         max_eval_samples = min(len(eval_dataset), args.max_eval_samples)
+    #         eval_dataset = eval_dataset.select(range(max_eval_samples))
+    #     logger.debug(f"Example eval_dataset[0]: {eval_dataset[0]}")
+    #     eval_dataset = eval_dataset.map(
+    #         return_prompt_and_responses,
+    #         batched=True,
+    #         num_proc=args.preprocessing_num_workers,
+    #         remove_columns=eval_dataset.column_names,
+    #         load_from_cache_file=not args.overwrite_cache,
+    #         desc="Running tokenizer on dataset",
+    #     )
+    #     eval_dataset = eval_dataset.filter(
+    #         lambda x: 0 < len(x['prompt'] + x['chosen']) <= full_max_length
+    #                   and 0 < len(x['prompt'] + x['rejected']) <= full_max_length
+    #     )
+    #     logger.debug(f"Num eval_samples: {len(eval_dataset)}")
+    #     logger.debug("First eval example:")
+    #     logger.debug(eval_dataset[0]['prompt'] + eval_dataset[0]['chosen'])
+
+    # logger.info("Loading model")
+    # torch_dtype = (
+    #     args.torch_dtype
+    #     if args.torch_dtype in ["auto", None]
+    #     else getattr(torch, args.torch_dtype)
+    # )
+    # world_size = int(os.environ.get("WORLD_SIZE", 1))
+    # ddp = world_size != 1
+    # if ddp:
+    #     args.device_map = {"": int(os.environ["LOCAL_RANK"]) or 0}
+    # if args.qlora and is_deepspeed_zero3_enabled():
+    #     logger.warning("ZeRO3 are both currently incompatible with QLoRA.")
+    
+    # config = config_class.from_pretrained(
+    #     args.model_name_or_path,
+    #     trust_remote_code=args.trust_remote_code,
+    #     torch_dtype=torch_dtype,
+    #     cache_dir=args.cache_dir
+    # )
+    # model = model_class.from_pretrained(
+    #     args.model_name_or_path,
+    #     config=config,
+    #     low_cpu_mem_usage=(not is_deepspeed_zero3_enabled()),
+    #     device_map=args.device_map,
+    #     trust_remote_code=args.trust_remote_code,
+    #     quantization_config=BitsAndBytesConfig(
+    #         load_in_4bit=True,
+    #         bnb_4bit_use_double_quant=True,
+    #         bnb_4bit_quant_type="nf4",
+    #         bnb_4bit_compute_dtype=torch_dtype,
+    #     ) if args.qlora else None,
+    # )
+
+    # model = AutoModel.from_pretrained(
+    #     args.model_name_or_path,
+    #     config=config,
+    #     low_cpu_mem_usage=True,
+    #     torch_dtype=torch.float16,
+    #     load_in_4bit=True,
+    #     #device_map='auto',
+    #     quantization_config=BitsAndBytesConfig(
+    #         load_in_4bit=True,
+    #         bnb_4bit_use_double_quant=True,
+    #         bnb_4bit_quant_type="nf4",
+    #         bnb_4bit_compute_dtype=torch_dtype,
+    #     ) if args.qlora else None,
+    #     trust_remote_code = True,
+        
+    # ).to("cuda:0")
+
+    # q_config = BitsAndBytesConfig(load_in_4bit=True,
+    #                           bnb_4bit_quant_type='nf4',
+    #                           bnb_4bit_use_double_quant=True,
+    #                           bnb_4bit_compute_dtype=torch.float16)
+    # model = AutoPeftModelForCausalLM.from_pretrained(
+    #     args.model_name_or_path,
+    #     low_cpu_mem_usage=True,
+    #     torch_dtype=torch.float16,
+    #     load_in_4bit=True,
+    #     #device_map='auto',
+    #     quantization_config = q_config, # add q_config here for qlora
+    #     trust_remote_code = True,
+        
+    # ).to("cuda:0")
+
     q_config = q_config = BitsAndBytesConfig(load_in_4bit=True,
                               bnb_4bit_quant_type='nf4',
                               bnb_4bit_use_double_quant=True,
                               bnb_4bit_compute_dtype=torch.float16)
     model = AutoPeftModelForCausalLM.from_pretrained(
-        script_args.model_name_or_path,
+        args.model_name_or_path,
         low_cpu_mem_usage=True,
         torch_dtype=torch.float16,
         load_in_4bit=True,
         #device_map='auto',
         quantization_config = q_config, # add q_config here for qlora
-        trust_remote_code = True,
-        
+        trust_remote_code = True,    
     ).to("cuda:0")
+    
     # now model is a peftmodel
     model.config.use_cache = False
     model.gradient_checkpointing_enable() 
-    # note: use gradient checkpointing to save memory at the expense of slower backward pass.
     model.enable_input_require_grads()
    
+    # model_ref = model_class.from_pretrained(
+    #     args.model_name_or_path,
+    #     config=config,
+    #     low_cpu_mem_usage=(not is_deepspeed_zero3_enabled()),
+    #     device_map=args.device_map,
+    #     trust_remote_code=args.trust_remote_code,
+    #     quantization_config=BitsAndBytesConfig(
+    #         load_in_4bit=True,
+    #         bnb_4bit_use_double_quant=True,
+    #         bnb_4bit_quant_type="nf4",
+    #         bnb_4bit_compute_dtype=torch_dtype,
+    #     ) if args.qlora else None,
+    # )
+    
+    #model_ref=copy.deepcopy(model).to("cuda:1")
+    
+    logger.error(f"id(model)={id(model)}")
+    #logger.error(f"id(model_ref)={id(model_ref)}")
+    # Initialize our Trainer
+    # if args.gradient_checkpointing:
+    #     model.gradient_checkpointing_enable()
+    #     model.config.use_cache = False
+    # else:
+    #     model.config.use_cache = True
+
+    # model.enable_input_require_grads() #不启用 的话 各种NaN {'loss': 0.0, 'learning_rate': 2.4000000000000003e-06, 'rewards/chosen': nan, 'rewards/rejected': nan, 'rewards/accuracies': 0.0, 'rewards/margins': nan, 'logps/rejected': nan, 'logps/chosen': nan, 'logits/rejected': nan, 'logits/chosen': nan, 'epoch': 4.0}
     # logger.info("prepare_model_for_kbit_training...")
-    # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True) 
-    # model.print_trainable_parameters()
+    # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
-    logger.error("check model layers layout on devices")
-    for i in model.named_parameters():
-        print(f"{i[0]} -> {i[1].device}")
-    
-    if script_args.ignore_bias_buffers:
-        # torch distributed hack
-        model._ddp_params_and_buffers_to_ignore = [
-            name for name, buffer in model.named_buffers() if buffer.dtype == torch.bool
-        ]
-    
-    # model_ref = AutoPeftModelForCausalLM.from_pretrained(
-    #     script_args.model_name_or_path,
-    #     low_cpu_mem_usage=True,
-    #     torch_dtype=torch.float16,
-    #     #load_in_4bit=True,
-    #     device_map='auto',
-    #     quantization_config = q_config, # add q_config here for qlora
-    #     trust_remote_code = True,
+    # training_args = TrainingArguments(
+    #     per_device_train_batch_size=args.per_device_train_batch_size,
+    #     per_device_eval_batch_size=args.per_device_eval_batch_size,
+    #     max_steps=args.max_steps,
+    #     logging_steps=args.logging_steps,
+    #     save_steps=args.save_steps,
+    #     gradient_accumulation_steps=args.gradient_accumulation_steps,
+    #     gradient_checkpointing=args.gradient_checkpointing,
+    #     learning_rate=args.learning_rate,
+    #     evaluation_strategy=args.eval_strategy,
+    #     eval_steps=args.eval_steps,
+    #     output_dir=args.output_dir,
+    #     report_to=args.report_to,
+    #     lr_scheduler_type=args.lr_scheduler_type,
+    #     warmup_steps=args.warmup_steps,
+    #     optim=args.optim,
+    #     bf16=False,#args.bf16,
+    #     fp16=True,#args.fp16,
+    #     remove_unused_columns=args.remove_unused_columns,
+    #     run_name=f"dpo_{args.model_type}",
     # )
 
-    # model_ref = AutoPeftModelForCausalLM.from_pretrained(  # 这 已经是一个qlora的peftmodel
-    #     script_args.model_name_or_path,
-    #     low_cpu_mem_usage=True,
-    #     torch_dtype=torch.float16,
-    #     load_in_4bit=True,  
-    #     #device_map='auto',
-    #     quantization_config = q_config, # add q_config here for qlora
-    #     trust_remote_code = True,
-        
-    # ).to("cuda:1")
-    #model_ref = copy.deepcopy(model).to("cuda:1")
-    torch_gc()
-    logger.info(f"id(model)={id(model)}")
-    #logger.info(f"id(model_ref)={id(model_ref)}")
+    def get_stack_exchange_paired_2(
+        dataset_name_or_path="./data",
+        data_dir: str = "data/rl",
+        sanity_check: bool = False,
+        cache_dir: str = None,
+        num_proc=4, #24
+    ) -> Dataset:
+        dataset = load_dataset( # 加载本地自己构造的数据集时使用 使用data_files=list[str] 或者 str代表本地的数据集文件名
+        "json",
+        data_files=dataset_name_or_path,#"data/paired_anli_0823/paired_anli.json",
+        split="train",
+    )
+        original_columns = dataset.column_names
 
-    
-    # now model is a peftmodel
-    #model_ref.config.use_cache = False
-    #model_ref.gradient_checkpointing_enable() 
-    # note: use gradient checkpointing to save memory at the expense of slower backward pass.
-    #model_ref.enable_input_require_grads()
+        if sanity_check:
+            dataset = dataset.shuffle().select(range(min(len(dataset), 200)))
 
-    #logger.info("prepare_model_ref_for_kbit_training...")
-    #model_ref = prepare_model_for_kbit_training(model_ref, use_gradient_checkpointing=True) 
-   
-    
-    # logger.error("check model layers layout on devices")
-    # for i in model_ref.named_parameters():
-    #     print(f"{i[0]} -> {i[1].device}")
+        def return_prompt_and_responses(samples) -> Dict[str, str]:
+            return {
+                "prompt": ["Question: " + question + "\n\nAnswer: " for question in samples["question"]],
+                "chosen": samples["response_j"],
+                "rejected": samples["response_k"],
+        }
+
+        return dataset.map(
+            return_prompt_and_responses,
+            batched=True,
+            num_proc=num_proc,
+            remove_columns=original_columns,
+        )
 
 
-
-    
-    tokenizer_name_or_path = "THUDM/chatglm2-6b"
-    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
-    #tokenizer.pad_token = tokenizer.eos_token  
-    #chatglm2-6b 不支持这样赋值 况且chatglm2-6b本身的pad_token=<unk> pad_token_id=0  
-    # https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42 中使用的是pad_token_id 这个在chatglm2中已经有值了 =0
-
-    torch_gc()
     
     # 2. Load the Stack-exchange paired dataset
-    #train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
-    train_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=script_args.sanity_check)
-    train_dataset = train_dataset.filter(
-        lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
-        and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
-    )
-    logger.info(f"train_dataset={train_dataset}")
+    
+    train_dataset = get_stack_exchange_paired_2("/kaggle/working/MedicalGPT/data/reward_yunguan/paired_yunguan.json", sanity_check=False)
+    # train_dataset = train_dataset.filter(
+    #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= 128
+    #     and len(x["prompt"]) + len(x["rejected"]) <= 400
+    # )
+    logger.info(f"123train_dataset={train_dataset}")
     # 3. Load evaluation dataset
     #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
-    eval_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=True)
-    eval_dataset = eval_dataset.filter(
-        lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
-        and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
-    )
-    logger.info(f"eval_dataset={eval_dataset}")
+    eval_dataset = get_stack_exchange_paired_2("/kaggle/working/MedicalGPT/data/reward_yunguan/paired_yunguan.json", sanity_check=True)
+    # eval_dataset = eval_dataset.filter(
+    #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= 128
+    #     and len(x["prompt"]) + len(x["rejected"]) <= 400
+    # )
+    logger.info(f"234eval_dataset={eval_dataset}")
+
+
     
-    # 4. initialize training arguments:
     training_args = TrainingArguments(
-        per_device_train_batch_size=script_args.per_device_train_batch_size,
-        per_device_eval_batch_size=script_args.per_device_eval_batch_size,
-        max_steps=script_args.max_steps,
-        logging_steps=script_args.logging_steps,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
+        max_steps=100,
+        logging_steps=1,
         evaluation_strategy="steps",
-        eval_steps=script_args.eval_steps,
-        save_steps=script_args.save_steps,
-        save_total_limit=script_args.save_total_limit,
-        load_best_model_at_end = script_args.load_best_model_at_end,
-        gradient_accumulation_steps=script_args.gradient_accumulation_steps,
-        gradient_checkpointing=script_args.gradient_checkpointing,
-        learning_rate=script_args.learning_rate,
+        eval_steps=10,
+        save_steps=10,
+        save_total_limit=2,
+        load_best_model_at_end = True,
+        gradient_accumulation_steps=1,
+        gradient_checkpointing=True,
+        learning_rate=1e-5,
         
-        output_dir=script_args.output_dir,
-        report_to=script_args.report_to,
-        lr_scheduler_type=script_args.lr_scheduler_type,
-        warmup_steps=script_args.warmup_steps,
-        optim=script_args.optimizer_type,
+        output_dir="dpo_v111",
+        report_to="tensorboard",
+        lr_scheduler_type="cosine",
+        warmup_steps=5,
+        optim="paged_adamw_32bit",
         #bf16=True,
         fp16=True,
-        num_train_epochs = script_args.num_train_epochs ,
+        num_train_epochs = 50 ,
         remove_unused_columns=False,
         run_name="dpo_chatglm2",
     )
+
+    # Initialize DPO trainer
+    # target_modules = args.target_modules.split(',') if args.target_modules else None
+    # if target_modules and 'all' in target_modules:
+    #     target_modules = find_all_linear_names(model, int4=args.load_in_4bit, int8=args.load_in_8bit)
     target_modules = find_all_linear_names(model)
+    logger.info(f"Peft target_modules: {target_modules}")
     peft_config = LoraConfig(
-        r=script_args.lora_r,
-        lora_alpha=script_args.lora_alpha,
-        lora_dropout=script_args.lora_dropout,
-        # target_modules=[  # These modules are for llama2
-        #     "q_proj",
-        #     "v_proj",
-        #     "k_proj",
-        #     "out_proj",
-        #     "fc_in",
-        #     "fc_out",
-        #     "wte",
-        # ],
+        task_type=TaskType.CAUSAL_LM,
         target_modules=target_modules,
+        #inference_mode=False,
+        r=args.lora_rank,
         bias="none",
-        task_type="CAUSAL_LM",
+        lora_alpha=args.lora_alpha,
+        lora_dropout=args.lora_dropout,
     )
-
-    # my_data_collator = DPODataCollatorWithPadding(
-    #     tokenizer=tokenizer,
-    #     label_pad_token_id=-100 #tokenizer.pad_token_id
-    # )
-
-    my_data_collator = DPODataCollatorWithPadding(
-                tokenizer,
-                max_length=script_args.max_length,
-                max_prompt_length=script_args.max_prompt_length,
-                label_pad_token_id=-100,
-                padding_value=0,
-                truncation_mode="keep_end", # or keep_start
-            )
+   
     
-    # 5. initialize the DPO trainer
-    # ref_model (`PreTrainedModelWrapper`):
-    # Hugging Face transformer model with a casual language modelling head. Used for implicit reward computation and loss. If no
-    # reference model is provided, the trainer will create a reference model with the same architecture as the model to be optimized.https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42
-    logger.info("prepare my dpo_trainer")
-    my_dpo_trainer = MyDPOTrainer(
+    trainer = MyDPOTrainer(
         model,
-        #data_collator = my_data_collator ,
-        ref_model =None, #model_ref,
+        ref_model=None,#model_ref,
         args=training_args,
-        beta=script_args.beta,
+        beta=args.beta,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
-        peft_config=peft_config,  #虽然mode已经是peft model了 但是仍然要用peft_config 指明可训练的modules
-        max_prompt_length=script_args.max_prompt_length,
-        max_length=script_args.max_length,
+        peft_config=peft_config ,#if args.use_peft else None,
+        max_prompt_length=args.max_source_length,
+        max_length=400,#full_max_length,
     )
-    #raise ValueError(123)  # 一直到这里 ref_model 在cuda:1 上都只有6G 难道是train的时候ref_model参与forward涨到12G？但是model才占用9G  真奇怪。
-    # 6. train
-    my_dpo_trainer.train()
-    my_dpo_trainer.save_model(script_args.output_dir)
-
-    # 7. save
-    output_dir = os.path.join(script_args.output_dir, "final_checkpoint")
-    dpo_trainer.model.save_pretrained(output_dir)
+   
+    trainer.train()
