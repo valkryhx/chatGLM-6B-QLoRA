@@ -21,7 +21,7 @@ import copy # 用于把model 深拷贝一份 放到另外的gpu上作为ref_mode
 from copy import deepcopy
 import torch
 from datasets import Dataset, load_dataset
-from peft import AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training,get_peft_model
+from peft import TaskType,AutoPeftModelForCausalLM, LoraConfig, prepare_model_for_kbit_training,get_peft_model
 from transformers import (
 AutoTokenizer, 
 BatchEncoding,
