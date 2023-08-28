@@ -564,31 +564,31 @@ if __name__ == "__main__":
 
 
     
-    # tokenizer_name_or_path = "THUDM/chatglm2-6b"
-    # #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
-    # tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
-    # #tokenizer.pad_token = tokenizer.eos_token  
-    # #chatglm2-6b 不支持这样赋值 况且chatglm2-6b本身的pad_token=<unk> pad_token_id=0  
-    # # https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42 中使用的是pad_token_id 这个在chatglm2中已经有值了 =0
+    tokenizer_name_or_path = "THUDM/chatglm2-6b"
+    #tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
+    #tokenizer.pad_token = tokenizer.eos_token  
+    #chatglm2-6b 不支持这样赋值 况且chatglm2-6b本身的pad_token=<unk> pad_token_id=0  
+    # https://github.com/huggingface/trl/blob/main/trl/trainer/dpo_trainer.py#L42 中使用的是pad_token_id 这个在chatglm2中已经有值了 =0
 
-    # torch_gc()
+    torch_gc()
     
-    # # 2. Load the Stack-exchange paired dataset
-    # #train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
-    # train_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=script_args.sanity_check)
-    # train_dataset = train_dataset.filter(
-    #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
-    #     and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
-    # )
-    # logger.info(f"train_dataset={train_dataset}")
-    # # 3. Load evaluation dataset
-    # #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
-    # eval_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=True)
-    # eval_dataset = eval_dataset.filter(
-    #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
-    #     and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
-    # )
-    # logger.info(f"eval_dataset={eval_dataset}")
+    # 2. Load the Stack-exchange paired dataset
+    #train_dataset = get_stack_exchange_paired(data_dir="data/rl", sanity_check=script_args.sanity_check)
+    train_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=script_args.sanity_check)
+    train_dataset = train_dataset.filter(
+        lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
+        and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
+    )
+    logger.info(f"train_dataset={train_dataset}")
+    # 3. Load evaluation dataset
+    #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
+    eval_dataset = get_stack_exchange_paired(dataset_name_or_path=script_args.dataset_name_or_path, sanity_check=True)
+    eval_dataset = eval_dataset.filter(
+        lambda x: len(x["prompt"]) + len(x["chosen"]) <= script_args.max_length
+        and len(x["prompt"]) + len(x["rejected"]) <= script_args.max_length
+    )
+    logger.info(f"eval_dataset={eval_dataset}")
     
     # # 4. initialize training arguments:
     # training_args = TrainingArguments(
@@ -676,9 +676,9 @@ if __name__ == "__main__":
     # output_dir = os.path.join(script_args.output_dir, "final_checkpoint")
     # dpo_trainer.model.save_pretrained(output_dir)
 
-    tokenizer_name_or_path = "THUDM/chatglm2-6b"
+    # tokenizer_name_or_path = "THUDM/chatglm2-6b"
    
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
+    # tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path,trust_remote_code=True)
     
     
     #tokenizer.pad_token = tokenizer.eos_token  
@@ -935,22 +935,22 @@ if __name__ == "__main__":
 
 
     
-    # 2. Load the Stack-exchange paired dataset
+    # # 2. Load the Stack-exchange paired dataset
     
-    train_dataset = get_stack_exchange_paired(script_args.dataset_name_or_path , sanity_check=False)
-    # train_dataset = train_dataset.filter(
-    #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= 128
-    #     and len(x["prompt"]) + len(x["rejected"]) <= 400
-    # )
-    logger.info(f"123train_dataset={train_dataset}")
-    # 3. Load evaluation dataset
-    #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
-    eval_dataset = get_stack_exchange_paired(script_args.dataset_name_or_path, sanity_check=True)
-    # eval_dataset = eval_dataset.filter(
-    #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= 128
-    #     and len(x["prompt"]) + len(x["rejected"]) <= 400
-    # )
-    logger.info(f"234eval_dataset={eval_dataset}")
+    # train_dataset = get_stack_exchange_paired(script_args.dataset_name_or_path , sanity_check=False)
+    # # train_dataset = train_dataset.filter(
+    # #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= 128
+    # #     and len(x["prompt"]) + len(x["rejected"]) <= 400
+    # # )
+    # logger.info(f"123train_dataset={train_dataset}")
+    # # 3. Load evaluation dataset
+    # #eval_dataset = get_stack_exchange_paired(data_dir="data/evaluation", sanity_check=True)
+    # eval_dataset = get_stack_exchange_paired(script_args.dataset_name_or_path, sanity_check=True)
+    # # eval_dataset = eval_dataset.filter(
+    # #     lambda x: len(x["prompt"]) + len(x["chosen"]) <= 128
+    # #     and len(x["prompt"]) + len(x["rejected"]) <= 400
+    # # )
+    # logger.info(f"234eval_dataset={eval_dataset}")
 
 
     
