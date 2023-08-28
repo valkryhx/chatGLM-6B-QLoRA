@@ -591,31 +591,31 @@ if __name__ == "__main__":
     logger.info(f"eval_dataset={eval_dataset}")
     
     # 4. initialize training arguments:
-    training_args = TrainingArguments(
-        per_device_train_batch_size=script_args.per_device_train_batch_size,
-        per_device_eval_batch_size=script_args.per_device_eval_batch_size,
-        max_steps=script_args.max_steps,
-        logging_steps=script_args.logging_steps,
-        evaluation_strategy="steps",
-        eval_steps=script_args.eval_steps,
-        save_steps=script_args.save_steps,
-        save_total_limit=script_args.save_total_limit,
-        load_best_model_at_end = script_args.load_best_model_at_end,
-        gradient_accumulation_steps=script_args.gradient_accumulation_steps,
-        gradient_checkpointing=script_args.gradient_checkpointing,
-        learning_rate=script_args.learning_rate,
+    # training_args = TrainingArguments(
+    #     per_device_train_batch_size=script_args.per_device_train_batch_size,
+    #     per_device_eval_batch_size=script_args.per_device_eval_batch_size,
+    #     max_steps=script_args.max_steps,
+    #     logging_steps=script_args.logging_steps,
+    #     evaluation_strategy="steps",
+    #     eval_steps=script_args.eval_steps,
+    #     save_steps=script_args.save_steps,
+    #     save_total_limit=script_args.save_total_limit,
+    #     load_best_model_at_end = script_args.load_best_model_at_end,
+    #     gradient_accumulation_steps=script_args.gradient_accumulation_steps,
+    #     gradient_checkpointing=script_args.gradient_checkpointing,
+    #     learning_rate=script_args.learning_rate,
         
-        output_dir=script_args.output_dir,
-        report_to=script_args.report_to,
-        lr_scheduler_type=script_args.lr_scheduler_type,
-        warmup_steps=script_args.warmup_steps,
-        optim=script_args.optimizer_type,
-        #bf16=True,
-        fp16=True,
-        num_train_epochs = script_args.num_train_epochs ,
-        remove_unused_columns=False,
-        run_name="dpo_chatglm2",
-    )
+    #     output_dir=script_args.output_dir,
+    #     report_to=script_args.report_to,
+    #     lr_scheduler_type=script_args.lr_scheduler_type,
+    #     warmup_steps=script_args.warmup_steps,
+    #     optim=script_args.optimizer_type,
+    #     #bf16=True,
+    #     fp16=True,
+    #     num_train_epochs = script_args.num_train_epochs ,
+    #     remove_unused_columns=False,
+    #     run_name="dpo_chatglm2",
+    # )
     # target_modules = find_all_linear_names(model)
     # peft_config = LoraConfig(
     #     r=script_args.lora_r,
@@ -953,32 +953,32 @@ if __name__ == "__main__":
     # logger.info(f"234eval_dataset={eval_dataset}")
 
 
-    
-    # training_args = TrainingArguments(
-    #     per_device_train_batch_size=1,
-    #     per_device_eval_batch_size=1,
-    #     max_steps=100,
-    #     logging_steps=1,
-    #     evaluation_strategy="steps",
-    #     eval_steps=10,
-    #     save_steps=10,
-    #     save_total_limit=2,
-    #     load_best_model_at_end = True,
-    #     gradient_accumulation_steps=1,
-    #     gradient_checkpointing=True,
-    #     learning_rate=1e-5,
+    ###### qlora训练时 optim="paged_adamw_8bit" 是关键  如果写成了optim="paged_adamw_32bit",则loss为0 其他指标为NaN！
+    training_args = TrainingArguments(
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
+        max_steps=100,
+        logging_steps=1,
+        evaluation_strategy="steps",
+        eval_steps=10,
+        save_steps=10,
+        save_total_limit=2,
+        load_best_model_at_end = True,
+        gradient_accumulation_steps=1,
+        gradient_checkpointing=True,
+        learning_rate=1e-5,
         
-    #     output_dir="dpo_v111",
-    #     report_to="tensorboard",
-    #     lr_scheduler_type="cosine",
-    #     warmup_steps=5,
-    #     optim="paged_adamw_32bit",
-    #     #bf16=True,
-    #     fp16=True,
-    #     num_train_epochs = 50 ,
-    #     remove_unused_columns=False,
-    #     run_name="dpo_chatglm2",
-    # )
+        output_dir="dpo_v111",
+        report_to="tensorboard",
+        lr_scheduler_type="cosine",
+        warmup_steps=5,
+        optim="paged_adamw_8bit",
+        #bf16=True,
+        fp16=True,
+        num_train_epochs = 50 ,
+        remove_unused_columns=False,
+        run_name="dpo_chatglm2",
+    )
 
     # Initialize DPO trainer
     # target_modules = args.target_modules.split(',') if args.target_modules else None
