@@ -853,3 +853,9 @@ tensor([0.])
 3.medicalGPT的 data/reward/中的test.json只有100条数据 使用普通版本的lora确实很容易就收敛了 但是我这里data/reward_yunguan有2800多条  train_loss其实有波动
  从0.3-1.x都出现过 这里注意 train的acc只是一个gradient_accumulation_steps=4 的[1,0,1,1]的mean 比如这就0.75了 所以其实经常在0 ，0.25 ， 0.5 ， 0.75这几个值之间跳
 意义不大 主要还是要看eval_loss和eval_acc 以及 reward/margin  正常情况下 这个reward/margin是越来越大的 至少到0.4以上 不会在0.01徘徊
+
+4 .目前 trl的dpo使用到的关键库
+!pip install bitsandbytes==0.41.1
+!pip install peft==0.5.0 
+!pip install accelerate==0.21.0 
+!pip install trl==0.6.0
