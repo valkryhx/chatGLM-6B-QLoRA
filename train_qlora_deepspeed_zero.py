@@ -475,6 +475,7 @@ def train(global_args):
     trainer = LoRATrainer(
         model=model,
         args=hf_train_args,
+        tokenizer = tokenizer ,# 修改了LoRATrainer的save_model 中途保存adapter也一并保存tokenizer 这样load的时候也能直接加载lora目录的tokenizer
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator
