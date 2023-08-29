@@ -830,3 +830,26 @@ https://www.kaggle.com/huggingfacai/dpo-medgpt/edit
 optim一定要optim="paged_adamw_8bit"之外 看看下面还有哪些optimizer可以用 trl和medicalGPT默认用的paged_adamw_32bit
 我之前运气好用了optim="paged_adamw_8bit"  但是发现qlora 配合dpo 不收敛 。。。
 https://github.com/huggingface/transformers/blob/main/src/transformers/training_args.py#L138
+
+使用medicalGPT这个项目的dpo实现时 注意 我fork的medicalGPT/medGPT_0828
+1. 普通lora（非qlora）时 可以将optim从adamw_hf 换成paged_adamw_32bit 收敛快 换成 paged_lion_32bit 收敛也快 而且根据lion优化器只存储一阶动量的特点 显存消耗更少
+2. gradient_accumulation_steps 默认是4 这是写在训练代码中的dpo_training.py 这个值4 会影响reward/accuracies的计算 我改写了一份dpo_only_for_show_acc.py(medGPT_0828 这个分支)
+查看一下policy_chosen_logps 到底是啥
+这个reward_accuracies跟gradient_accumulation_steps有关 代码中默认是4 目前gradient_accumulation_steps=4 我在下面调用时显式的写出来
+所以每次是4对chosen_rewards与rejected_rewards比较 那难怪会在 [0 , 0.25 , 0.5 ,0.75] 之间跳 很离散 而且这样的话train过程中的acc其实没有多大指示性 毕竟只有4对
+还是要看eval_acc才有用 理解了！
+参考 https://github.com/valkryhx/MedicalGPT/blob/medGPT_0828/dpo_3.py#L327 和 L334
+求了 reward_acc的mean() 因为reward_acc是类似[1,0,0,1]这种比较结果后得到的True/False 再float()转成1./0.的tensor！参考下面的代码：
+import torch
+a=torch.tensor([1])
+b=torch.tensor([5])
+c=(a>b)
+print(c)
+print(c.float())
+输出
+tensor([False])
+tensor([0.])
+
+3.medicalGPT的 data/reward/中的test.json只有100条数据 使用普通版本的lora确实很容易就收敛了 但是我这里data/reward_yunguan有2800多条  train_loss其实有波动
+ 从0.3-1.x都出现过 这里注意 train的acc只是一个gradient_accumulation_steps=4 的[1,0,1,1]的mean 比如这就0.75了 所以其实经常在0 ，0.25 ， 0.5 ， 0.75这几个值之间跳
+意义不大 主要还是要看eval_loss和eval_acc 以及 reward/margin  正常情况下 这个reward/margin是越来越大的 至少到0.4以上 不会在0.01徘徊
