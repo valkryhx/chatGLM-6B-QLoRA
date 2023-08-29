@@ -185,6 +185,7 @@ class LoRATrainer(Trainer):
             output_dir = self.args.output_dir
         if self.is_world_process_zero():  
             self.model.save_pretrained(output_dir)
+            self.tokenizer.save_pretrained(output_dir)  ## add 20230829
             torch.save(self.args, os.path.join(output_dir, "training_args.bin"))
             logger.error("Save done.")
         else :
