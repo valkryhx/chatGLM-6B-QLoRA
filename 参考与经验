@@ -859,3 +859,14 @@ tensor([0.])
 !pip install peft==0.5.0 
 !pip install accelerate==0.21.0 
 !pip install trl==0.6.0
+
+#---20230830---#
+参见https://www.tensorflow.org/datasets/splits
+load_dataset 支持 split=train[:1%]这种写法 split=f"train[:{args.validation_split_percentage}%]  666
+if "validation" not in raw_datasets.keys():
+        raw_datasets["validation"] = load_dataset(
+            'json',
+            data_files=data_files,
+            split=f"train[:{args.validation_split_percentage}%]",  # 注意train[:1%] 写法是支持的！参见https://www.tensorflow.org/datasets/splits
+            cache_dir=args.cache_dir,
+            )
