@@ -870,3 +870,8 @@ if "validation" not in raw_datasets.keys():
             split=f"train[:{args.validation_split_percentage}%]",  # 注意train[:1%] 写法是支持的！参见https://www.tensorflow.org/datasets/splits
             cache_dir=args.cache_dir,
             )
+
+使用命令行参数覆盖默认参数  注意赋值语句后千万不要加逗号 就是这样hf_train_args.per_device_train_batch_size=args.per_device_train_batch_size【,】
+这个逗号会让赋值成为元组tuple 也就是让hf_train_args.xxx 的type成为tuple  这个错误贼奇特 第一次见 元组居然确实可以不加括号 我以为末尾是逗号，就会报错 结果语法没问题 
+a = 3  # a is int
+a = 3, # 语法居然不会报错 此时a = tuple ！！！真奇葩的写法 居然不小心在末尾加逗号遇到了
