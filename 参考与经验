@@ -941,3 +941,13 @@ context_tokens += (
 response_text 是 _tokenize_str("assistant", turn_repsonse) 也就是f"{role}\n{content}" assistant\n 回答
 \n{im_start}{query_text}{im_end}\n{im_start}{response_text}{im_end} 也就是
 \n<|im_start|>user\n提问<|im_end|>\n<|im_start|>assistant\n回答<|im_end|>
+
+
+LORA 微调 embedding 层  参考https://github.com/QwenLM/Qwen-7B/issues/240#issuecomment-1695354408
+> 对于`<|extra_0|>`至`<|extra_204|>`，无论是预训练中还是Chat模型微调中，它们都没有被使用，相当于是“空白”概念。因而通过后续微调可以赋予全新的意义，且不与之前训练过程中使用的特殊token冲突。未微调新加入的token的话，确实也会导致生成异常。
+> 
+> 对于该场景，以下方案供您参考：
+> 
+> 1. 建议微调embedding，可开启peft中微调embedding的功能，参见[Add nn.Embedding Support to Lora huggingface/peft#337 (comment)](https://github.com/huggingface/peft/pull/337#issuecomment-1527412343)
+> 2. 复用类似功能的特殊token，如chat模型中的`<|endoftext|>`表示文档结束、`<|im_start|>`表示一轮开始、`<|im_end|>`表示一轮结束，但可能难以修正其原有含义。
+> 3. 采用纯文本表达，但可能不够鲁棒。
