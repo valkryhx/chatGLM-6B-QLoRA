@@ -965,3 +965,15 @@ class GPTJModel(GPTJPreTrainedModel):
         self.embed_dim = config.n_embd
         self.vocab_size = config.vocab_size
         self.wte = nn.Embedding(config.vocab_size, self.embed_dim)
+
+ ConversationBufferWindowMemory的memroy 加上return_messages=True 那么返回的语句
+memory.load_memory_variables({})
+
+ 是个lsit 可以直接slice 或者 处理成标准history   {'history': [HumanMessage(content='not much you', additional_kwargs={}),
+      AIMessage(content='not much', additional_kwargs={})]}
+
+HumanMessage.content 直接得到 问题 string
+AIMessage.conten 直接得到回答string
+
+参考  我在kaggle上也实现了
+https://python.langchain.com/docs/modules/memory/types/buffer_window
