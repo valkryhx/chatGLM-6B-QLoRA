@@ -957,7 +957,7 @@ LORA 微调 embedding 层  参考https://github.com/QwenLM/Qwen-7B/issues/240#is
 https://github.com/huggingface/peft/pull/337#issuecomment-1527412343
 https://github.com/huggingface/peft/pull/337#issuecomment-1527412343
 
-wte 就是GPTJmodel的word to embedding 层
+wte 就是GPTJmodel的word to embedding 层  #参考 https://huggingface.co/transformers/v4.11.3/_modules/transformers/models/gptj/modeling_gptj.html
 class GPTJModel(GPTJPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
