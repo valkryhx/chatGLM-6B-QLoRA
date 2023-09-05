@@ -952,3 +952,7 @@ LORA 微调 embedding 层  参考https://github.com/QwenLM/Qwen-7B/issues/240#is
 > 1. 建议微调embedding，可开启peft中微调embedding的功能，参见[Add nn.Embedding Support to Lora huggingface/peft#337 (comment)](https://github.com/huggingface/peft/pull/337#issuecomment-1527412343)
 > 2. 复用类似功能的特殊token，如chat模型中的`<|endoftext|>`表示文档结束、`<|im_start|>`表示一轮开始、`<|im_end|>`表示一轮结束，但可能难以修正其原有含义。
 > 3. 采用纯文本表达，但可能不够鲁棒。
+
+有个老旧但是完整的参考例子 里面将module_to_save=[wte,lmhead]我估计这个就是targe_modules=[wte,lmhead]的老旧写法
+https://github.com/huggingface/peft/pull/337#issuecomment-1527412343
+https://github.com/huggingface/peft/pull/337#issuecomment-1527412343
