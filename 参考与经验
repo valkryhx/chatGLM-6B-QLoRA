@@ -956,3 +956,12 @@ LORA 微调 embedding 层  参考https://github.com/QwenLM/Qwen-7B/issues/240#is
 有个老旧但是完整的参考例子 里面将module_to_save=[wte,lmhead]我估计这个就是targe_modules=[wte,lmhead]的老旧写法
 https://github.com/huggingface/peft/pull/337#issuecomment-1527412343
 https://github.com/huggingface/peft/pull/337#issuecomment-1527412343
+
+wte 就是GPTJmodel的word to embedding 层
+class GPTJModel(GPTJPreTrainedModel):
+    def __init__(self, config):
+        super().__init__(config)
+
+        self.embed_dim = config.n_embd
+        self.vocab_size = config.vocab_size
+        self.wte = nn.Embedding(config.vocab_size, self.embed_dim)
