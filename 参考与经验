@@ -912,3 +912,32 @@ medicalGPT使用的是<|im_end|> 但是我看qwen的tokenizer config里面实际
 可能不影响吧 还有个特殊符号标记开头 是 <|im_start|> 
 目前 qwen的防注入攻击默认是不开启的 也就是 <|endoftext|>会被tokenizer标记为单一的151643 符合社区大众用法 
 而不是最最开始的 <  |  end of text |  > 这样的零散的好几个词符
+
+qwen模型的训练是否在forward中format了input
+可以看到modeling_qwen.py的class qwenlmheadmodel中 （config的automdoel指定为这个模型类）
+的forward中并没有相关的format代码
+但是在def chat和def stream_chat 中可以看到
+995行 assert generation_config.chat_format == 'chatml'
+1004行的make_context 是from .qwen_generation_utils import (
+    HistoryType,
+    make_context,
+...)
+我们在qwen_generation_utils.py 中看到119行的def make_context的171行
+context_tokens += (
+            nl_tokens
+            + im_start_tokens
+            + _tokenize_str("user", query)[1]
+            + im_end_tokens
+            + nl_tokens
+            + im_start_tokens
+            + tokenizer.encode("assistant")
+            + nl_tokens
+        )
+这里nl_tokens 是\n的token 也就是 context_tokens的格式是 \n<|im_start|>user+问题<|im_end|>\nassistant\n
+实际的多轮对话是prev_chat = (
+                f"\n{im_start}{query_text}{im_end}\n{im_start}{response_text}{im_end}"
+            )
+其中query_text 是_tokenize_str("user", turn_query)  也就是f"{role}\n{content}"  user\n 提问
+response_text 是 _tokenize_str("assistant", turn_repsonse) 也就是f"{role}\n{content}" assistant\n 回答
+\n{im_start}{query_text}{im_end}\n{im_start}{response_text}{im_end} 也就是
+\n<|im_start|>user\n提问<|im_end|>\n<|im_start|>assistant\n回答<|im_end|>
