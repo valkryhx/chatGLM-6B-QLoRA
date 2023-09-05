@@ -875,3 +875,40 @@ if "validation" not in raw_datasets.keys():
 这个逗号会让赋值成为元组tuple 也就是让hf_train_args.xxx 的type成为tuple  这个错误贼奇特 第一次见 元组居然确实可以不加括号 我以为末尾是逗号，就会报错 结果语法没问题 
 a = 3  # a is int
 a = 3, # 语法居然不会报错 此时a = tuple ！！！真奇葩的写法 居然不小心在末尾加逗号遇到了
+
+
+#---20230905---#
+关于在训练chatglm2-6b时 数据是否需要format成 【问:{question}\n\n答:{answer}\n\n】的研究 
+在hf上托管的chatglm2-6b源码的modeling_chatglm.py的849行的class ChatGLMForConditionalGeneration(ChatGLMPreTrainedModel)中查看forward方法
+其中涉及到transformer_outputs = self.transformer 而transformer_outputs 之后就是loss计算了
+这个self.transformer 又在854行找到  self.transformer = ChatGLMModel(config, empty_init=empty_init, device=device)
+也就是实例化ChatGLMModel 并调用其forward 
+在731行class ChatGLMModel(ChatGLMPreTrainedModel)的784行找到了forward 其中调用了get_prompt
+这个get_prompt 没有使用【问:{question}\n\n答:{answer}\n\n】  可以检查代码
+
+反过来看infer的时候 在1018行找到def chat 在1036行找到def stream_chat  这2个方法都是带有 @torch.inference_mode()上下文管理器标记的
+def chat中用到了self.build_inputs 
+build_inputs用到了tokenizer.build_prompt
+而tokenizer.build_prompt在tokenzization_chatglm.py 的 162行 很明显格式化了prompt
+ def build_prompt(self, query, history=None):
+        if history is None:
+            history = []
+        prompt = ""
+        for i, (old_query, response) in enumerate(history):
+            prompt += "[Round {}]\n\n问：{}\n\n答：{}\n\n".format(i + 1, old_query, response)
+        prompt += "[Round {}]\n\n问：{}\n\n答：".format(len(history) + 1, query)
+        return prompt
+再说这个def stream_chat
+其中用到了build_stream_inputs 而build_stream_inputs中明显格式化了prompt prompt = "[Round {}]\n\n问：{}\n\n答：".format(len(history) + 1, query)
+**** 综上
+在训练时 chatglm2没有隐含的给语料加上格式化操作 但是在使用model.chat 和model.stream_chat时又在后台用了格式化
+为了让训练和推理时保持一致（这样的一致会减少胡说的概率 相当于强制让训练过程符合推理过程的格式化要求）
+所以要显式的让训练的样本做【问:{question}\n\n答:{answer}\n\n】格式化
+
+
+qwen的格式化和baichuan的格式化 可以参考MedicalGPT的supervised_finetuning.py 里面都有 
+其中qwen需要手动设置好tokenizer.eos_token / tokenizer.pad_token = tokenizer.eos_token 设置好以后tokenizer会自动扩展size 
+medicalGPT使用的是<|im_end|> 但是我看qwen的tokenizer config里面实际约定的eos_toekn_id 是151643 也就是 <|endoftext|> ?
+可能不影响吧 还有个特殊符号标记开头 是 <|im_start|> 
+目前 qwen的防注入攻击默认是不开启的 也就是 <|endoftext|>会被tokenizer标记为单一的151643 符合社区大众用法 
+而不是最最开始的 <  |  end of text |  > 这样的零散的好几个词符
