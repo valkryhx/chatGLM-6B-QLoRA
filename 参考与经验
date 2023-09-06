@@ -977,3 +977,14 @@ AIMessage.conten 直接得到回答string
 
 参考  我在kaggle上也实现了
 https://python.langchain.com/docs/modules/memory/types/buffer_window
+
+
+#---20230906---#
+FastAPI的多文件上传 参考
+https://www.tutorialsbuddy.com/python-fastapi-upload-files?expand_article=1   这个有上传和保存文件的代码 包括单一文件和多个文件上传
+https://github.com/tiangolo/fastapi/issues/2694#issuecomment-769030865  这是多文件上传的调用写法
+https://cloud.tencent.com/developer/ask/sof/107266271   多文件上传的调用写法
+https://stackoverflow.com/questions/63138497/uploading-multiple-files-uploadfiles-fastapi
+https://fastapi.tiangolo.com/zh/tutorial/request-files/
+https://stackoverflow.com/questions/68981869/how-to-upload-a-single-file-to-fastapi-server-using-curl     curl的调用写法
+https://github.com/tiangolo/fastapi/issues/2694#issue-792976892   curl分多次上传多个文件的写法
