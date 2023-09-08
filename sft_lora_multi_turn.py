@@ -11,29 +11,27 @@
 代码中的处理方式参考【https://huggingface.co/THUDM/chatglm2-6b/blob/main/tokenization_chatglm.py#L167】
 
 # ./data/sharegpt_multi_turn_data 目录不能有空白json文件
-!git pull --all --force 
-#!pip install  -U git+https://github.com/huggingface/peft.git   # 20230717 peft==0.4.0正式发布了 不用调版本了推理完后再训练需要重新升级到0.4.0dev 所以有这句
+!git pull --all --force
 !deepspeed --include localhost:0,1  sft_lora_multi_turn.py  \
   --train_args_json luzi.json \
   --model_name_or_path THUDM/chatglm2-6b \
-  --output_dir output-sharegpt-2k-sft-0805-v1 \
+  --output_dir output-sharegpt-2k-sft-0908 \
   --num_train_samples -1 \
   --num_eval_samples 2 \
-  --resume_from_checkpoint ./output-sharegpt-2k-sft-0804-v4/checkpoint-3980 \
   --train_data_path ./data/sharegpt_data  \
   --eval_data_path  ./data/sharegpt_data    \
   --data_type sharegpt  \
-  --max_length 1800 \
+  --max_length 1000 \
   --lora_rank 64 \
   --lora_dropout 0.05 \
   --compute_dtype fp16 \
   --per_device_train_batch_size 2 \
   --per_device_eval_batch_size 2  \
-  --gradient_accumulation_steps 1 \
+  --gradient_accumulation_steps 2 \
   --learning_rate  1.8e-5 \
   --num_train_epochs  40  \
   --save_total_limit 2 \
-  --load_in_4bit True \
+  --use_qlora True \
 --deepspeed ds_zero2_config.json
 """
 
