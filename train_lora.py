@@ -326,7 +326,7 @@ def train(global_args):
         
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
-                                          load_in_4bit=True if global_args.use_qlora else False ,
+                                          load_in_4bit=False,#True if global_args.use_qlora else False ,
                                           torch_dtype=torch.float16,
                                           #quantization_config=q_config if global_args.use_qlora==True else None,
                                           quantization_config=q_config,
