@@ -336,7 +336,10 @@ def train(global_args):
                                           #device_map=new_hf_device_map,
                                           # device_map="auto"   # add 20230713
                                      )
-
+    # base_model 先设置use_cache=False 后面peftModel也会设置一次 在Trainer.train之前
+    # 不使用old的past_query_key_value  设置为True的话是为了加快训练 但是用的是旧的qkv
+    model.config.use_cache= False
+    logger.debug(f"base model.config.use_cache={model.config.use_cache}")
     logger.error("加载完基座模型layers[27].self_attention.query_key_value.weight")
     print(model.transformer.encoder.layers[27].self_attention.query_key_value.weight)
     # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
@@ -424,7 +427,7 @@ def train(global_args):
     # train
     logger.debug(f'hf_train_args.per_device_train_batch_size={hf_train_args.per_device_train_batch_size}')
     logger.debug(f'hf_train_args.per_device_eval_batch_size ={hf_train_args.per_device_eval_batch_size }')
-    logger.debug(f'hf_train_args.gradient_accumulation_steps ={hf_train_args.per_device_eval_batch_size }')
+    logger.debug(f'hf_train_args.gradient_accumulation_steps ={hf_train_args.gradient_accumulation_steps }')
     logger.debug(f"model.config.use_cache={model.config.use_cache}")
     model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
     logger.debug(f"model.config.use_cache={model.config.use_cache}")
