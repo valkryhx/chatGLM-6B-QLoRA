@@ -988,3 +988,21 @@ https://stackoverflow.com/questions/63138497/uploading-multiple-files-uploadfile
 https://fastapi.tiangolo.com/zh/tutorial/request-files/
 https://stackoverflow.com/questions/68981869/how-to-upload-a-single-file-to-fastapi-server-using-curl     curl的调用写法
 https://github.com/tiangolo/fastapi/issues/2694#issue-792976892   curl分多次上传多个文件的写法
+
+#---20230908---#
+model = AutoModel.from_pretrained(global_args.model_name_or_path,
+                                          trust_remote_code=True,                           
+                                          load_in_4bit=【True if global_args.use_qlora else False】 ,   
+                                          # 如果用qlora的话 load_in_4bit这里写True/False都不影响 因为都会被q_config的load_in_4bit=True覆盖   
+                                          # 通过True/False条件下的logger.error("加载完基座模型layers[27].self_attention.query_key_value.weight")确认layer是一样的unit8值
+
+在基座模型加载完后 （也就是model=AutoModel.from_pretrained）
+直接写model.config.use_cache= False  也就是基座模型就设置use_cache=False 这样就不用在加载完lora层的peftmodel再写一次model.config.use_cache= False
+# base_model 先设置use_cache=False 后面peftModel也会设置一次 在Trainer.train之前
+# 不使用old的past_query_key_value  设置为True的话是为了加快训练 但是用的是旧的qkv
+model.config.use_cache= False
+logger.debug(f"base model.config.use_cache={model.config.use_cache}")
+如果基座模型加载后没写 也可以在peftmodel后面写 可以移到trainer=LoraTrainer(xxx)之前
+logger.debug(f"model.config.use_cache={model.config.use_cache}")  #  如果basemodel没写 这里就是True
+model.config.use_cache = False   #设置False
+logger.debug(f"model.config.use_cache={model.config.use_cache}")  #  现在就是False
