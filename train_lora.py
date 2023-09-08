@@ -428,9 +428,9 @@ def train(global_args):
     logger.debug(f'hf_train_args.per_device_train_batch_size={hf_train_args.per_device_train_batch_size}')
     logger.debug(f'hf_train_args.per_device_eval_batch_size ={hf_train_args.per_device_eval_batch_size }')
     logger.debug(f'hf_train_args.gradient_accumulation_steps ={hf_train_args.gradient_accumulation_steps }')
-    logger.debug(f"model.config.use_cache={model.config.use_cache}")
+    logger.debug(f"在刚刚加载完base_model就写成False 那下面的设置就不用写了 会也是False 否则在下面设置也行\nmodel.config.use_cache={model.config.use_cache}")
     model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
-    logger.debug(f"model.config.use_cache={model.config.use_cache}")
+    logger.debug(f"现在写就是peft_model 效果跟base_model一样 model.config.use_cache={model.config.use_cache}")
     
     trainer = LoRATrainer(
         model=model,
