@@ -311,7 +311,7 @@ def train(global_args):
     hf_train_args.save_total_limit = global_args.save_total_limit
     
     model_max_length = global_args.max_input_length + global_args.max_output_length
-    tokenizer = ChatGLMTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
     # Quantization
     #q_config = BitsAndBytesConfig(load_in_4bit=True,
