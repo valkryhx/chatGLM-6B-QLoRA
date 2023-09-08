@@ -15,4 +15,4 @@ sentencepiece==0.1.99
 deepspeed==0.9.5
 evaluate==0.4.0
 #trl==0.5.0
-trl==0.6.0
+trl==0.7.1
