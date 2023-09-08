@@ -116,7 +116,7 @@ def parse_args():
     #parser.add_argument("--block_size",type=int,default=256,help="将篇章级别文本分词后的长tokens结果 按照block_size划分成固定大小 想象一下长火车分成多个车厢")
     parser.add_argument("--max_length",type=int,default=256,help="多个轮次对话的总文本的最大长度 也就是history对应的多个对话的Q+A的整体长度")
     parser.add_argument("--data_type",type=str,default="history",choices=['history', 'sharegpt'],help="多轮对话的数据格式 目前支持两种 sharegpt和history格式")
-    parser.add_argument('--load_in_4bit',
+    parser.add_argument('--load_in_4bit',  # 该参数没有用上   被use_qlora取代
                       help='Whether to load_in_4bit',
                       type=eval, 
                       choices=[True, False], 
