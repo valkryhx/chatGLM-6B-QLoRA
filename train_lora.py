@@ -335,7 +335,8 @@ def train(global_args):
     #                                       # device_map="auto"   # add 20230713
     #                                  )
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
-                                          trust_remote_code=True,                          
+                                          trust_remote_code=True,  
+                                          device_map="auto"
                                      )
     logger.error("加载完基座模型layers[27].self_attention.query_key_value.weight")
     print(model.transformer.encoder.layers[27].self_attention.query_key_value.weight)
