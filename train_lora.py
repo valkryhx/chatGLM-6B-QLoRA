@@ -381,8 +381,8 @@ def train(global_args):
                                           #device_map=new_hf_device_map,
                                           # device_map="auto"   # add 20230713
                                      )
-
-    
+    logger.error("加载完基座模型layers[27].self_attention.query_key_value.weight")
+    print(model.transformer.encoder.layers[27].self_attention.query_key_value.weight)
     # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     
     print(f'memory footprint of model: {model.get_memory_footprint()/(1024*1024*1024)} GB')
@@ -420,7 +420,8 @@ def train(global_args):
         task_type=TaskType.CAUSAL_LM
     )
     model = get_peft_model(model, lora_config)
-
+    logger.error("加上lora层后layers[27].self_attention.query_key_value.weight")
+    print(model.base_model.model.transformer.encoder.layers[27].self_attention.query_key_value.weight)
     resume_from_checkpoint = global_args.resume_from_checkpoint
     if resume_from_checkpoint is not None:
         checkpoint_name = os.path.join(resume_from_checkpoint, 'pytorch_model.bin')
