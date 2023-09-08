@@ -422,6 +422,13 @@ def train(global_args):
     # raise ValueError("TEST")
     
     # train
+    logger.debug('hf_train_args.per_device_train_batch_size={hf_train_args.per_device_train_batch_size}')
+    logger.debug('hf_train_args.per_device_eval_batch_size ={hf_train_args.per_device_eval_batch_size }')
+    logger.debug('hf_train_args.gradient_accumulation_steps ={hf_train_args.per_device_eval_batch_size }')
+    logger.debug(f"model.config.use_cache={model.config.use_cache}")
+    model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
+    logger.debug(f"model.config.use_cache={model.config.use_cache}")
+    
     trainer = LoRATrainer(
         model=model,
         args=hf_train_args,
