@@ -200,6 +200,7 @@ def find_all_linear_names(model,use_qlora=False):
     
     """
     cls = torch.nn.Linear
+    logger.debug(f"use_qlora={use_qlora}")
     if use_qlora:
         cls = bnb.nn.Linear4bit
         logger.debug("use qlora in find all_linear_names")
