@@ -1006,3 +1006,13 @@ logger.debug(f"base model.config.use_cache={model.config.use_cache}")
 logger.debug(f"model.config.use_cache={model.config.use_cache}")  #  如果basemodel没写 这里就是True
 model.config.use_cache = False   #设置False
 logger.debug(f"model.config.use_cache={model.config.use_cache}")  #  现在就是False
+
+# hf_train_args.report_to=args.report_to
+参考   https://github.com/valkryhx/MedicalGPT/blob/medGPT_0828/dpo_peftmodel_my_style_0830.py
+    ## 关于这个report_to 参数 我看了之前的sft/reward_model代码 都是不在命令行里面传的 直接使用从luzi.json配置文件中读取的"report_to":"tensorboard"配置 
+        ##  这个配置在hf_train_args.report_to会被转成 ['tensorboard'] 这是符合这个参数list[str]的格式的 因为相关的处理程序会遍历这个list 
+        ## 如果直接将ScriptArguments获取的args.report_to 赋值给hf_train_args 那么会导致hf_train_args.report_to= 'tensorboard' 而处理程序会遍历这个str 导致获取 t e n 。。。这一系列char来作为存放log的变量 
+        ## 所以会报错 t is not valid  please use tensorboard，wandb xxx等 这种诡异的错误
+        ## 为了使用这个变量 我在后面赋值时加一个[] 将 'tensorboard' 转成['tensorboard'],即hf_train_args.report_to=[args.report_to]
+    hf_train_args.report_to=[args.report_to]
+
