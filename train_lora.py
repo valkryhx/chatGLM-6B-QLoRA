@@ -319,64 +319,17 @@ def train(global_args):
     q_config = BitsAndBytesConfig(load_in_4bit=True,
                                   bnb_4bit_quant_type='nf4',
                                   bnb_4bit_use_double_quant=True,
-                                  bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype])
+                                  bnb_4bit_compute_dtype=_compute_dtype_map[global_args.compute_dtype]) if global_args.use_qlora else None
+    print(f"q_config={q_config}")
     
-    # init model
-    # with init_empty_weights(): # 似乎没用
-    """
-    print('loading init model...')
-    model = AutoModel.from_pretrained(
-            global_args.model_name_or_path, 
-            trust_remote_code=True, 
-            load_in_4bit=True,
-            torch_dtype=torch.float16,
-            #quantization_config=q_config,
-            #device_map="auto" # 模型不同层会被自动分配到不同GPU上进行计算
-            # device_map={'':torch.cuda.current_device()}
-        )
-    print(model.hf_device_map)
-    print(f'memory_allocated {torch.cuda.memory_allocated()}')
-    """
-    """
-    设置了 device_map="auto" 之后
-    chatglm 1.0 的时候，lm_head会跟input_layer自动分配到同个 device，
-    chatglm 2.0 的时候，没有了 lm_head，有一个 output_layer，这个时候可能会分配到两个 device，导致计算loss的时候报错显示
-    RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:2 and cuda:0!
-    一个解决办法是设置 device_map={'':torch.cuda.current_device()}，进行数据并行，但是这样batchsize只能设置非常小，而且很占显存
-    另一个解决办法是: 手动把 output_layer 设置为跟 input 一样的 device
-    然后这里会加载两次模型，可以先加载，调整device_map之后，再把旧模型删掉：https://github.com/pytorch/pytorch/issues/37250#issuecomment-1622972872
-    """
     
-    """
-    if torch.cuda.device_count() > 1:
-        world_size = int(os.environ.get("WORLD_SIZE", 1))
-        ddp = (world_size != 1) # True(distributed training) or False(single gpu )
-        global_args.ddp_find_unused_parameters = False if ddp else None
-        
-        model.hf_device_map['transformer.output_layer'] = model.hf_device_map['transformer.embedding']
-        new_hf_device_map = model.hf_device_map
-        model.cpu()
-        del model
-        torch.cuda.empty_cache()
-        print(f'memory_allocated {torch.cuda.memory_allocated()}')
-        print('loading real model...')
-
-    
-        global_args.ddp_find_unused_parameters = False
-        model = AutoModel.from_pretrained(global_args.model_name_or_path,
-                                          trust_remote_code=True,                           
-                                          load_in_4bit=True,
-                                          torch_dtype=torch.float16,
-                                          quantization_config=q_config,
-                                          device_map=new_hf_device_map)
-        print("[real]",model.hf_device_map)
-        """
         
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
                                           load_in_4bit=False if global_args.use_qlora else True ,
                                           torch_dtype=torch.float16,
-                                          quantization_config=q_config if global_args.use_qlora==True else None,
+                                          #quantization_config=q_config if global_args.use_qlora==True else None,
+                                          quantization_config=q_config,
                                           empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
                                           #device_map=new_hf_device_map,
                                           # device_map="auto"   # add 20230713
