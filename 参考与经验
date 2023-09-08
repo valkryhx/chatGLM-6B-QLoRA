@@ -1016,3 +1016,5 @@ logger.debug(f"model.config.use_cache={model.config.use_cache}")  #  现在就�
         ## 为了使用这个变量 我在后面赋值时加一个[] 将 'tensorboard' 转成['tensorboard'],即hf_train_args.report_to=[args.report_to]
     hf_train_args.report_to=[args.report_to]
 
+reward和ppo rlhf能跑的代码 rm_3.py ppo_chatglm2.py
+https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/chatglm-rewardmodel-qlora-rm_3%E6%88%90%E5%8A%9F_run_ppo%E6%88%90%E5%8A%9F.ipynb
