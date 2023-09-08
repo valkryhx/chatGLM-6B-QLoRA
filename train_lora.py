@@ -324,20 +324,20 @@ def train(global_args):
     
     
         
-    # model = AutoModel.from_pretrained(global_args.model_name_or_path,
-    #                                       trust_remote_code=True,                           
-    #                                       load_in_4bit=False if global_args.use_qlora else True ,
-    #                                       torch_dtype=torch.float16,
-    #                                       #quantization_config=q_config if global_args.use_qlora==True else None,
-    #                                       quantization_config=q_config,
-    #                                       empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
-    #                                       #device_map=new_hf_device_map,
-    #                                       # device_map="auto"   # add 20230713
-    #                                  )
     model = AutoModel.from_pretrained(global_args.model_name_or_path,
-                                          trust_remote_code=True,  
-                                          device_map="auto"
+                                          trust_remote_code=True,                           
+                                          load_in_4bit=True if global_args.use_qlora else False ,
+                                          torch_dtype=torch.float16,
+                                          #quantization_config=q_config if global_args.use_qlora==True else None,
+                                          quantization_config=q_config,
+                                          empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
+                                          #device_map=new_hf_device_map,
+                                          # device_map="auto"   # add 20230713
                                      )
+    # model = AutoModel.from_pretrained(global_args.model_name_or_path,
+    #                                       trust_remote_code=True,  
+    #                                       device_map="auto"
+    #                                  )
     logger.error("加载完基座模型layers[27].self_attention.query_key_value.weight")
     print(model.transformer.encoder.layers[27].self_attention.query_key_value.weight)
     # model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
