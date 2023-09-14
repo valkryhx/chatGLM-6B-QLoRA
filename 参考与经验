@@ -1018,3 +1018,41 @@ logger.debug(f"model.config.use_cache={model.config.use_cache}")  #  现在就�
 
 reward和ppo rlhf能跑的代码 rm_3.py ppo_chatglm2.py
 https://github.com/valkryhx/chatGLM-6B-QLoRA/blob/main/chatglm-rewardmodel-qlora-rm_3%E6%88%90%E5%8A%9F_run_ppo%E6%88%90%E5%8A%9F.ipynb
+
+#---20230914---#
+chatglm2-6b中能让回答产生多样性（同一个问题 在top-k / temperature设置不变的情况下多种回答）的因素：
+1.beam_search开启>1 ，默认是beam_search ==1 所以是关着的 
+2.do_sample 默认是True（见model.chat源码）
+这个平时一致忽略了 
+在do_sample =True 时 有如下代码 【https://huggingface.co/THUDM/chatglm2-6b/blob/main/modeling_chatglm.py#L1161】
+if generation_config.do_sample:
+    next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
+else:
+    next_tokens = torch.argmax(probs, dim=-1)
+上面的multinomial 是多项式采样，比如 probs=[0.1, 0.2,0.4,0.3] 先按照概率值大小排序成[0.4,0.3,0.2,0.1]然后将这些概率值当成[0,1)区间的线段
+取一个随机值random random依次对比区间累计值落在哪个区间就取对应的区间idx。
+例如random=0.85 第0累计区间为0.4 < 0.85
+               第1累计区间为0.4+0.3=0.7 <0.85
+               第2累计区间为0.4+0.3+0.2 = 0.9 > 0.85 
+               则取idx = 2 （0.7<=0.85<0.9）
+               返回idx=2的token
+排序是为了让大的概率值排在前面的idx 从而优先被采样
+
+在huggingface的 【https://huggingface.co/transformers/v3.2.0/_modules/transformers/generation_utils.html】 中也有类似的代码
+比如
+if do_sample:
+                # Temperature (higher temperature => more likely to sample low probability tokens)
+                if temperature != 1.0:
+                    scores = scores / temperature
+                # Top-p/top-k filtering
+                next_token_logscores = top_k_top_p_filtering(scores, top_k=top_k, top_p=top_p)
+                # Sample
+                probs = F.softmax(next_token_logscores, dim=-1)
+                next_token = torch.multinomial(probs, num_samples=1).squeeze(1)
+
+今天偶然发现chatglm2-6b也有 sequence classification头了  参考https://huggingface.co/THUDM/chatglm2-6b/blob/main/modeling_chatglm.py#L1198
+查看ChatGLMForSequenceClassification
+查看相关的classifier_head 代码 其实就是做了线性变换 将hidden_size 变换成num_labels维度
+self.classifier_head = nn.Linear(config.hidden_size, config.num_labels, bias=True, dtype=torch.half)
+
+
