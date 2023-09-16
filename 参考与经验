@@ -1056,6 +1056,26 @@ if do_sample:
 self.classifier_head = nn.Linear(config.hidden_size, config.num_labels, bias=True, dtype=torch.half)
 
 #---20230916---#
+
+将chatglm 模型api服务 封装成langchain LLM 参考 https://zhuanlan.zhihu.com/p/624240080
+模型服务是解耦的 独立于llm类 也独立于langchain 这样好！
+
+启动Cache，需要在脚本中增加这两行代码即可：参考 https://zhuanlan.zhihu.com/p/624240080
+
+from langchain.cache import InMemoryCache
+
+# 启动llm的缓存
+langchain.llm_cache = InMemoryCache()
+启动Cache后，ChatGLM的访问效果如下所示，当第二次请求模块同一个问题时，模块处理用户问题所用的时间少了一个数量级：
+
+Human: 你好
+INFO:root:chatGLM process time: 993.685ms
+ChatGLM: 你好 !我是人工智能助手 ChatGLM-6B,很高兴见到你,欢迎问我任何问题。
+Human: 你好
+INFO:root:chatGLM process time: 0.116ms
+ChatGLM: 你好 !我是人工智能助手 ChatGLM-6B,很高兴见到你,欢迎问我任何问题。
+
+
 向量数据库 db =chroma.from_document(persist_dir=xxx)是建立好db 并将向量数据库文件持久化到目录
           之后可以db=None 删除这个实例
           加载时则是db=chroma(persist_dir=xxx) 是从这个持久化的目录里加载向量数据库实例
