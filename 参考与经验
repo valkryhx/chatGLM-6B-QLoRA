@@ -1055,4 +1055,35 @@ if do_sample:
 查看相关的classifier_head 代码 其实就是做了线性变换 将hidden_size 变换成num_labels维度
 self.classifier_head = nn.Linear(config.hidden_size, config.num_labels, bias=True, dtype=torch.half)
 
+#---20230916---#
+向量数据库 db =chroma.from_document(persist_dir=xxx)是建立好db 并将向量数据库文件持久化到目录
+          之后可以db=None 删除这个实例
+          加载时则是db=chroma(persist_dir=xxx) 是从这个持久化的目录里加载向量数据库实例
+langchain 使用tool agent   
+参考 https://www.luxiangdong.com/2023/07/11/embedding/#/%E8%87%AA%E5%AE%9A%E4%B9%89Embedding%E6%A8%A1%E5%9E%8B
 
+向量数据库加载后动态追加新的doc 参考 https://www.luxiangdong.com/2023/07/11/embedding/#/%E8%87%AA%E5%AE%9A%E4%B9%89Embedding%E6%A8%A1%E5%9E%8B
+注意doc是切分好的文段 不是真个文档
+text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+docs= ['New York City','Houston.txt']
+all_docs = []
+for d in docs:
+    print(f"#### Loading data: {d}")
+    doc = UnstructuredFileLoader(f"./data/{d}",  strategy="hi_res").load()
+    doc = text_splitter.split_documents(doc)
+    all_docs.extend(doc)
+## add to vector store
+vectorstore.add_documents(all_docs)
+
+1.
+langchain 项目的更新速度飞快两周时间从0.0.277更新到0.0.291，关于向量数据库的动态追加功能不正常的bug也是更新到了最新版本才暂时不出现。
+
+2.
+目前开发测试中发现，在langchain 服务在线运行时，只要更新了内存中的向量数据库，比如临时加入新批次文档向量或者在线执行全量文档切分，重启langchain服务后都会导致向量数据库检索为空，即使向量数据文件已经持久化到文件系统也会出现这个现象。
+目前每次重启langchain服务都重新执行构建向量数据库的步骤来规避该问题。目前文件较少，重建耗时在10秒左右。
+
+注意langchain服务的uvcorn的reload=False比较好 等于True会动态刷新（会启动一个watchfiles的进程监测本机目录的文件变化） 经常出现检索为空
+
+如果检索为空 则需要关闭langchain服务 删除向量数据持久化目录DB 重新执行ingest.py 重新启动langchain服务
+
+embedding模型加载时可以使用cpu 这样减少显存占用。
