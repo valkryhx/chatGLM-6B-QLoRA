@@ -1107,3 +1107,37 @@ langchain 项目的更新速度飞快两周时间从0.0.277更新到0.0.291，�
 如果检索为空 则需要关闭langchain服务 删除向量数据持久化目录DB 重新执行ingest.py 重新启动langchain服务
 
 embedding模型加载时可以使用cpu 这样减少显存占用。
+
+#---20230921---#
+flink  keyby-reduce 聚合
+
+langchain中的text splitter 
+默认是RecursiveCharacterTextSplitter 
+参考https://python.langchain.com/docs/modules/data_connection/document_transformers/
+recursiveCharacterTextSplitter的做法是依次使用 ["\n\n", "\n", " ", ""] 作为separator对文本做分割，得到分割结果
+
+CharacterTextSplitter 是另一款splitter ，参数中可以设置分割字符串seperator
+参考https://python.langchain.com/docs/modules/data_connection/document_transformers/text_splitters/character_text_splitter
+text_splitter = CharacterTextSplitter(        
+    separator = "\n\n",
+    chunk_size = 1000,
+    chunk_overlap  = 200,
+    length_function = len,
+    is_separator_regex = False,
+)
+根据https://python.langchain.com/docs/modules/data_connection/document_transformers/ 描述
+参数chunk_size 是指设置最大的chunk长度 length_function =len 是设置长度计算方法为len
+在我实际使用时 每一行之后都加上[END_OF_LINE]\n 
+这样就形成
+xxx
+[END_OF_LINE]\n 
+xxx
+[END_OF_LINE]\n 
+xxx
+[END_OF_LINE]\n 
+
+设置separator = "[END_OF_LINE]\n"   chunk_size =1 这样 无论多大的xxx（原始sample，每一行就是一个）
+都被切分成一个splitted_text ，然后就不会出现重复文本片段。只不过会出现warning splitted_text_len 998 > 1(chunk size)
+
+如果chunk设置太大比如2000（默认值是4000） 那么就会出现多个splitted_text 被塞入一个chunk的情况
+也就是这个langchain的text splitter的逻辑是必须把chunk塞满 。设置成chunk_size =1 避免这个情况。
