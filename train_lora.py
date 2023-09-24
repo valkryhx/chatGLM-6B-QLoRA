@@ -126,7 +126,10 @@ def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
     answer = example['output']
     q_ids = tokenizer.encode(text=question, add_special_tokens=False)
     a_ids = tokenizer.encode(text=answer, add_special_tokens=False)
+    #这里不使用 tokenizer.build_inputs_with_special_tokens(q_ids, a_ids)，因为这个方法可能其他模型没有
     total_ids = tokenizer.encode(text=question+answer ,add_special_tokens=False)[:global_args.max_length]
+    #可能需要加上下面的
+    #total_ids = total_ids + [2] # [2]是eos token id 确保最后是结束符eos 不然训练后可能模型会出现一直输出的现象。
     question_length = len(q_ids)
     labels = [ignore_label_id] * question_length + total_ids[question_length:]
     return {'input_ids': q_ids, 'labels': labels}
