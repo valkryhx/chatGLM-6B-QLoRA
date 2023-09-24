@@ -110,13 +110,17 @@ def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
     answer = example['output']
     q_ids = tokenizer.encode(text=question, add_special_tokens=False)
     a_ids = tokenizer.encode(text=answer, add_special_tokens=False)
-    if len(q_ids) > global_args.max_input_length - 2:  # 额外token为2个  gmask, bos
+    # tokenizer.build_inputs_with_special_tokens(q_ids, a_ids)会在开头位置添加额外2个token:gmask, bos。所里这里如果q_ids超了 就让q_ids舍去最后2个token 
+    if len(q_ids) > global_args.max_input_length - 2:  
         q_ids = q_ids[: global_args.max_input_length - 2]
+    # tokenizer.build_inputs_with_special_tokens(q_ids, a_ids)会在结束添加额外1个token:eos。所里这里如果a_ids超了 就让a_ids舍去最后1个token
     if len(a_ids) > global_args.max_output_length - 1:  # 额外token为1  eos
         a_ids = a_ids[: global_args.max_output_length - 1]
     input_ids = tokenizer.build_inputs_with_special_tokens(q_ids, a_ids)
     # question_length = input_ids.index(tokenizer.bos_token_id)
-    question_length = len(q_ids) + 2  # chatglm1 - gmask, bos, chatglm2 - gmask, sop
+    # chatglm1 - gmask, bos,这个没用过先不管 #chatglm2 会在最开始的位置多两个token 64790, 64792 ,可能就是gmask, sop
+    # 所以需要 +2 才是真正的q_ids的结束位置
+    question_length = len(q_ids) + 2  
     labels = [ignore_label_id] * question_length + input_ids[question_length:]
     return {'input_ids': input_ids, 'labels': labels}
 
