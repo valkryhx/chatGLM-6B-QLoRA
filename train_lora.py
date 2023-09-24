@@ -132,8 +132,8 @@ def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
     #total_ids = total_ids + [2] # [2]是eos token id 确保最后是结束符eos 不然训练后可能模型会出现一直输出的现象。
     question_length = len(q_ids)
     labels = [ignore_label_id] * question_length + total_ids[question_length:]
-    assert len(labels) > 0 ,question+answer
-    return {'input_ids': q_ids, 'labels': labels}
+    assert len(total_ids)  == len(labels) 
+    return {'input_ids': total_ids, 'labels': labels}
 
 #20230923 这个不再使用
 def tokenize_func_old_not_use(example, tokenizer, global_args, ignore_label_id=-100):
