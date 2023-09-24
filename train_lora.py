@@ -219,6 +219,8 @@ class DataCollatorForChatGLM:
             labels.append(torch.LongTensor(label))
         input_ids = torch.stack(input_ids)
         labels = torch.stack(labels)
+        logger.error(f"len_of_input_ids={len(input_ids)}")
+        logger.error(f"len_of_labels={len(labels)}")
         return {'input_ids': input_ids, 'labels': labels}
 
 
