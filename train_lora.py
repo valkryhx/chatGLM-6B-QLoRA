@@ -53,8 +53,9 @@ def parse_args():
     parser.add_argument('--train_data_path', type=str, required=True, help='训练数据路径')
     parser.add_argument('--eval_data_path', type=str, default=None, help='验证数据路径')
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--max_input_length', type=int, default=256, help='instruction + input的最大长度')
-    parser.add_argument('--max_output_length', type=int, default=256, help='output的最大长度')
+    #parser.add_argument('--max_input_length', type=int, default=256, help='instruction + input的最大长度')
+    #parser.add_argument('--max_output_length', type=int, default=256, help='output的最大长度')
+    parser.add_argument('--max_length', type=int, default=512, help='q+a的最大token个数 ，注意一个token可能对应2-3个char')
     parser.add_argument('--lora_rank', type=int, default=4, help='lora rank')
     parser.add_argument('--lora_alpha', type=int, default=32, help='lora_alpha')
     parser.add_argument('--lora_dropout', type=float, default=0.05, help='lora dropout')
@@ -102,6 +103,36 @@ def parse_args():
 
 
 def tokenize_func(example, tokenizer, global_args, ignore_label_id=-100):
+    """单样本tokenize处理
+       q="你是谁？"
+       a="你是谁"
+       total=q+a       
+       q_ids = tk.encode(text=q, add_special_tokens=False)
+       a_ids = tk.encode(text=a, add_special_tokens=False)
+       total_ids = tk.encode(text=total,add_special_tokens=False)
+       可以看出      
+       q_ids = [30910, 34607, 55622, 31514]
+       a_ids = [30910, 34607, 55622]
+       total_ids = [30910, 34607, 55622, 31514, 34607, 55622]
+       total_ids 是拼接后的q+a 的ids 会省去一个a_ids的开头的30910 但是前半部分和q_ids一模一样
+       我直接用 total_ids[:len(q_ids)]来表示q_ids没有问题，后面正好是a_ids[1:]，正好也不需要那个30910
+       那么label也就是question_length = len(q_ids)
+                      labels = [ignore_label_id] * question_length + total_ids[question_length:]
+    """
+    question = global_args.prompt_text + example['instruction']
+    if example.get('input', None):
+        if example['input'].strip():
+            question += f'''\n{example['input']}'''
+    answer = example['output']
+    q_ids = tokenizer.encode(text=question, add_special_tokens=False)
+    a_ids = tokenizer.encode(text=answer, add_special_tokens=False)
+    total_ids = tokenizer.encode(text=question+answer ,add_special_tokens=False)[:global_args.max_length]
+    question_length = len(q_ids)
+    labels = [ignore_label_id] * question_length + total_ids[question_length:]
+    return {'input_ids': q_ids, 'labels': labels}
+
+#20230923 这个不再使用
+def tokenize_func_old_not_use(example, tokenizer, global_args, ignore_label_id=-100):
     """单样本tokenize处理"""
     question = global_args.prompt_text + example['instruction']
     if example.get('input', None):
@@ -321,8 +352,8 @@ def train(global_args):
     hf_train_args.learning_rate = global_args.learning_rate
     hf_train_args.num_train_epochs = global_args.num_train_epochs
     hf_train_args.save_total_limit = global_args.save_total_limit
-    
-    model_max_length = global_args.max_input_length + global_args.max_output_length
+    model_max_length = global_args.max_length 
+    #model_max_length = global_args.max_input_length + global_args.max_output_length
     tokenizer = AutoTokenizer.from_pretrained(global_args.model_name_or_path, trust_remote_code=True)
 
     # Quantization
