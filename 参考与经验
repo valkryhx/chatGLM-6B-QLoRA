@@ -1147,3 +1147,7 @@ xxx
 提到目前Embedding模型中最好的是BAAI的 bge-large-zh
 主页是https://huggingface.co/BAAI/bge-large-zh-v1.5#using-langchain
 测评榜单 https://github.com/FlagOpen/FlagEmbedding/blob/master/C_MTEB/README.md
+
+add Codeadd Markdown
+使用两种不同的embedding模型可能会导致生成的向量维度不一致，报错 chromadb.errors.InvalidDimensionException: Embedding dimension 1024 does not match collection dimensionality 768
+比如先用m3e embedding模型生成的向量为768 已经存到DB目录了 再用bge-large-zhv1.5 模型生成向量长度为1024 这样就会报错 解决方法是 https://github.com/langchain-ai/langchain/issues/5046#issuecomment-1560241183 删除旧的DB 重新生成
