@@ -1141,3 +1141,8 @@ xxx
 
 如果chunk设置太大比如2000（默认值是4000） 那么就会出现多个splitted_text 被塞入一个chunk的情况
 也就是这个langchain的text splitter的逻辑是必须把chunk塞满 。设置成chunk_size =1 避免这个情况。
+
+#---20230927---#
+落地实践|92%的准确率 如何用DB-GPT打造企业级的知识库问答系统 来自20230926 EosphorosAI的文章
+提到目前Embedding模型中最好的是BAAI的 bge-large-zh
+主页是https://huggingface.co/BAAI/bge-large-zh-v1.5#using-langchain
