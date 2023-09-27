@@ -1146,3 +1146,4 @@ xxx
 落地实践|92%的准确率 如何用DB-GPT打造企业级的知识库问答系统 来自20230926 EosphorosAI的文章
 提到目前Embedding模型中最好的是BAAI的 bge-large-zh
 主页是https://huggingface.co/BAAI/bge-large-zh-v1.5#using-langchain
+测评榜单 https://github.com/FlagOpen/FlagEmbedding/blob/master/C_MTEB/README.md
