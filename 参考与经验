@@ -1151,3 +1151,20 @@ xxx
 add Codeadd Markdown
 使用两种不同的embedding模型可能会导致生成的向量维度不一致，报错 chromadb.errors.InvalidDimensionException: Embedding dimension 1024 does not match collection dimensionality 768
 比如先用m3e embedding模型生成的向量为768 已经存到DB目录了 再用bge-large-zhv1.5 模型生成向量长度为1024 这样就会报错 解决方法是 https://github.com/langchain-ai/langchain/issues/5046#issuecomment-1560241183 删除旧的DB 重新生成
+
+#---20230928---#
+修复了 medicalGPT项目中使用use_model_ref=True 的代码 ，之前是使用trl自带的create_reference_model 或者是deepcopy 都会导致训练时loss一直为0.6931
+也就是 -log(sigmoid(0)) =0.6931 说明rewards/chosen 和 rewards/rejected 很接近 观察到训练过程中 rewards/chosen rewards/rejected rewards/margin 一直是0
+
+现在换成了从普通的from_pretrained 到 peftmodel(model,peft_config)到 resume_from_ckpt加载特定的ckpt
+这一套走下来效果就ok了 可以正常训练。
+
+当langchain服务报错时，很肯能是requests.post超时导致的
+我在LLM_RCP.py的def _post方法中设置了timeout=1000（原值为60）
+在UI服务 web_demo_langchain_yunguan_0922.py的 requests.post中设置timeout=1000
+LangChain服务不用设置这个值 ，service_langchain.py
+模型服务不用设置timeout （比如service_chatglm2_base / qlora_sft_dpo）
+
+在A800上跑的混合了运管（短问答）和案例库（长问答）的dpo算法  样本大概500个 
+发现loss很不稳定 但是chosen和rejected的margin倒是很快就为6甚至20+了
+甚至epoch都没到0.5 就已经这样了  
