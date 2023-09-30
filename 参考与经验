@@ -1178,3 +1178,14 @@ https://www.mlexpert.io/prompt-engineering/faster-llm-inference
 下面的timdettmers 是qlora论文的作者 【QLORA: Efficient Finetuning of Quantized LLMs】https://arxiv.org/pdf/2305.14314.pdf
 https://huggingface.co/timdettmers/qlora-self-instruct-65b#current-inference-limitations
 他也很明确的提出了 如果觉得4bit 模型推理速度慢 那就使用16 bits精度，无需强制在推理时做量化
+
+https://towardsdatascience.com/qlora-fine-tune-a-large-language-model-on-your-gpu-27bed5a03e2b
+这个blog的关于qlora的图还行 在qlora的论文中也有
+
+如何将大模型快速转化为对应的GPTQ量化模型，十分钟快速拥有自己的GPTQ模型
+【代码简单 是transformers库的官方实现 但是需要一个高质量的数据集来参与量化过程 这就跟chatglm.cpp的思路不一样。chatglm.cpp项目是直接用c++改写代码 参考我的kaggle demo ，chatglm.cpp量化的ggml模型是原始模型的推理速度的4倍】
+https://www.bilibili.com/video/BV1ez4y1T7JQ/?spm_id_from=333.788.recommend_more_video.2
+
+chatglm.cpp项目是直接用c++改写代码 参考我的kaggle demo ，chatglm.cpp量化的ggml模型是原始模型的推理速度的4倍
+参见我的demo 在最后面
+https://www.kaggle.com/code/huggingfacai/dpo-medgpt-0924
