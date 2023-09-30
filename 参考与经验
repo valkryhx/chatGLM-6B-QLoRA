@@ -1168,3 +1168,13 @@ LangChain服务不用设置这个值 ，service_langchain.py
 在A800上跑的混合了运管（短问答）和案例库（长问答）的dpo算法  样本大概500个 
 发现loss很不稳定 但是chosen和rejected的margin倒是很快就为6甚至20+了
 甚至epoch都没到0.5 就已经这样了  
+
+#---20230930---#
+关于 qlora 训练后的推理加载model = AutoModel.from_pretrained()是否一定要load_in_4bit=True 以及是否要设置 quantization=q_config
+答案是不需要 根据：下面的测试 load_in_4bit 且开启quantization 是速度最慢的 当然效果也是最佳的  毕竟模型训练时就是这样的设置 
+但是 不开启quantization 以及使用load_in_8bit 设置原始的load_in_16bit 推理速度会提升一倍 就是效果可能稍稍劣化
+https://www.mlexpert.io/prompt-engineering/faster-llm-inference
+
+下面的timdettmers 是qlora论文的作者 【QLORA: Efficient Finetuning of Quantized LLMs】https://arxiv.org/pdf/2305.14314.pdf
+https://huggingface.co/timdettmers/qlora-self-instruct-65b#current-inference-limitations
+他也很明确的提出了 如果觉得4bit 模型推理速度慢 那就使用16 bits精度，无需强制在推理时做量化
