@@ -372,7 +372,7 @@ def train(global_args):
     
     
         
-    model = AutoModel.from_pretrained(global_args.model_name_or_path,
+    model = AutoModelForCausalLM.from_pretrained(global_args.model_name_or_path,
                                           trust_remote_code=True,                           
                                           load_in_4bit=True if global_args.use_qlora else False ,   
                                           # 如果用qlora的话 这里写True/False都不影响 因为都会被q_config的load_in_4bit=True覆盖   
