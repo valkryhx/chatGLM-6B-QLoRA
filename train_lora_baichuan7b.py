@@ -382,7 +382,7 @@ def train(global_args):
                                           quantization_config=q_config,
                                           empty_init=False,   # https://github.com/THUDM/ChatGLM-6B/issues/530
                                           #device_map=new_hf_device_map,
-                                          # device_map="auto"   # add 20230713
+                                          device_map="auto"   # add 20230713
                                      )
     # base_model 先设置use_cache=False 后面peftModel也会设置一次 在Trainer.train之前
     # 不使用old的past_query_key_value  设置为True的话是为了加快训练 但是用的是旧的qkv
