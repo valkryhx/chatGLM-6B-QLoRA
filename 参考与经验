@@ -1223,3 +1223,8 @@ Stored in directory: /tmp/pip-ephem-wheel-cache-mqb28jj1/wheels/d9/f2/38/a470822
 实际在这里/root/.cache/pip/wheels/d9/f2/38/a47082299fa8fb9965b5c20ab7757aabaa593743c997bdcf70/chatglm_cpp-0.2.7-cp38-cp38-linux_x86_64.whl
 这个/root/.cache/pip/wheels 就是pip默认的wheel存放路径
 
+
+#---20231015---#
+https://python.langchain.com/docs/modules/memory/types/token_buffer   
+langchain的根据token来保留memory的用法 当max_token_limit设置太小时 会出现memory不是2的倍数的情况 慎用
+另一种是根据window来保留memory  目前用的就是这种
