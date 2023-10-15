@@ -1228,3 +1228,20 @@ Stored in directory: /tmp/pip-ephem-wheel-cache-mqb28jj1/wheels/d9/f2/38/a470822
 https://python.langchain.com/docs/modules/memory/types/token_buffer   
 langchain的根据token来保留memory的用法 当max_token_limit设置太小时 会出现memory不是2的倍数的情况 慎用
 另一种是根据window来保留memory  目前用的就是这种
+
+langchain agent的好例子 然而都是基于openai的 用chatglm都不能跑通 
+https://blog.csdn.net/dfBeautifulLive/article/details/133353827
+https://zhuanlan.zhihu.com/p/627333499
+https://medium.com/@sagaruprety/langchain-agents-prompt-design-for-efficient-tool-selection-fa168398a6c8  这个例子里面直接出现了修改
+https://python.langchain.com/docs/modules/memory/agent_with_memory    langchain的官网上有不少agent / tool /的用法 demo好是好 但是agent相关的demo都是强烈依赖openAI模型才能正常调用tool
+这是极大的缺陷
+https://python.langchain.com/docs/modules/agents/how_to/sharedmemory_for_tools
+
+网上号称能跑天通的例子 
+https://zhuanlan.zhihu.com/p/644167758
+https://blog.csdn.net/liangwqi/article/details/131775673
+https://zhuanlan.zhihu.com/p/642703708   
+上面这个例子是抄的ChatGLM4Tools项目 倒是可以看看这个intentAgent
+https://github.com/Executedone/ChatGLM4Tools/tree/f534172a95aa26ca2707184ac111c997873a5744
+
+https://blog.csdn.net/liangwqi/article/details/131893520  chatglm 抽取知识图谱
